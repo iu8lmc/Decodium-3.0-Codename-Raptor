@@ -1,5 +1,5 @@
 # WSJT-X 3.0.0 rc1 (modified)
- WSJT-X 3.0.0 rc1 (modified for use with "Otto"), 
+ WSJT-X 3.0.0 rc1 ("release candidate 1" from September 15, 2025), modified for use with "Otto"
  <br><br>Download the WSJT-X installer from the release page: 
  <br>https://github.com/avantol/WSJT-X_3.0.0/releases/latest
  <br><br>Download Otto.msi (required!) at https://github.com/avantol/WSJTX-Controller-v2
