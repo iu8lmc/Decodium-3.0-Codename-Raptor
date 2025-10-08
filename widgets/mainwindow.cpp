@@ -1506,7 +1506,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   //avt 9/24/25
   debugToFile("******************************* Starting *******************************");
   //testing# included:
-  debugToFile(QString{"31           data_dir:'%1' writeable_data_dir:'%2'"}.arg(m_config.data_dir().absolutePath()).arg(m_config.writeable_data_dir().absolutePath()));
+  debugToFile(QString{"40           data_dir:'%1' writeable_data_dir:'%2'"}.arg(m_config.data_dir().absolutePath()).arg(m_config.writeable_data_dir().absolutePath()));
   debugToFile("             sslLibVer:" + QSslSocket::sslLibraryVersionString() + " sslLibBuild:" + QSslSocket::sslLibraryBuildVersionString()); 
 
   initExternalCtrl();
@@ -17829,7 +17829,7 @@ void MainWindow::on_actionDownload_from_LOTW_triggered()
   m_firstLotwDl = false;
 
   if (!m_config.lotw_pwd().size() || !m_config.my_callsign().size()) {
-    MessageBox::information_message (this, tr ("Call sign and LOTW password are required.\n\nEnter these in Settings at the General tab."));
+    MessageBox::information_message (this, tr ("Call sign and LOTW password are required.\n\nEnter these in Settings at the Reporting tab."));
     return;
   }
 
