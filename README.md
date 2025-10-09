@@ -7,5 +7,5 @@
  <br>Also make sure Trusted QSL ("TQSL") is installed, and in the suggested folder.
  <br><br>When running the installers, at the Windows warning message, click "More info" then "Run anyway".
  <br><br>* If you run WSJT-X 2.7.0 GA without Otto, you can still upload to / download from LOTW.
- <br><br>Click here for the full feature list for all WM8Q projects ->[https://github.com/avantol/WSJT-X_3.0.0/releases/download/v3.0.0-100/WM8Q.feature.list.pdf](https://docs.google.com/spreadsheets/d/e/2PACX-1vRYuHHO7EpAjSYfSCHZycaMdFZfYVkFyqPz9biFtmnS9uukw43fYYqEBZyhV0WtQyde50OqF96b1Ao_/pubhtml?gid=0&single=true)
+ <br><br>Click here for the full feature list for all WM8Q projects ->[https://docs.google.com/spreadsheets/d/e/2PACX-1vRYuHHO7EpAjSYfSCHZycaMdFZfYVkFyqPz9biFtmnS9uukw43fYYqEBZyhV0WtQyde50OqF96b1Ao_/pubhtml?gid=0&single=true]
  <br>The feature list also contains download links for all projects.
