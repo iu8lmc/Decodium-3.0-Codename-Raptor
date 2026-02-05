@@ -481,6 +481,8 @@ private slots:
   void on_leEchoMessage_textChanged();
   void downloadQsoComplete(bool result);  //avt 10/2/25
   void downloadQslComplete(bool result);  //avt 10/2/25
+  void externalResultUpdate();  //avt 1/23/26
+  void uploadToLotw();    //avt 1/29/26
 
 private:
   Q_SIGNAL void initializeAudioOutputStream (QAudioDeviceInfo,
@@ -862,6 +864,7 @@ private:
   QTimer splashTimer;
   QTimer p1Timer;
   QTimer externalCtrlTimer;     //avt 12/16/21
+  QTimer externalResultTimer;     //avt 1/23/26
 
   QString m_path;
   QString m_baseCall;
@@ -1134,6 +1137,8 @@ private:
   void updateLotwCtrls();      //avt 9/23/25
   void logIncremental(QString, QString);      //avt 9/25/25
   void setIncrLogCount();    //avt 9/25/25
+  void sendDetail(quint32, QString);    //avt 9/25/25
+  QString revisionExtra();    //avt 1/11/26
 };
 
 extern int killbyname(const char* progName);

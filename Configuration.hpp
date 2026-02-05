@@ -311,6 +311,8 @@ public:
   bool ShowOTP() const;
   unsigned int OTPinterval() const;
   void setExternalCtrlMode(bool);         //avt  10/2/25
+  bool is_pwr_swr_supported() const;      //avt 1/25/26
+  void setPskReporter(bool enable);       //avt 2/4/26
 
 //                                      0       1      2         3       4       5      6     7        8           9
   enum class SpecialOperatingActivity {NONE, NA_VHF, EU_VHF, FIELD_DAY, RTTY, WW_DIGI, FOX, HOUND, ARRL_DIGI, Q65_PILEUP};
@@ -485,7 +487,7 @@ public slots:
 private:
   class impl;
   pimpl<impl> m_;
-  bool m_externalCtrlMode;         //avt  10/2/25
+  bool m_externalCtrlMode;        //avt  1/25/26
 };
 
 ENUM_QDATASTREAM_OPS_DECL (Configuration, DataMode);

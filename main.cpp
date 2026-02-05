@@ -287,23 +287,6 @@ int main(int argc, char *argv[])
         }
       while (!temp_ok);
 
-      SplashScreen splash;
-      {
-        // change this key if you want to force a new splash screen
-        // for a new version, the user will be able to re-disable it
-        // if they wish
-        QString splash_flag_name {"Splash_v1.7"};
-        if (multi_settings.common_value (splash_flag_name, true).toBool ())
-          {
-            QObject::connect (&splash, &SplashScreen::disabled, [&, splash_flag_name] {
-                multi_settings.set_common_value (splash_flag_name, false);
-                splash.close ();
-              });
-            splash.show ();
-            a.processEvents ();
-          }
-      }
-
       // create writeable data directory if not already there
       auto writeable_data_dir = QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)};
       if (!writeable_data_dir.mkpath ("."))
@@ -399,7 +382,6 @@ int main(int argc, char *argv[])
             {
               if (!mem_jt9.create (sizeof (dec_data)))
               {
-                splash.hide ();
                 MessageBox::critical_message (nullptr, a.translate ("main", "Shared memory error"),
                                               a.translate ("main", "Unable to create shared memory segment"));
                 throw std::runtime_error {"Shared memory error"};
@@ -408,7 +390,6 @@ int main(int argc, char *argv[])
             }
           else
             {
-              splash.hide ();
               MessageBox::critical_message (nullptr, a.translate ("main", "Sub-process error"),
                                             a.translate ("main", "Failed to close orphaned jt9 process"));
               throw std::runtime_error {"Sub-process error"};
@@ -437,9 +418,8 @@ int main(int argc, char *argv[])
           QDir::setCurrent(qApp->applicationDirPath()); //This helps to find the SF executables
 
           // run the application UI
-          MainWindow w(temp_dir, multiple, &multi_settings, &mem_jt9, downSampleFactor, &splash, env);
+          MainWindow w(temp_dir, multiple, &multi_settings, &mem_jt9, downSampleFactor, nullptr, env);
           w.show();
-          splash.raise ();
           QObject::connect (&a, SIGNAL (lastWindowClosed()), &a, SLOT (quit()));
           result = a.exec();
 

@@ -977,6 +977,8 @@ private:
   bool default_audio_input_device_selected_;
   bool default_audio_output_device_selected_;
   
+  bool isExternalCtrlMode_;
+ 
   friend class Configuration;
 };
 
@@ -1031,10 +1033,10 @@ bool Configuration::progressBar_red () const {return m_->progressBar_red_;}
 bool Configuration::spot_to_psk_reporter () const
 {
   // rig must be open and working to spot externally
-  return is_transceiver_online () && m_->spot_to_psk_reporter_;
+  return is_transceiver_online () && (m_->spot_to_psk_reporter_);
 }
 bool Configuration::psk_reporter_tcpip () const {return m_->psk_reporter_tcpip_;}
-bool Configuration::monitor_off_at_startup () const {return m_->monitor_off_at_startup_;}
+bool Configuration::monitor_off_at_startup () const {return !m_externalCtrlMode and m_->monitor_off_at_startup_;}   //avt 1/25/26
 bool Configuration::monitor_last_used () const {return m_->rig_is_dummy_ || m_->monitor_last_used_;}
 bool Configuration::log_as_RTTY () const {return m_->log_as_RTTY_;}
 bool Configuration::report_in_comments () const {return m_->report_in_comments_;}
@@ -1087,7 +1089,7 @@ bool Configuration::AlwaysPass() const {return m_->AlwaysPass_;}
 bool Configuration::filters_for_Wait_and_Pounce_only() const {return m_->filters_for_Wait_and_Pounce_only_;}
 bool Configuration::filters_for_word2() const {return m_->filters_for_word2_;}
 bool Configuration::twoDays() const {return m_->twoDays_;}
-bool Configuration::PWR_and_SWR () const {return m_->PWR_and_SWR_;}
+bool Configuration::PWR_and_SWR () const {return (m_externalCtrlMode and is_pwr_swr_supported()) or m_->PWR_and_SWR_;}  //avt 1/25/26
 bool Configuration::check_SWR () const {return m_->check_SWR_;}
 bool Configuration::x2ToneSpacing() const {return m_->x2ToneSpacing_;}
 bool Configuration::x4ToneSpacing() const {return m_->x4ToneSpacing_;}
@@ -1700,10 +1702,33 @@ bool Configuration::ShowOTP () const
   return m_->ShowOTP_;
 }
 
-void Configuration::setExternalCtrlMode(bool active) {         //avt  10/2/25
+void Configuration::setExternalCtrlMode(bool active) 
+{         //avt  10/2/25
   m_externalCtrlMode = active;
+  m_->isExternalCtrlMode_ = active;
   m_->ui_->enable_Wait_features_check_box->setVisible (!active);
+  m_->set_rig_invariants ();
 }
+
+void Configuration::setPskReporter(bool enable)
+{
+  m_->spot_to_psk_reporter_ = enable;
+  m_->ui_->psk_reporter_check_box->setChecked (enable);
+}
+
+
+bool Configuration::is_pwr_swr_supported() const
+{
+  return TransceiverFactory::basic_transceiver_name_ != m_->ui_->rig_combo_box->currentText ()
+        && !m_->ui_->rig_combo_box->currentText().startsWith("OmniRig") 
+        && !m_->ui_->rig_combo_box->currentText().startsWith("OmniRig") 
+        && !m_->ui_->rig_combo_box->currentText().startsWith("DX Lab") 
+        && !m_->ui_->rig_combo_box->currentText().startsWith("Ham Radio") 
+        && !m_->ui_->rig_combo_box->currentText().startsWith("Kenwood TS-480") 
+        && !m_->ui_->rig_combo_box->currentText().startsWith("Kenwood TS-850") 
+        && !m_->ui_->rig_combo_box->currentText().startsWith("Kenwood TS-870");
+}
+
 
 namespace
 {
@@ -1793,6 +1818,7 @@ Configuration::impl::impl (Configuration * self, QNetworkAccessManager * network
   , dns_lookup_id_ {-1}
   , default_audio_input_device_selected_ {false}
   , default_audio_output_device_selected_ {false}
+  , isExternalCtrlMode_ {false}
 {
   ui_->setupUi (this);
 
@@ -3030,6 +3056,7 @@ void Configuration::impl::set_rig_invariants ()
          !ui_->rig_combo_box->currentText().startsWith("Kenwood TS-850") &&
          !ui_->rig_combo_box->currentText().startsWith("Kenwood TS-870")) {
          ui_->PWR_and_SWR_check_box->setEnabled (true);
+         
       }
       ui_->test_CAT_push_button->setEnabled (true);
       ui_->test_PTT_push_button->setEnabled (false);
@@ -3241,7 +3268,7 @@ TransceiverFactory::ParameterPack Configuration::impl::gather_rig_data ()
   result.force_rts = ui_->force_RTS_combo_box->isEnabled () && ui_->force_RTS_combo_box->currentIndex () > 0;
   result.rts_high = ui_->force_RTS_combo_box->isEnabled () && 1 == ui_->force_RTS_combo_box->currentIndex ();
   result.poll_interval = ui_->CAT_poll_interval_spin_box->value ();
-  if (ui_->PWR_and_SWR_check_box->isChecked ()) result.poll_interval |= do__pwr;
+  if (ui_->PWR_and_SWR_check_box->isChecked () or isExternalCtrlMode_) result.poll_interval |= do__pwr;  //avt 1/25/26
   if (is_tci_ && ui_->tci_audio_check_box->isChecked ()) result.poll_interval |= tci__audio;
   result.ptt_type = static_cast<TransceiverFactory::PTTMethod> (ui_->PTT_method_button_group->checkedId ());
   result.ptt_port = ui_->PTT_port_combo_box->currentText ();

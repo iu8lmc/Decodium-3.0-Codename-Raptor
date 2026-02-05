@@ -21,8 +21,7 @@ LicenseFile=C:\JTSDK\common-licenses\GPL-3
 OutputDir=C:\JTSDK\map65\package
 OutputBaseFilename={#MyAppName}-{#MyAppVersion}-Win32
 SetupIconFile=C:\JTSDK\icons\wsjt.ico
-Compression=lzma
-SolidCompression=yes
+Compression=zip
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
