@@ -5,6 +5,7 @@
 
 QString revision (QString const& svn_rev_string = QString {});
 QString version (bool include_patch = true);
+QString testVer ();     //avt 1/29/26
 QString program_title (QString const& revision = QString {});
 
 #endif

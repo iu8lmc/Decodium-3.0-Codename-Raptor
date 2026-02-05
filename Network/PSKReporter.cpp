@@ -239,7 +239,7 @@ public:
   QString rx_grid_;
   QString rx_ant_;
   QString rigInformation_;
-  QString prog_id_;
+  QString prog_id_;       //avt 1/12/26
   QByteArray tx_data_;
   QByteArray tx_residue_;
   struct Spot
@@ -611,11 +611,11 @@ bool PSKReporter::eclipse_active(QDateTime now)
   return m_->eclipse_active(now);
 }
 
-void PSKReporter::setLocalStation (QString const& call, QString const& gridSquare, QString const& antenna, QString const& rigInformation)
+void PSKReporter::setLocalStation (QString const& call, QString const& gridSquare, QString const& antenna, QString const& rigInformation, QString const& program_info)        //avt 1/12/26
 {
   LOG_LOG_LOCATION (m_->logger_, trace, "call: " << call << " grid: " << gridSquare << " ant: " << antenna);
   m_->check_connection ();
-  if (call != m_->rx_call_ || gridSquare != m_->rx_grid_ || antenna != m_->rx_ant_)
+  if (call != m_->rx_call_ || gridSquare != m_->rx_grid_ || antenna != m_->rx_ant_ || program_info != m_->prog_id_)   //avt 1/12/26
     {
       LOG_LOG_LOCATION (m_->logger_, trace, "updating information");
       m_->send_receiver_data_ = m_->socket_
@@ -624,6 +624,7 @@ void PSKReporter::setLocalStation (QString const& call, QString const& gridSquar
       m_->rx_grid_ = gridSquare;
       m_->rx_ant_ = antenna;
       m_->rigInformation_ = rigInformation;
+      m_->prog_id_ = program_info;    //avt 1/12/26
     }
 }
 
