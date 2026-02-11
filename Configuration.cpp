@@ -2096,8 +2096,9 @@ Configuration::impl::impl (Configuration * self, QNetworkAccessManager * network
     }
   // load the LoTW users dictionary if it exists, fetch and load if it
   // doesn't and we need it
-  lotw_users_.load (ui_->LotW_CSV_URL_line_edit->text (), fetch_if_needed);
-
+  // avt 2/10/26 prevent crash, wait until very large logbook read
+  QTimer::singleShot (30000, [=] {lotw_users_.load (ui_->LotW_CSV_URL_line_edit->text (), fetch_if_needed);});
+  
   transceiver_thread_ = new QThread {this};
   transceiver_thread_->start ();
 }
@@ -2999,6 +3000,7 @@ void Configuration::impl::set_rig_invariants ()
     ui_->sound_output_channel_combo_box->setCurrentIndex (0);
   }
   ui_->test_CAT_push_button->setStyleSheet ({});
+  ui_->test_CAT_push_button->setText("Test CAT");    //avt 2/10/26
   ui_->CAT_poll_interval_label->setEnabled (!asynchronous_CAT);
   ui_->CAT_poll_interval_spin_box->setEnabled (!asynchronous_CAT);
 
@@ -4064,6 +4066,7 @@ void Configuration::impl::on_test_CAT_push_button_clicked ()
     }
 
   ui_->test_CAT_push_button->setStyleSheet ({});
+  ui_->test_CAT_push_button->setText("Test CAT");    //avt 2/10/26
   if (open_rig (true))
     {
        // Q_EMIT sync (true);
@@ -4086,6 +4089,8 @@ void Configuration::impl::on_gbCloudlog_clicked ()
 void Configuration::impl::on_test_PTT_push_button_clicked (bool checked)
 {
   ui_->test_PTT_push_button->setChecked (!checked); // let status
+  ui_->test_PTT_push_button->setText("Test PTT");       //avt 2/10/26
+
                                                     // update check us
   if (!validate ())
     {
@@ -5022,6 +5027,7 @@ bool Configuration::impl::open_rig (bool force)
           connect (p, &Transceiver::finished, p, &Transceiver::deleteLater, Qt::QueuedConnection);
 
           ui_->test_CAT_push_button->setStyleSheet ({});
+          ui_->test_CAT_push_button->setText("Test CAT");    //avt 2/10/26
           rig_active_ = true;
           LOG_TRACE ("emitting startup_transceiver");
           Q_EMIT start_transceiver (++transceiver_command_number_); // start rig on its thread
@@ -5303,10 +5309,12 @@ void Configuration::impl::handle_transceiver_update (TransceiverState const& sta
   if (state.online ())
     {
       ui_->test_PTT_push_button->setChecked (state.ptt ());
+      ui_->test_PTT_push_button->setText(state.ptt () ? "PTT test successful" : "Test PTT");       //avt 2/10/26
 
       if (isVisible ())
         {
           ui_->test_CAT_push_button->setStyleSheet ("QPushButton {background-color: green;}");
+          ui_->test_CAT_push_button->setText("CAT test successful");    //avt 2/10/26
 
           auto const& rig = ui_->rig_combo_box->currentText ();
           auto ptt_method = static_cast<TransceiverFactory::PTTMethod> (ui_->PTT_method_button_group->checkedId ());
@@ -5347,6 +5355,7 @@ void Configuration::impl::handle_transceiver_failure (QString const& reason)
   qDebug() << "Configuration::impl::handle_transceiver_failure called with reason: " << reason << "\n";
   close_rig ();
   ui_->test_PTT_push_button->setChecked (false);
+  ui_->test_PTT_push_button->setText("Test PTT");       //avt 2/10/26
 
   if (isVisible ())
     {
@@ -5367,6 +5376,7 @@ void Configuration::impl::close_rig ()
   if (rig_active_)
     {
       ui_->test_CAT_push_button->setStyleSheet ("QPushButton {background-color: red;}");
+      ui_->test_CAT_push_button->setText("Test CAT");    //avt 2/10/26
       LOG_TRACE ("emitting stop_transceiver");
       Q_EMIT stop_transceiver ();
       if (is_tci_) QThread::msleep (100);

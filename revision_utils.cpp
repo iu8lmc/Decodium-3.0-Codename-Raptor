@@ -26,7 +26,7 @@ namespace
 
 QString testVer ()    //avt 1/29/26
 {
-  return "67";
+  return "72";
 }
 
 QString revision (QString const& scs_rev_string)
