@@ -561,7 +561,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
       "Please be patient,\n"
       "this may take a few minutes", QString {}, 0, 1, this},
   m_messageClient {new MessageClient {QApplication::applicationName (),
-        version (), revision (),
+        version (), revision () + " " + testVer(),    //avt 2/10/26
         m_config.udp_server_name (), m_config.udp_server_port (),
         m_config.udp_interface_names (), m_config.udp_TTL (),
         this}},
@@ -868,7 +868,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
         if (newTxMsgIdx == 14) {          //avt 2/1/24
           m_listenMode = param0;
           ui->txFirstCheckBox->setEnabled(!m_listenMode);
-          ui->genStdMsgsPushButton->setEnabled(!m_listenMode);   //avt 2/2/24
           debugToFile(QString{"listen       listenMode:%1"}.arg(m_listenMode));  //avt 2/2/24
           return;
         }
@@ -10926,6 +10925,7 @@ void MainWindow::on_dxGridEntry_textChanged (QString const& grid)
 void MainWindow::on_genStdMsgsPushButton_clicked()          //genStdMsgs button
 {
   ui->pbBandHopping->setChecked(false); // disable band hopping
+  ui->txFirstCheckBox->setEnabled(true);  //avt 2/8/26
   genStdMsgs(m_rpt);
   m_dblClk = false;    //avt
   statusUpdate();             //avt 12/20/21 send msg w/m_dblClk false to defeat same-message check
@@ -16147,14 +16147,12 @@ void MainWindow::initExternalCtrl()    //avt 12/5/20
     ui->cbAutoSeq->setChecked(true);
     ui->cbAutoSeq->setEnabled(false); //avt 11/22/20
     ui->txFirstCheckBox->setEnabled(!m_listenMode);   //avt 2/1/24
-    //ui->genStdMsgsPushButton->setEnabled(!m_listenMode);   //avt 1/5/26
     ui->respondComboBox->setVisible(false); //avt
     ui->respondComboBox->setCurrentIndex(0); //avt
     ui->pbBestSP->setEnabled(false);  //avt 2/28/21
   } else {
     if (ui->cbAutoSeq->isVisible()) ui->cbAutoSeq->setEnabled(true); //avt 11/22/20
     if (ui->txFirstCheckBox->isVisible()) ui->txFirstCheckBox->setEnabled(true);  //avt 2/1/24
-    //if (ui->genStdMsgsPushButton->isVisible()) ui->genStdMsgsPushButton->setEnabled(true);   //avt 1/5/26
     ui->respondComboBox->setVisible(m_mode!="JT65" and m_mode!="JT9");  //avt
     ui->pbBestSP->setEnabled(m_mode=="FT4");  //avt 2/28/21
     m_dblClk = false; //avt 1/1/21
