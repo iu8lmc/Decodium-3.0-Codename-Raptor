@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>WSJT-X   by K1JT (mod)</string>
+   <string>Decodium 3 FT2</string>
   </property>
   <property name="toolTip">
    <string/>
@@ -923,6 +923,40 @@
            </property>
            <property name="text">
             <string>E&amp;nable Tx</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="autoCQButton">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::StrongFocus</enum>
+           </property>
+           <property name="toolTip">
+            <string>Auto CQ: call CQ repeatedly, auto-reply to callers, resume CQ after QSO</string>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QPushButton:checked {
+	color: white;
+	background-color: red;
+	border-style: outset;
+	border-width: 1px;
+	border-radius: 5px;
+	border-color: black;
+	min-width: 5em;
+	padding: 3px;
+}</string>
+           </property>
+           <property name="text">
+            <string>Auto CQ</string>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -4456,6 +4490,31 @@ QLabel[oob=&quot;true&quot;] {
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="ft2Button">
+             <property name="minimumSize">
+              <size>
+               <width>32</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="focusPolicy">
+              <enum>Qt::StrongFocus</enum>
+             </property>
+             <property name="toolTip">
+              <string>Switch to FT2 mode</string>
+             </property>
+             <property name="text">
+              <string>FT2</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="msk144Button">
              <property name="minimumSize">
               <size>
@@ -4912,6 +4971,7 @@ QPushButton[state=&quot;ok&quot;] {
      <string>Mode</string>
     </property>
     <addaction name="actionFST4"/>
+    <addaction name="actionFT2"/>
     <addaction name="actionFT4"/>
     <addaction name="actionFT8"/>
     <addaction name="actionJT4"/>
@@ -4967,7 +5027,7 @@ QPushButton[state=&quot;ok&quot;] {
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About WSJT-X</string>
+    <string>About Decodium 3 FT2</string>
    </property>
    <property name="menuRole">
     <enum>QAction::AboutRole</enum>
@@ -5391,6 +5451,14 @@ QPushButton[state=&quot;ok&quot;] {
     <string>Erase WSPR hashtable</string>
    </property>
   </action>
+  <action name="actionFT2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>FT2</string>
+   </property>
+  </action>
   <action name="actionFT4">
    <property name="checkable">
     <bool>true</bool>
@@ -5548,23 +5616,23 @@ QPushButton[state=&quot;ok&quot;] {
   </action>
   <action name="actionQuick_Start_Guide_to_WSJT_X_2_7_and_QMAP">
    <property name="text">
-    <string>Quick-Start Guide to WSJT-X 2.7 and QMAP</string>
+    <string>Quick-Start Guide to Decodium 3 FT2 and QMAP</string>
    </property>
   </action>
   <action name="actionWSJT_X_improved_Home_Page">
    <property name="text">
-    <string>WSJT-X_improved Home Page</string>
+    <string>Decodium 3 FT2 Home Page</string>
    </property>
    <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go to the wsjt-x_improved home page.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go to the Decodium 3 FT2 home page.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionThe_additional_features_of_wsjt_x_improved">
    <property name="text">
-    <string>The additional features of wsjt-x_improved</string>
+    <string>The additional features of Decodium 3 FT2</string>
    </property>
    <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overview on the additional features of wsjt-x_improved.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overview on the additional features of Decodium 3 FT2.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionRecommended_Audio_Settings">

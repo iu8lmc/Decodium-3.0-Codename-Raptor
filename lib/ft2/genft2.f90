@@ -1,86 +1,90 @@
-subroutine genft2(msg0,ichk,msgsent,i4tone,itype)
-! s8 + 48bits + s8 + 80 bits = 144 bits (72ms message duration)
-!
-! Encode an MSK144 message
+subroutine genft2(msg0,ichk,msgsent,msgbits,i4tone)
+
+! Encode an FT2  message
 ! Input:
 !   - msg0     requested message to be transmitted
 !   - ichk     if ichk=1, return only msgsent
-!              if ichk.ge.10000, set imsg=ichk-10000 for short msg
 !   - msgsent  message as it will be decoded
-!   - i4tone   array of audio tone values, 0 or 1
-!   - itype    message type 
-!                 1 = 77 bit message 
-!                 7 = 16 bit message     "<Call_1 Call2> Rpt"
+!   - i4tone   array of audio tone values, {0,1,2,3}
 
-  use iso_c_binding, only: c_loc,c_size_t
+! Frame structure:
+! s16 + 87symbols + 2 ramp up/down = 105 total channel symbols
+! r1 + s4 + d29 + s4 + d29 + s4 + d29 + s4 + r1
+
+! Message duration: TxT = 105*288/12000 = 2.52 s
+
+! use iso_c_binding, only: c_loc,c_size_t
+
   use packjt77
+  include 'ft2_params.f90'
   character*37 msg0
   character*37 message                    !Message to be generated
   character*37 msgsent                    !Message as it will be received
   character*77 c77
-  integer*4 i4tone(144)
-  integer*1 codeword(128)
-  integer*1 msgbits(77) 
-  integer*1 bitseq(144)                   !Tone #s, data and sync (values 0-1)
-  integer*1 s16(16)
-  real*8 xi(864),xq(864),pi,twopi
-  data s16/0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0/
-  equivalence (ihash,i1hash)
+  integer*4 i4tone(NN),itmp(ND)
+  integer*1 codeword(2*ND)
+  integer*1 msgbits(77),rvec(77)
+  integer icos4a(4),icos4b(4),icos4c(4),icos4d(4)
   logical unpk77_success
+  data icos4a/0,1,3,2/
+  data icos4b/1,0,2,3/
+  data icos4c/2,3,1,0/
+  data icos4d/3,2,0,1/
+  data rvec/0,1,0,0,1,0,1,0,0,1,0,1,1,1,1,0,1,0,0,0,1,0,0,1,1,0,1,1,0, &
+            1,0,0,1,0,1,1,0,0,0,0,1,0,0,0,1,0,1,0,0,1,1,1,1,0,0,1,0,1, &
+            0,1,0,1,0,1,1,0,1,1,1,1,1,0,0,0,1,0,1/
+  message=msg0
 
-  nsym=128
-  pi=4.0*atan(1.0)
-  twopi=8.*atan(1.0)
-
-  message(1:37)=' ' 
-  itype=1
-  if(msg0(1:1).eq.'@') then                    !Generate a fixed tone
-     read(msg0(2:5),*,end=1,err=1) nfreq       !at specified frequency
-     go to 2
-1    nfreq=1000
-2    i4tone(1)=nfreq
-  else
-     message=msg0
-
-     do i=1, 37
-        if(ichar(message(i:i)).eq.0) then
-           message(i:37)=' '
-           exit
-        endif
-     enddo
-     do i=1,37                               !Strip leading blanks
-        if(message(1:1).ne.' ') exit
-        message=message(i+1:)
-     enddo
-
-     if(message(1:1).eq.'<') then
-        i2=index(message,'>')
-        i1=0
-        if(i2.gt.0) i1=index(message(1:i2),' ')
-        if(i1.gt.0) then
-           call genmsk40(message,msgsent,ichk,i4tone,itype)
-           if(itype.lt.0) go to 999
-           i4tone(41)=-40
-           go to 999
-        endif
+  do i=1, 37
+     if(ichar(message(i:i)).eq.0) then
+        message(i:37)=' '
+        exit
      endif
+  enddo
+  do i=1,37                               !Strip leading blanks
+     if(message(1:1).ne.' ') exit
+     message=message(i+1:)
+  enddo
 
-     i3=-1
-     n3=-1
-     call pack77(message,i3,n3,c77)
-     call unpack77(c77,0,msgsent,unpk77_success) !Unpack to get msgsent
+  i3=-1
+  n3=-1
+  call pack77(message,i3,n3,c77)
+  call unpack77(c77,0,msgsent,unpk77_success) !Unpack to get msgsent
 
-     if(ichk.eq.1) go to 999
-     read(c77,"(77i1)") msgbits
-     call encode_128_90(msgbits,codeword)
+  if(ichk.eq.1) go to 999
+  read(c77,'(77i1)',err=1) msgbits
+  if(unpk77_success) go to 2
+1 msgbits=0
+  itone=0
+  msgsent='*** bad message ***                  '
+  go to 999
 
-!Create 144-bit channel vector:
-     bitseq=0 
-     bitseq(1:16)=s16
-     bitseq(17:144)=codeword
+entry get_ft2_tones_from_77bits(msgbits,i4tone)
 
-     i4tone=bitseq
-  endif
+2 msgbits=mod(msgbits+rvec,2)
+  call encode174_91(msgbits,codeword)
+
+! Grayscale mapping:
+! bits   tone
+! 00     0
+! 01     1
+! 11     2
+! 10     3
+
+  do i=1,ND
+    is=codeword(2*i)+2*codeword(2*i-1)
+    if(is.le.1) itmp(i)=is
+    if(is.eq.2) itmp(i)=3
+    if(is.eq.3) itmp(i)=2
+  enddo
+
+  i4tone(1:4)=icos4a
+  i4tone(5:33)=itmp(1:29)
+  i4tone(34:37)=icos4b
+  i4tone(38:66)=itmp(30:58)
+  i4tone(67:70)=icos4c
+  i4tone(71:99)=itmp(59:87)
+  i4tone(100:103)=icos4d
 
 999 return
 end subroutine genft2

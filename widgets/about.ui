@@ -6,7 +6,7 @@
    <enum>Qt::NonModal</enum>
   </property>
   <property name="windowTitle">
-   <string>About WSJT-X</string>
+   <string>About Decodium 3 FT2</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

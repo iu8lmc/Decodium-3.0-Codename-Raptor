@@ -48,7 +48,7 @@ project (wsjtx
   VERSION 3.0.0.0
   LANGUAGES C CXX Fortran
   )
-set (PROJECT_DESCRIPTION "WSJT-X: Digital Modes for Weak Signal Communications in Amateur Radio")
+set (PROJECT_DESCRIPTION "Decodium 3 FT2: Digital Modes for Weak Signal Communications in Amateur Radio")
 set (CMAKE_PROJECT_DESCRIPTION ${PROJECT_DESCRIPTION})
 set (CMAKE_AUTOUIC ON)
 
@@ -78,11 +78,11 @@ set (wsjtx_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_
 #
 # project information
 #
-set (PROJECT_BUNDLE_NAME "WSJT-X")
-set (PROJECT_VENDOR "WM8Q")
-set (PROJECT_CONTACT "WM8Q <qrz.com/db/WM8Q>")
+set (PROJECT_BUNDLE_NAME "Decodium 3 FT2")
+set (PROJECT_VENDOR "IU8LMC")
+set (PROJECT_CONTACT "IU8LMC <qrz.com/db/IU8LMC>")
 set (PROJECT_COPYRIGHT "See Help | Copyright info")
-set (PROJECT_HOMEPAGE qrz.com/db/WM8Q)
+set (PROJECT_HOMEPAGE qrz.com/db/IU8LMC)
 set (PROJECT_MANUAL wsjtx-main)
 set (PROJECT_MANUAL_DIRECTORY_URL https://wsjt.sourceforge.io/wsjtx-doc/)
 set (PROJECT_SAMPLES_URL http://downloads.sourceforge.net/project/wsjt/)
@@ -251,6 +251,7 @@ set (wsjt_qt_CXXSRCS
   logbook/WorkedBefore.cpp
   logbook/Multiplier.cpp
   Network/NetworkAccessManager.cpp
+  Network/NtpClient.cpp
   widgets/LazyFillComboBox.cpp
   widgets/CheckableItemComboBox.cpp
   widgets/BandComboBox.cpp
@@ -351,6 +352,7 @@ set (wsjt_FSRCS
   lib/jt65_mod.f90
   lib/jt65_mod6.f90 #ft8md
   lib/ft8_decode.f90
+  lib/ft2_decode.f90
   lib/ft4_decode.f90
   lib/fst4_decode.f90
   lib/get_q3list.f90
@@ -389,6 +391,7 @@ set (wsjt_FSRCS
   lib/averms.f90
   lib/azdist.f90
   lib/ft8/baseline.f90
+  lib/ft2/ft2_baseline.f90
   lib/ft4/ft4_baseline.f90
   lib/blanker.f90
   lib/bpdecode40.f90
@@ -459,6 +462,8 @@ set (wsjt_FSRCS
   lib/foldspec9f.f90
   lib/four2a.f90
   lib/fspread_lorentz.f90
+  lib/ft2/foxfiltft2.f90
+  lib/ft2/foxgenft2.f90
   lib/ft8/foxfilt.f90
   lib/ft8/foxgen.f90
 #  lib/ft8/foxgen_wrap.f90
@@ -479,6 +484,8 @@ set (wsjt_FSRCS
   lib/genmsk_128_90.f90
   lib/genmsk40.f90
   lib/ft4/ft4code.f90
+  lib/ft2/genft2.f90
+  lib/ft2/gen_ft2wave.f90
   lib/ft4/genft4.f90
   lib/ft4/gen_ft4wave.f90
   lib/ft8/gen_ft8wave.f90
@@ -532,6 +539,7 @@ set (wsjt_FSRCS
   lib/decode_msk144.f90
   lib/ft4/ft4sim.f90
   lib/ft4/ft4sim_mult.f90
+  lib/ft2/ft2_downsample.f90
   lib/ft4/ft4_downsample.f90
   lib/77bit/my_hash.f90
   lib/wsprd/osdwspr.f90
@@ -573,6 +581,7 @@ set (wsjt_FSRCS
   lib/stdmsg.f90
   lib/subtract65.f90
   lib/ft8/subtractft8.f90
+  lib/ft2/subtractft2.f90
   lib/ft4/subtractft4.f90
   lib/sun.f90
   lib/symspec.f90
@@ -580,10 +589,13 @@ set (wsjt_FSRCS
   lib/symspec65.f90
   lib/sync4.f90
   lib/sync65.f90
+  lib/ft2/getcandidates2.f90
+  lib/ft2/get_ft2_bitmetrics.f90
   lib/ft4/getcandidates4.f90
   lib/ft4/get_ft4_bitmetrics.f90
   lib/ft8/sync8.f90
   lib/ft8/sync8d.f90
+  lib/ft2/sync2d.f90
   lib/ft4/sync4d.f90
   lib/sync9.f90
   lib/sync9f.f90
@@ -907,23 +919,26 @@ set_source_files_properties (lib/filbig.f90 PROPERTIES COMPILE_FLAGS "-Wno-alias
 set_property (SOURCE ${all_C_and_CXXSRCS} APPEND_STRING PROPERTY COMPILE_FLAGS " -include wsjtx_config.h")
 set_property (SOURCE ${all_C_and_CXXSRCS} APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/wsjtx_config.h)
 
-if (WIN32)
+option (ENABLE_OMNIRIG "Enable OmniRig support (requires dumpcpp and OmniRig)" ON)
+if (WIN32 AND ENABLE_OMNIRIG)
   # generate the OmniRig COM interface source
   find_program (DUMPCPP dumpcpp)
-  if (DUMPCPP-NOTFOUND)
-    message (FATAL_ERROR "dumpcpp tool not found")
-  endif (DUMPCPP-NOTFOUND)
-  execute_process (
-    COMMAND ${DUMPCPP} -getfile {4FE359C5-A58F-459D-BE95-CA559FB4F270}
-    OUTPUT_VARIABLE AXSERVER
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-  string (STRIP "${AXSERVER}" AXSERVER)
-  if (NOT AXSERVER)
-    message (FATAL_ERROR "You need to install OmniRig on this computer")
-  endif (NOT AXSERVER)
-  string (REPLACE "\"" "" AXSERVER ${AXSERVER})
-  file (TO_CMAKE_PATH ${AXSERVER} AXSERVERSRCS)
+  if (DUMPCPP)
+    execute_process (
+      COMMAND ${DUMPCPP} -getfile {4FE359C5-A58F-459D-BE95-CA559FB4F270}
+      OUTPUT_VARIABLE AXSERVER
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+    string (STRIP "${AXSERVER}" AXSERVER)
+    if (NOT AXSERVER)
+      message (WARNING "OmniRig not installed - OmniRig support disabled")
+    else ()
+      string (REPLACE "\"" "" AXSERVER ${AXSERVER})
+      file (TO_CMAKE_PATH ${AXSERVER} AXSERVERSRCS)
+    endif ()
+  else ()
+    message (WARNING "dumpcpp not found - OmniRig support disabled")
+  endif ()
 endif ()
 
 
@@ -1488,10 +1503,10 @@ qt5_add_resources (wsjtx_RESOURCES_RCC
   )
 
 # AX COM servers
-if (WIN32)
+if (WIN32 AND AXSERVERSRCS)
   include (QtAxMacros)
   wrap_ax_server (GENAXSRCS ${AXSERVERSRCS})
-endif (WIN32)
+endif ()
 
 #
 # targets dependent on Qt
@@ -1524,7 +1539,7 @@ generate_version_info (jt9_VERSION_RESOURCES
   NAME jt9
   BUNDLE ${PROJECT_BUNDLE_NAME}
   ICON ${WSJTX_ICON_FILE}
-  FILE_DESCRIPTION "jt9 - WSJT-X slow mode decoder"
+  FILE_DESCRIPTION "jt9 - Decodium 3 FT2 slow mode decoder"
   )
 
 add_executable (record_time_signal Audio/tools/record_time_signal.cpp)

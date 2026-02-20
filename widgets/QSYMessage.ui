@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>WSJT-X Popup</string>
+   <string>Decodium 3 FT2</string>
   </property>
   <widget class="QLabel" name="label">
    <property name="geometry">

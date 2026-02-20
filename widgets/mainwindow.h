@@ -7,6 +7,7 @@
 #include <QString>
 #include <QStringList>
 #include <QLabel>
+#include <QCheckBox>
 #include <QThread>
 #include <QProcess>
 #include <QProgressBar>
@@ -52,6 +53,7 @@
 #include "widgets/qsymonitor.h"
 #include "MessageBox.hpp"
 #include "Network/NetworkAccessManager.hpp"
+#include "Network/NtpClient.hpp"
 
 #define NUM_JT4_SYMBOLS 206                //(72+31)*2, embedded sync
 #define NUM_JT65_SYMBOLS 126               //63 data + 63 sync
@@ -62,6 +64,7 @@
 #define NUM_FT8_SYMBOLS 79
 #define NUM_SUPERFOX_SYMBOLS 153
 #define NUM_FT4_SYMBOLS 105
+#define NUM_FT2_SYMBOLS 105
 #define NUM_FST4_SYMBOLS 160             //240/2 data + 5*8 sync
 #define NUM_CW_SYMBOLS 250
 #define MAX_NUM_SYMBOLS 250
@@ -206,6 +209,8 @@ private slots:
   void on_cbHoldTxFreq_clicked (bool);
   void on_ft8Button_clicked();
   void on_ft4Button_clicked();
+  void on_ft2Button_clicked();
+  void on_autoCQButton_clicked(bool checked);
   void on_msk144Button_clicked();
   void on_q65Button_clicked();
   void on_jt65Button_clicked();
@@ -310,6 +315,7 @@ private slots:
   void on_actionJT9_triggered();
   void on_actionJT65_triggered();
   void on_actionJT4_triggered();
+  void on_actionFT2_triggered();
   void on_actionFT4_triggered();
   void on_actionFT8_triggered();
   void on_actionFST4_triggered();
@@ -481,8 +487,8 @@ private slots:
   void on_leEchoMessage_textChanged();
   void downloadQsoComplete(bool result);  //avt 10/2/25
   void downloadQslComplete(bool result);  //avt 10/2/25
-  void externalResultUpdate();  //avt 1/23/26
-  void uploadToLotw();    //avt 1/29/26
+  void onNtpOffsetUpdated(double offsetMs);
+  void onNtpSyncStatusChanged(bool synced, QString const& statusText);
 
 private:
   Q_SIGNAL void initializeAudioOutputStream (QAudioDeviceInfo,
@@ -764,6 +770,7 @@ private:
   bool    m_bNoMoreFiles;
   bool    m_bDoubleClicked;
   bool    m_bCallingCQ;
+  bool    m_autoCQ;
   bool    m_bAutoReply;
   QString m_lastloggedcall; //ft8md
   bool    m_bCheckedContest;
@@ -831,6 +838,7 @@ private:
   QLabel auto_tx_label;
   QLabel band_hopping_label;
   QLabel ndecodes_label;
+  QLabel dt_correction_label;
   QProgressBar progressBar;
   QLabel watchdog_label;
 
@@ -864,7 +872,6 @@ private:
   QTimer splashTimer;
   QTimer p1Timer;
   QTimer externalCtrlTimer;     //avt 12/16/21
-  QTimer externalResultTimer;     //avt 1/23/26
 
   QString m_path;
   QString m_baseCall;
@@ -1019,6 +1026,21 @@ private:
   bool m_externalCtrl;         //avt  10/1/25
   bool m_autoButtonState;     //avt 10/2/25
 
+  //---- DT Feedback Loop (clock drift auto-correction) ----
+  QVector<double> m_dtSamples;        // DT values collected in current period
+  double m_dtCorrection_ms {0.0};     // accumulated time correction (milliseconds)
+  double m_dtSmoothFactor {0.3};      // exponential smoothing factor (0-1)
+  int m_dtMinSamples {3};             // minimum decodes before applying correction
+  bool m_dtFeedbackEnabled {true};    // enable/disable DT feedback loop
+  int m_dtLastSampleCount {0};        // sample count for status display
+
+  // NTP Time Synchronization
+  NtpClient *m_ntpClient {nullptr};
+  double m_ntpOffset_ms {0.0};
+  bool m_ntpEnabled {true};
+  QCheckBox ntp_checkbox;
+  QLabel ntp_status_label;
+
   //---------------------------------------------------- private functions
   void readSettings();
   void set_application_font (QFont const&);
@@ -1137,8 +1159,6 @@ private:
   void updateLotwCtrls();      //avt 9/23/25
   void logIncremental(QString, QString);      //avt 9/25/25
   void setIncrLogCount();    //avt 9/25/25
-  void sendDetail(quint32, QString);    //avt 9/25/25
-  QString revisionExtra();    //avt 1/11/26
 };
 
 extern int killbyname(const char* progName);
