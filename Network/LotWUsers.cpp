@@ -64,7 +64,7 @@ public:
       lotw_downloader_.configure(network_manager_,
                                  url,
                                  csv_file_name,
-                                 "WSJT-X LotW User Downloader");
+                                 "Decodium 3 FT2 LotW User Downloader");
       if (!connected_)
       {
         connect(&lotw_downloader_, &FileDownload::complete, [this, csv_file_name] {

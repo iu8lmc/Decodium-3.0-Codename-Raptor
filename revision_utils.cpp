@@ -24,14 +24,9 @@ namespace
   }
 }
 
-QString testVer ()    //avt 1/29/26
-{
-  return "72";
-}
-
 QString revision (QString const& scs_rev_string)
 {
-  return "102";
+  return "100 (mod by IU8LMC, qrz.com/db/IU8LMC)";
   QString result;
   auto revision_from_scs = revision_extract_number (scs_rev_string);
 
@@ -85,6 +80,6 @@ QString version (bool include_patch)
 
 QString program_title (QString const& revision)
 {
-  QString id {QCoreApplication::applicationName () + "   v" + QCoreApplication::applicationVersion ()};
+  QString id {"Decodium 3   v" + QCoreApplication::applicationVersion ()};
   return id + " " + revision;
 }

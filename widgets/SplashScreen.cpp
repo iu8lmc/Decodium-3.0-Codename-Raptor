@@ -28,7 +28,7 @@ SplashScreen::SplashScreen ()
   : QSplashScreen {QPixmap {":/splash.png"}, Qt::WindowStaysOnTopHint}
 {
   setLayout (&m_->main_layout_);
-  showMessage ("<h2>" + QString {"WSJT-X v" +
+  showMessage ("<h2>" + QString {"Decodium 3 FT2 v" +
         QCoreApplication::applicationVersion() + " " +
         revision ()}.simplified () + "</h2>"
     "V2.0 has many new features.<br /><br />"

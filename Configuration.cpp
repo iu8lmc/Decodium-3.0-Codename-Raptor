@@ -2496,6 +2496,9 @@ void Configuration::impl::read_settings ()
   RxBandwidth_ = settings_->value ("RxBandwidth", 2500).toInt ();
   save_directory_.setPath (settings_->value ("SaveDir", default_save_directory_.absolutePath ()).toString ());
   azel_directory_.setPath (settings_->value ("AzElDir", default_azel_directory_.absolutePath ()).toString ());
+  if (!azel_directory_.exists ()) {
+    azel_directory_.mkpath (".");
+  }
 
   tci_audio_ = settings_->value ("TCIAudio", tci_audio_).toBool ();
 
@@ -3715,7 +3718,7 @@ void Configuration::impl::on_CTY_download_button_clicked (bool /*clicked*/)
   cty_download.configure(network_manager_,
                          "http://www.country-files.com/bigcty/cty.dat",
                          dataPath.absoluteFilePath("cty.dat"),
-                         "WSJT-X CTY Downloader");
+                         "Decodium 3 FT2 CTY Downloader");
 
   // set up LoTW users CSV file fetching
   connect (&cty_download, &FileDownload::complete, this, &Configuration::impl::after_CTY_downloaded, Qt::UniqueConnection);
@@ -3846,7 +3849,7 @@ void Configuration::impl::on_LotW_CSV_fetch_push_button_clicked (bool /*checked*
 void Configuration::impl::on_decoded_text_font_push_button_clicked ()
 {
   next_decoded_text_font_ = QFontDialog::getFont (0, decoded_text_font_ , this
-                                                  , tr ("WSJT-X Decoded Text Font Chooser")
+                                                  , tr ("Decodium 3 FT2 Decoded Text Font Chooser")
                                                   , QFontDialog::MonospacedFonts
                                                   );
 }

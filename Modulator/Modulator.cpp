@@ -77,6 +77,7 @@ void Modulator::start (QString mode, unsigned symbolsLength, double framesPerSym
   if((mode=="FT8" and m_nsps==1024)) delay_ms=400;            //SuperFox Qary Polar Code transmission
   if(mode=="Q65" and m_nsps<=3600) delay_ms=500;              //Q65-15 and Q65-30
   if(mode=="FT4") delay_ms=300;                               //FT4
+  if(mode=="FT2") delay_ms=500;                               //FT2 (0.5s guard matches tx_duration)
 
 // noise generator parameters
   if (m_addNoise) {

@@ -89,7 +89,7 @@ public:
     }
 
     QNetworkRequest request {apiUrl+"/index.php/api/auth/"+apiKey};
-    request.setRawHeader ("User-Agent", "WSJT-X Cloudlog API");
+    request.setRawHeader ("User-Agent", "Decodium3FT2 Cloudlog API");
     request.setOriginatingObject (this);
     reply_ = network_manager_->get (request);
     connect (reply_.data (), &QNetworkReply::finished, this, &Cloudlog::impl::reply_apitest);

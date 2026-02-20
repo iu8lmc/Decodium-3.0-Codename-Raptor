@@ -8,6 +8,7 @@ subroutine multimode_decoder(ss,id2,params,nfsample)
   use jt9_decode
   use ft8_decode
   use ft8_decodevar
+  use ft2_decode
   use ft4_decode
   use fst4_decode
   use q65_decode
@@ -45,6 +46,10 @@ subroutine multimode_decoder(ss,id2,params,nfsample)
      integer :: decodedvar
      real :: xdtt(200)
   end type counting_ft8_decodervar
+
+  type, extends(ft2_decoder) :: counting_ft2_decoder
+     integer :: decoded
+  end type counting_ft2_decoder
 
   type, extends(ft4_decoder) :: counting_ft4_decoder
      integer :: decoded
@@ -84,6 +89,7 @@ subroutine multimode_decoder(ss,id2,params,nfsample)
   type(counting_jt9_decoder) :: my_jt9
   type(counting_ft8_decoder) :: my_ft8
   type(counting_ft8_decodervar) :: my_ft8var
+  type(counting_ft2_decoder) :: my_ft2
   type(counting_ft4_decoder) :: my_ft4
   type(counting_fst4_decoder) :: my_fst4
   type(counting_q65_decoder) :: my_q65  
@@ -91,7 +97,7 @@ subroutine multimode_decoder(ss,id2,params,nfsample)
   if(.not.params%newdat .and. params%ntr.gt.ntr0) go to 800
   ntr0=params%ntr
   rms=sqrt(dot_product(float(id2(1:180000)),float(id2(1:180000)))/180000.0)
-  if(rms.lt.0.5) go to 800
+  if(rms.lt.0.1) go to 800
 
 ! Cast C character arrays to Fortran character strings
   datetime=transfer(params%datetime, datetime)
@@ -109,6 +115,7 @@ subroutine multimode_decoder(ss,id2,params,nfsample)
   my_jt9%decoded = 0
   my_ft8%decoded = 0
   my_ft8var%decodedvar = 0
+  my_ft2%decoded = 0
   my_ft4%decoded = 0
   my_fst4%decoded = 0
   my_q65%decoded = 0
@@ -1189,6 +1196,67 @@ subroutine multimode_decoder(ss,id2,params,nfsample)
      go to 800
   endif    ! end of code for FT8 mode
 
+  if(params%nmode.eq.2) then
+     if(ncontest.eq.6) then            !Fox mode for FT2
+        inquire(file=trim(temp_dir)//'/houndcallers.txt',exist=ex)
+        if(.not.ex) then
+           c2fox='            '
+           g2fox='    '
+           nsnrfox=-99
+           nfreqfox=-99
+           n30z=0
+           nwrap=0
+           nfox=0
+        endif
+        open(19,file=trim(temp_dir)//'/houndcallers.txt',status='unknown')
+     endif
+     call timer('decft2  ',0)
+     call my_ft2%decode(ft2_decoded,id2,params%nQSOProgress,params%nfqso,    &
+          params%nfa,params%nfb,params%ndepth,                               &
+          logical(params%lapcqonly),ncontest,mycall,hiscall)
+     call timer('decft2  ',1)
+
+     j=0
+     if(ncontest.eq.6) then
+        ! Fox mode FT2: write hound callers to houndcallers.txt
+        n=params%nutc
+        n30=(3600*(n/10000) + 60*mod((n/100),100) + mod(n,100))/30
+        if(n30.lt.n30z) nwrap=nwrap+2880    !New UTC day, handle the wrap
+        n30z=n30
+        n30=n30+nwrap
+
+        rewind 19
+        if(nfox.eq.0) then
+           endfile 19
+           rewind 19
+        else
+           do i=1,nfox
+              n=n30fox(i)
+              nage=min(99,mod(n30-n+288000,2880))
+              if(nage.le.4) then
+                 j=j+1
+                 c2fox(j)=c2fox(i)
+                 g2fox(j)=g2fox(i)
+                 nsnrfox(j)=nsnrfox(i)
+                 nfreqfox(j)=nfreqfox(i)
+                 n30fox(j)=n
+                 if(len(trim(g2fox(j))).eq.4) then
+                    call azdist(mygrid,g2fox(j)//'  ',0.d0,nAz,nEl,nDmiles, &
+                         nDkm,nHotAz,nHotABetter)
+                 else
+                    nDkm=9999
+                 endif
+                 write(19,1004) c2fox(j),g2fox(j),nsnrfox(j),nfreqfox(j), &
+                      nDkm,nage
+              endif
+           enddo
+           nfox=j
+           flush(19)
+        endif
+     endif
+     go to 800
+  endif
+
   if(params%nmode.eq.5) then
      call timer('decft4  ',0)
      call my_ft4%decode(ft4_decoded,id2,params%nQSOProgress,params%nfqso,    &
@@ -1380,8 +1448,8 @@ subroutine multimode_decoder(ss,id2,params,nfsample)
 
 ! JT65 is not yet producing info for nsynced, ndecoded.
 800 ndecoded = my_jt4%decoded + my_jt65%decoded + my_jt9%decoded +       &
-         my_ft8%decoded + my_ft8var%decodedvar + my_ft4%decoded +        &
-         my_fst4%decoded + my_q65%decoded
+         my_ft8%decoded + my_ft8var%decodedvar + my_ft2%decoded +        &
+         my_ft4%decoded + my_fst4%decoded + my_q65%decoded
   if(params%lmultift8 .and. params%nmode.eq.8) then
      if(params%nzhsym.eq.41) ndec41=0
      if(params%nzhsym.eq.46) ndec46=ndecoded
@@ -1811,6 +1879,92 @@ contains
     
     return
   end subroutine ft8_decoded
+
+  subroutine ft2_decoded (this,sync,snr,dt,freq,decoded,nap,qual)
+    use ft2_decode
+    implicit none
+
+    class(ft2_decoder), intent(inout) :: this
+    real, intent(in) :: sync
+    integer, intent(in) :: snr
+    real, intent(in) :: dt
+    real, intent(in) :: freq
+    character(len=37), intent(in) :: decoded
+    integer, intent(in) :: nap
+    real, intent(in) :: qual
+    character*2 annot
+    character*37 decoded0
+    character*12 c1,c2
+    character*4 g2,w
+    integer i1,i2,i3,i4,i5,n,n30
+    logical b0,b1,b2,isgrid4
+
+    isgrid4(w)=(len_trim(w).eq.4 .and.                                        &
+         ichar(w(1:1)).ge.ichar('A') .and. ichar(w(1:1)).le.ichar('R') .and.  &
+         ichar(w(2:2)).ge.ichar('A') .and. ichar(w(2:2)).le.ichar('R') .and.  &
+         ichar(w(3:3)).ge.ichar('0') .and. ichar(w(3:3)).le.ichar('9') .and.  &
+         ichar(w(4:4)).ge.ichar('0') .and. ichar(w(4:4)).le.ichar('9'))
+
+    decoded0=decoded
+
+    annot='  '
+    if(nap.ne.0) then
+       write(annot,'(a1,i1)') 'a',nap
+       if(qual.lt.0.17) decoded0(37:37)='?'
+    endif
+
+    write(*,1001) params%nutc,snr,dt,nint(freq),decoded0,annot
+1001 format(i6.6,i4,f5.1,i5,' + ',1x,a37,1x,a2)
+
+    if(ios13.eq.0) then
+       write(13,1002,err=10) params%nutc,nint(sync),snr,dt,freq,0,decoded0
+1002   format(i6.6,i4,i5,f6.1,f8.0,i4,3x,a37,' FT2')
+       flush(13)
+    endif
+
+!  Fox mode: collect Hound callers (same logic as ft8_decoded)
+    if(ncontest.eq.6) then
+       i1=index(decoded0,' ')
+       i2=i1 + index(decoded0(i1+1:),' ')
+       i3=i2 + index(decoded0(i2+1:),' ')
+       if(i1.ge.3 .and. i2.ge.7 .and. i3.ge.10) then
+          c1=decoded0(1:i1-1)//'            '
+          c2=decoded0(i1+1:i2-1)
+          g2=decoded0(i2+1:i3-1)
+          b0=c1.eq.mycall
+          if(c1(1:3).eq.'DE ' .and. index(c2,'/').ge.2) b0=.true.
+          if(len(trim(c1)).ne.len(trim(mycall))) then
+             i4=index(trim(c1),trim(mycall))
+             i5=index(trim(mycall),trim(c1))
+             if(i4.ge.1 .or. i5.ge.1) b0=.true.
+          endif
+          b1=i3-i2.eq.5 .and. isgrid4(g2)
+          b2=i3-i2.eq.1
+          if(b0 .and. (b1.or.b2) .and. nint(freq).ge.1000) then
+             n=params%nutc
+             n30=(3600*(n/10000) + 60*mod((n/100),100) + mod(n,100))/30
+             if(n30.lt.n30z) nwrap=nwrap+2880    !New UTC day, handle the wrap
+             n30z=n30
+             n30=n30+nwrap
+             if(nfox.lt.MAXFOX) nfox=nfox+1
+             c2fox(nfox)=c2
+             g2fox(nfox)=g2
+             nsnrfox(nfox)=snr
+             nfreqfox(nfox)=nint(freq)
+             n30fox(nfox)=n30
+          endif
+       endif
+    endif
+
+10  call flush(6)
+
+    select type(this)
+    type is (counting_ft2_decoder)
+       this%decoded = this%decoded + 1
+    end select
+
+    return
+  end subroutine ft2_decoded
 
   subroutine ft4_decoded (this,sync,snr,dt,freq,decoded,nap,qual)
     use ft4_decode
