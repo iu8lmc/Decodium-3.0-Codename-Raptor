@@ -8,6 +8,7 @@
 #include <QStringList>
 #include <QLabel>
 #include <QCheckBox>
+#include <QLineEdit>
 #include <QThread>
 #include <QProcess>
 #include <QProgressBar>
@@ -858,6 +859,7 @@ private:
   WSPRNet *wsprNet;
 
   QTimer m_guiTimer;
+  QTimer m_decoderWatchdog;
   QTimer stopWRTimer;               //Wait & Reply
   QTimer stopWCTimer;               //Wait & Call
   QTimer ptt1Timer;                 //StartTx delay
@@ -1038,7 +1040,9 @@ private:
   NtpClient *m_ntpClient {nullptr};
   double m_ntpOffset_ms {0.0};
   bool m_ntpEnabled {true};
+  QString m_ntpCustomServer;
   QCheckBox ntp_checkbox;
+  QLineEdit ntp_server_edit;
   QLabel ntp_status_label;
 
   //---------------------------------------------------- private functions

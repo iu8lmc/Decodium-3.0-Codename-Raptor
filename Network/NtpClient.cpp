@@ -90,6 +90,11 @@ void NtpClient::setInitialOffset(double offsetMs)
   m_offsetMs = offsetMs;
 }
 
+void NtpClient::setCustomServer(QString const& server)
+{
+  m_customServer = server.trimmed();
+}
+
 void NtpClient::syncNow()
 {
   if (!m_enabled) return;
@@ -103,6 +108,13 @@ void NtpClient::syncNow()
   std::random_device rd;
   std::mt19937 rng(rd());
   std::shuffle(selected.begin(), selected.end(), rng);
+
+  // Prepend custom server if set (always queried first)
+  if (!m_customServer.isEmpty()) {
+    selected.removeAll(m_customServer);
+    selected.prepend(m_customServer);
+  }
+
   int queryCount = qMin(selected.size(), SERVERS_PER_QUERY);
 
   // Start async DNS lookup for selected servers
