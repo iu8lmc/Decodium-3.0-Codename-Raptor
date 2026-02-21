@@ -155,7 +155,8 @@ sudo apt-get install -y \
   libhamlib-utils \
   libboost-log1.74.0 \
   libusb-1.0-0 \
-  libgomp1
+  libgomp1 \
+  libgfortran5
 echo ""
 echo "Dependencies installed. Run ./wsjtx.sh to start WSJTX 3.0"
 DEPS
