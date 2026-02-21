@@ -23,6 +23,7 @@ public:
 
   void setEnabled(bool enabled);
   void syncNow();
+  void setCustomServer(QString const& server);
   double offsetMs() const { return m_offsetMs; }
   bool isSynced() const { return m_synced; }
   void setInitialOffset(double offsetMs);
@@ -77,6 +78,7 @@ private:
   bool m_synced {false};
   bool m_enabled {false};
   int m_pendingDnsLookups {0};
+  QString m_customServer;
 };
 
 #endif // NTP_CLIENT_HPP__

@@ -1238,6 +1238,15 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   externalCtrlTimer.setSingleShot(true);      //avt 12/16/21
   connect(&externalCtrlTimer, &QTimer::timeout, this, &MainWindow::externalCtrlDisconnected);      //avt 12/16/21
 
+  m_decoderWatchdog.setSingleShot(true);
+  connect(&m_decoderWatchdog, &QTimer::timeout, this, [this]() {
+    if (m_decoderBusy) {
+      qDebug() << "Decoder watchdog: clearing hung decoder after timeout";
+      to_jt9(m_ihsym, -1, -1);
+      decodeDone();
+    }
+  });
+
   decodeBusy(false);
 
   m_msg[0][0]=0;
@@ -1265,6 +1274,9 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   readSettings();            //Restore user's setup parameters
 
   // Start NTP sync after settings are loaded
+  if (!m_ntpCustomServer.isEmpty()) {
+    m_ntpClient->setCustomServer(m_ntpCustomServer);
+  }
   if (m_ntpEnabled) {
     m_ntpClient->setInitialOffset(m_ntpOffset_ms);
     m_ntpClient->setEnabled(true);
@@ -1745,6 +1757,7 @@ void MainWindow::writeSettings()
   m_settings->setValue("DTFeedbackEnabled", m_dtFeedbackEnabled);
   m_settings->setValue("NTPOffset_ms", m_ntpOffset_ms);
   m_settings->setValue("NTPEnabled", m_ntpEnabled);
+  m_settings->setValue("NTPCustomServer", m_ntpCustomServer);
   m_settings->setValue("MinSync",m_minSync);
   m_settings->setValue ("AutoSeq", ui->cbAutoSeq->isChecked ());
   m_settings->setValue ("RxAll", ui->cbRxAll->isChecked ());
@@ -2098,6 +2111,8 @@ void MainWindow::readSettings()
   m_ntpOffset_ms = m_settings->value("NTPOffset_ms", 0.0).toDouble();
   m_ntpEnabled = m_settings->value("NTPEnabled", true).toBool();
   ntp_checkbox.setChecked(m_ntpEnabled);
+  m_ntpCustomServer = m_settings->value("NTPCustomServer", "").toString();
+  ntp_server_edit.setText(m_ntpCustomServer);
   m_bFast9=m_settings->value("Fast9",false).toBool();
   m_bFastMode=m_settings->value("FastMode",false).toBool();
   ui->sbMaxDrift->setValue (m_settings->value ("MaxDrift",0).toInt());
@@ -4713,6 +4728,20 @@ void MainWindow::createStatusBar()                           //createStatusBar
     }
   });
   statusBar()->addWidget(&ntp_checkbox);
+
+  ntp_server_edit.setPlaceholderText("NTP server...");
+  ntp_server_edit.setMinimumSize(QSize{140, 18});
+  ntp_server_edit.setMaximumSize(QSize{200, 18});
+  ntp_server_edit.setToolTip("Custom NTP server (leave empty for defaults)");
+  ntp_server_edit.setText(m_ntpCustomServer);
+  connect(&ntp_server_edit, &QLineEdit::editingFinished, this, [this]() {
+    m_ntpCustomServer = ntp_server_edit.text().trimmed();
+    if (m_ntpClient) {
+      m_ntpClient->setCustomServer(m_ntpCustomServer);
+      if (m_ntpEnabled) m_ntpClient->syncNow();
+    }
+  });
+  statusBar()->addWidget(&ntp_server_edit);
 
   ntp_status_label.setAlignment(Qt::AlignHCenter);
   ntp_status_label.setMinimumSize(QSize{120, 18});
@@ -8026,6 +8055,14 @@ void MainWindow::decodeBusy(bool b)                             //decodeBusy()
   ui->actionOpen->setEnabled(!b);
   ui->actionOpen_next_in_directory->setEnabled(!b);
   ui->actionDecode_remaining_files_in_directory->setEnabled(!b);
+
+  // Decoder watchdog: start when busy, stop when done
+  if (b) {
+    int timeout_ms = qMax(5000, qRound(m_TRperiod * 2000.0));
+    m_decoderWatchdog.start(timeout_ms);
+  } else {
+    m_decoderWatchdog.stop();
+  }
 
   statusUpdate ();
 }
@@ -13571,7 +13608,7 @@ void MainWindow::pskSetLocal ()
   if (rig_information.contains("OmniRig")) rig_information = "N/A (OmniRig)";
   if (rig_information == "FLRig") rig_information = "N/A (FLRig)";
   if (rig_information.contains("TCI Cli")) rig_information = "N/A (TCI)";
-  m_psk_Reporter.setLocalStation(m_config.my_callsign (), m_config.my_grid (), antenna_description, rig_information);
+  m_psk_Reporter.setLocalStation(m_config.my_callsign (), m_config.my_grid (), antenna_description, rig_information, QString {"Decodium 3 FT2 v" + version () + " " + m_revision}.simplified ());
 }
 
 void MainWindow::transmitDisplay (bool transmitting)
