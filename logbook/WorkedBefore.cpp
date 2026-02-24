@@ -461,7 +461,7 @@ bool WorkedBefore::add (QString const& call
                   "ADIF Export\n"
                   "<adif_ver:5>3.1.1\n"
                   "<created_timestamp:15>%0\n"
-                  "<programid:14>Decodium 3 FT2\n"
+                  "<programid:20>Decodium v3.0 SE KP5\n"
                   "<programversion:%1>%2\n"
                   "<eoh>"
                     }.arg (ts).arg (ver.size ()).arg (ver)

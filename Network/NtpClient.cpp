@@ -200,6 +200,10 @@ void NtpClient::onReadyRead()
 
     // Calculate offset: ((T2-T1) + (T3-T4)) / 2
     double offset = ((t2Ms - t1Ms) + (t3Ms - t4Ms)) / 2.0;
+    double rtt = (t4Ms - t1Ms) - (t3Ms - t2Ms);  // round-trip time
+
+    // Discard high-latency responses (RTT > 100ms = noisy)
+    if (rtt > 100.0) continue;
 
     // Sanity gate: discard offsets > 1 hour
     if (std::abs(offset) > MAX_OFFSET_MS) continue;
@@ -243,9 +247,26 @@ void NtpClient::onQueryTimeout()
   // NTP succeeded — reset failure counter
   m_ntpConsecutiveFailures = 0;
 
-  // Compute median of collected offsets
+  // Compute median of collected offsets with IQR outlier removal
   std::sort(m_collectedOffsets.begin(), m_collectedOffsets.end());
   int n = m_collectedOffsets.size();
+
+  // IQR filtering: remove outliers outside Q1-1.5*IQR .. Q3+1.5*IQR
+  if(n >= 4) {
+    double q1 = m_collectedOffsets[n/4];
+    double q3 = m_collectedOffsets[3*n/4];
+    double iqr = q3 - q1;
+    double lo = q1 - 1.5 * iqr;
+    double hi = q3 + 1.5 * iqr;
+    QVector<double> filtered;
+    for(auto v : m_collectedOffsets) {
+      if(v >= lo && v <= hi) filtered.append(v);
+    }
+    if(!filtered.isEmpty()) m_collectedOffsets = filtered;
+    n = m_collectedOffsets.size();
+  }
+
+  // Recompute median on filtered data
   double median;
   if (n % 2 == 0) {
     median = (m_collectedOffsets[n/2 - 1] + m_collectedOffsets[n/2]) / 2.0;
@@ -253,7 +274,14 @@ void NtpClient::onQueryTimeout()
     median = m_collectedOffsets[n/2];
   }
 
-  m_offsetMs = median;
+  m_lastServerCount = n;
+
+  // EMA smoothing to avoid jumps between sync cycles
+  if(m_synced) {
+    m_offsetMs = m_offsetMs * 0.5 + median * 0.5;
+  } else {
+    m_offsetMs = median;  // first sync: jump directly
+  }
   m_synced = true;
 
   // Restore normal refresh interval after successful sync

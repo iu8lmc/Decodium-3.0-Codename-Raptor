@@ -29,6 +29,7 @@ public:
   bool reset () override;
 
   Q_SIGNAL void framesWritten (qint64) const;
+  Q_SIGNAL void soundcardDriftUpdated(double driftMsPerPeriod, double driftPpm) const;
   Q_SLOT void setBlockSize (unsigned);
 
 protected:
@@ -53,6 +54,13 @@ private:
   // data (a signals worth) at
   // the input sample rate
   unsigned m_bufferPos;
+
+  // Soundcard clock drift measurement
+  qint64 m_driftStartMs {0};
+  qint64 m_driftLastEmitMs {0};
+  qint64 m_totalInputFrames {0};
+  double m_measuredDriftPpm {0.0};
+  static constexpr int DRIFT_EMIT_INTERVAL_MS = 30000;
 };
 
 #endif

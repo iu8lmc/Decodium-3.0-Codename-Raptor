@@ -316,6 +316,9 @@ void WideGraph::setMode(QString mode)                              //setMode
   ui->labTime->setVisible(!m_mode.startsWith("FST4"));
   ui->timestampComboBox->setVisible(!m_mode.startsWith("FST4"));
   ui->widePlot->setMode(mode);
+  // Update multi-slot spacing for the new mode
+  int spacing = (m_mode=="FT2") ? 200 : 60;
+  ui->widePlot->setMultiSlot(ui->widePlot->nSlots(), spacing);
   ui->widePlot->DrawOverlay();
   ui->widePlot->update();
 }
@@ -537,6 +540,10 @@ void WideGraph::on_zero2dSlider_valueChanged(int value)               //Zero2
 void WideGraph::setSuperFox(bool b)
 {
   ui->widePlot->setSuperFox(b);
+}
+void WideGraph::setMultiSlot(int nslots, int spacing)
+{
+  ui->widePlot->setMultiSlot(nslots, spacing);
 }
 
 void WideGraph::setSuperHound(bool b)

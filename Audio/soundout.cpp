@@ -29,7 +29,16 @@ bool SoundOutput::checkStream () const
         break;
 
       case QAudio::UnderrunError:
-        Q_EMIT error (tr ("Audio data not being fed to the audio output device fast enough."));
+        // Underrun recovery: resume the stream so audio continues
+        // instead of stalling permanently.  The stream transitions to
+        // IdleState on underrun; resuming it restarts pulling data.
+        qDebug () << "SoundOutput: underrun detected, recovering...";
+        if (m_stream->state () == QAudio::IdleState
+            || m_stream->state () == QAudio::SuspendedState)
+          {
+            m_stream->resume ();
+          }
+        result = true;  // non-fatal, keep going
         break;
 
       case QAudio::FatalError:
@@ -78,7 +87,7 @@ void SoundOutput::restart (QIODevice * source)
           m_stream.reset (new QAudioOutput (m_device, format));
           checkStream ();
           m_stream->setVolume (m_volume);
-          m_stream->setNotifyInterval(1000);
+          m_stream->setNotifyInterval(20);
           error_ = false;
 
           connect (m_stream.data(), &QAudioOutput::stateChanged, this, &SoundOutput::handleStateChanged);
@@ -109,9 +118,15 @@ void SoundOutput::restart (QIODevice * source)
     {
       m_stream->setBufferSize (m_stream->format().bytesForFrames (m_framesBuffered));
     }
+  else
+    {
+      // Default: 16384 frames (~341ms @ 48kHz) — prevents underrun
+      // on Windows where Qt's automatic buffer sizing is too small
+      m_stream->setBufferSize (m_stream->format().bytesForFrames (16384));
+    }
   m_stream->setCategory ("production");
   m_stream->start (source);
-//  LOG_DEBUG ("Selected buffer size (bytes): " << m_stream->bufferSize () << " period size: " << m_stream->periodSize ());
+  qDebug () << "SoundOut buffer size (bytes):" << m_stream->bufferSize () << "period size:" << m_stream->periodSize ();
 }
 
 void SoundOutput::suspend ()

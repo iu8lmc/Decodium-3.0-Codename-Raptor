@@ -26,6 +26,7 @@ public:
   void setCustomServer(QString const& server);
   double offsetMs() const { return m_offsetMs; }
   bool isSynced() const { return m_synced; }
+  int lastServerCount() const { return m_lastServerCount; }
   void setInitialOffset(double offsetMs);
 
 Q_SIGNALS:
@@ -44,8 +45,8 @@ private:
   static constexpr quint64 NTP_EPOCH_OFFSET = 2208988800ULL;
   static constexpr int NTP_PACKET_SIZE = 48;
   static constexpr int NTP_PORT = 123;
-  static constexpr int REFRESH_INTERVAL_MS = 300000;  // 5 minutes
-  static constexpr int REFRESH_RETRY_MS = 30000;      // 30 seconds when not synced
+  static constexpr int REFRESH_INTERVAL_MS = 60000;   // 1 minute
+  static constexpr int REFRESH_RETRY_MS = 10000;      // 10 seconds when not synced
   static constexpr int QUERY_TIMEOUT_MS = 5000;       // 5 seconds
   static constexpr double MAX_OFFSET_MS = 3600000.0;  // 1 hour sanity gate
   static constexpr int SERVERS_PER_QUERY = 8;          // max servers per sync cycle
@@ -76,6 +77,7 @@ private:
 
   double m_offsetMs {0.0};
   bool m_synced {false};
+  int m_lastServerCount {0};
   bool m_enabled {false};
   int m_pendingDnsLookups {0};
   QString m_customServer;
