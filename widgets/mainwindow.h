@@ -490,6 +490,7 @@ private slots:
   void downloadQslComplete(bool result);  //avt 10/2/25
   void onNtpOffsetUpdated(double offsetMs);
   void onNtpSyncStatusChanged(bool synced, QString const& statusText);
+  void onSoundcardDriftUpdated(double driftMsPerPeriod, double driftPpm);
 
 private:
   Q_SIGNAL void initializeAudioOutputStream (QAudioDeviceInfo,
@@ -675,7 +676,7 @@ private:
   qint32  m_nSortedHounds=0;
   qint32  m_nHoundsCalling=0;
   qint32  m_Nlist=12;
-  qint32  m_Nslots=5;
+  qint32  m_Nslots=3;
   qint32  m_Nslots0=0;
   qint32  m_nFoxMsgTimes[5]={0,0,0,0,0};
   qint32  m_tAutoOn;
@@ -687,6 +688,11 @@ private:
   qint32  m_tFoxTxSinceCQ=999; //Fox Tx cycles since most recent CQ
   qint32  m_nFoxFreq;          //Audio freq at which Hound received a call from Fox
   qint32  m_nSentFoxRrpt=0;    //Serial number for next R+rpt Hound will send to Fox
+  qint32  m_txRetryCount {0};  // Consecutive Tx retry counter for auto-sequence timeout
+  qint32  m_lastNtx {-1};     // Last Tx number sent (for retry detection)
+  qint32  m_cqRetryCount {0}; // CQ (Tx6) retry counter for period toggle
+  static constexpr int MAX_TX_RETRIES = 3;    // Tx2/Tx3/Tx4 retries before returning to CQ
+  static constexpr int MAX_CQ_RETRIES = 10;   // CQ retries before toggling Tx Even/1st
   qint32  m_kin0=0;
   qint32  m_earlyDecode=41;
   qint32  m_earlyDecode2=47;
@@ -1028,18 +1034,22 @@ private:
   bool m_externalCtrl;         //avt  10/1/25
   bool m_autoButtonState;     //avt 10/2/25
 
-  //---- DT Feedback Loop (clock drift auto-correction) ----
+  //---- DT Feedback Loop (disabled - replaced by soundcard drift detection) ----
   QVector<double> m_dtSamples;        // DT values collected in current period
   double m_dtCorrection_ms {0.0};     // accumulated time correction (milliseconds)
   double m_dtSmoothFactor {0.3};      // exponential smoothing factor (0-1)
   int m_dtMinSamples {3};             // minimum decodes before applying correction
-  bool m_dtFeedbackEnabled {true};    // enable/disable DT feedback loop
+  bool m_dtFeedbackEnabled {false};   // permanently disabled
   int m_dtLastSampleCount {0};        // sample count for status display
+
+  // Soundcard clock drift detection
+  double m_soundcardDriftPpm {0.0};
+  double m_soundcardDriftMsPerPeriod {0.0};
 
   // NTP Time Synchronization
   NtpClient *m_ntpClient {nullptr};
   double m_ntpOffset_ms {0.0};
-  bool m_ntpEnabled {true};
+  bool m_ntpEnabled {false};
   QString m_ntpCustomServer;
   QCheckBox ntp_checkbox;
   QLineEdit ntp_server_edit;
