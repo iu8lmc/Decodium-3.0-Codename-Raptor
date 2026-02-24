@@ -53,11 +53,26 @@ void Detector::clear ()
   // qFill (dec_data.d2, dec_data.d2 + sizeof (dec_data.d2) / sizeof (dec_data.d2[0]), 0);
 }
 
+void Detector::setNtpOffset(double offsetMs)
+{
+  m_ntpOffsetMs = offsetMs;
+}
+
+void Detector::setDriftCorrection(double correctionMs)
+{
+  m_dtCorrectionMs = correctionMs;
+}
+
 qint64 Detector::writeData (char const * data, qint64 maxSize)
 {
   static unsigned mstr0=999999;
   qint64 ms0 = QDateTime::currentMSecsSinceEpoch() % 86400000;
-  unsigned mstr = ms0 % int(1000.0*m_period); // ms into the nominal Tx start time
+  // Apply NTP + DT correction to improve period boundary alignment
+  double totalCorrectionMs = m_ntpOffsetMs + m_dtCorrectionMs;
+  qint64 ms0_corrected = ms0 + qRound64(totalCorrectionMs);
+  if (ms0_corrected < 0) ms0_corrected += 86400000;
+  if (ms0_corrected >= 86400000) ms0_corrected -= 86400000;
+  unsigned mstr = ms0_corrected % int(1000.0*m_period); // ms into the nominal Tx start time
   if(mstr < mstr0) {              //When mstr has wrapped around to 0, restart the buffer
     dec_data.params.kin = 0;
     m_bufferPos = 0;
@@ -72,23 +87,30 @@ qint64 Detector::writeData (char const * data, qint64 maxSize)
   size_t framesAccepted (qMin (static_cast<size_t> (maxSize /
                                                     bytesPerFrame ()), framesAcceptable));
 
-  // Soundcard clock drift measurement
-  m_totalInputFrames += framesAccepted;
+  // Soundcard clock drift measurement — count all frames delivered by audio
+  // subsystem, not just those accepted into the decode buffer, so that
+  // buffer wrap-arounds and drops don't corrupt the drift estimate.
+  size_t framesDelivered = static_cast<size_t>(maxSize / bytesPerFrame());
+  m_totalInputFrames += framesDelivered;
   qint64 ms0_raw = QDateTime::currentMSecsSinceEpoch();
   if (m_driftStartMs == 0) {
     m_driftStartMs = ms0_raw;
     m_driftLastEmitMs = ms0_raw;
-    m_totalInputFrames = framesAccepted;  // reset to just this batch
+    m_totalInputFrames = framesDelivered;  // reset to just this batch
   } else {
     qint64 elapsedMs = ms0_raw - m_driftStartMs;
     if (elapsedMs >= 10000 && (ms0_raw - m_driftLastEmitMs) >= DRIFT_EMIT_INTERVAL_MS) {
       double elapsedSec = elapsedMs / 1000.0;
-      double nominalInputRate = static_cast<double>(m_frameRate * m_downSampleFactor);
+      double nominalInputRate = static_cast<double>(m_frameRate) * m_downSampleFactor;
       double actualRate = static_cast<double>(m_totalInputFrames) / elapsedSec;
-      m_measuredDriftPpm = (actualRate / nominalInputRate - 1.0) * 1e6;
-      double driftMsPerPeriod = m_measuredDriftPpm * m_period / 1000.0;
-      m_driftLastEmitMs = ms0_raw;
-      Q_EMIT soundcardDriftUpdated(driftMsPerPeriod, m_measuredDriftPpm);
+      double ppm = (actualRate / nominalInputRate - 1.0) * 1e6;
+      // Sanity gate: ignore wildly implausible values (startup transient, etc.)
+      if (qAbs(ppm) < 500.0) {
+        m_measuredDriftPpm = ppm;
+        double driftMsPerPeriod = m_measuredDriftPpm * m_period / 1000.0;
+        m_driftLastEmitMs = ms0_raw;
+        Q_EMIT soundcardDriftUpdated(driftMsPerPeriod, m_measuredDriftPpm);
+      }
     }
   }
 

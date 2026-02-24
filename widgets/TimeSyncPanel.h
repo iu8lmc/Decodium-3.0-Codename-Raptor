@@ -25,6 +25,11 @@ public:
   void updateNtpOffset(double offsetMs, int serverCount);
   void updateNtpSyncStatus(bool synced, QString const& statusText);
   void updateSoundcardDrift(double driftMsPerPeriod, double driftPpm);
+  void updateDecodeTiming(QVector<double> const& dtSamples,
+                          double avgDt,
+                          double dtCorrectionMs,
+                          double decodeLatencyMs,
+                          int sampleCount);
   void syncNtpEnabled(bool enabled);
   void syncCustomServer(QString const& server);
 
@@ -61,6 +66,11 @@ private:
   bool synced_ {false};
   QVector<OffsetEntry> history_;
   static constexpr int MAX_HISTORY = 100;
+
+  // Decode timing stats
+  double lastAvgDt_ {0.0};
+  double lastDtCorrection_ {0.0};
+  double lastDecodeLatency_ {0.0};
 };
 
 #endif // TIMESYNCPANEL_H

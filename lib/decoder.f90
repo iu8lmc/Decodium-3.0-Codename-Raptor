@@ -1,6 +1,17 @@
 subroutine multimode_decoder(ss,id2,params,nfsample)
 
-
+!$ use omp_lib
+  use prog_args
+  use timer_module, only: timer
+  use jt4_decode
+  use jt65_decode
+  use jt9_decode
+  use ft8_decode
+  use ft8_decodevar
+  use ft2_decode
+  use ft4_decode
+  use fst4_decode
+  use q65_decode
 
 !ft8md added 3 uses below
   use ft8_mod1, only : ndecodes,allmessages,allsnrs,allfreq,mycall12_0,         &
@@ -217,7 +228,18 @@ subroutine multimode_decoder(ss,id2,params,nfsample)
            lenabledxcsearch=params%lenabledxcsearch
            lwidedxcsearch=params%lwidedxcsearch
 
-    
+           lmultinst=params%lmultinst
+           lskiptx1=params%lskiptx1
+           ltxing=params%ltxing
+
+           mycalllen1=len_trim(mycall)+1
+           msgroot=''
+           msgroot=trim(mycall)//' '//trim(hiscall)//' '
+           msgrootlen=len_trim(msgroot)
+           lcommonft8b=params%lcommonft8b
+           lhound=params%lhound
+           nft8cycles=params%nft8cycles
+           forcedt=0.
         
            if((hiscall.ne.hiscall12_0 .and. hiscall.ne.'            ')          &
                 .or. (mycall.ne.mycall12_0 .and. mycall.ne.'            ') .or. &

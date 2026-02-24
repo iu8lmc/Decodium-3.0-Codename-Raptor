@@ -167,6 +167,88 @@ QLabel { color: #ddd; }</string>
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="groupDecodeTiming">
+     <property name="title">
+      <string>Decode Timing</string>
+     </property>
+     <layout class="QFormLayout" name="formLayoutDecodeTiming">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelAvgDt">
+        <property name="text">
+         <string>Avg DT:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="lblAvgDt">
+        <property name="text">
+         <string>--</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelDtCorrection">
+        <property name="text">
+         <string>DT Correction:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="lblDtCorrection">
+        <property name="text">
+         <string>--</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="labelDecodeCount">
+        <property name="text">
+         <string>Decodes used:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="lblDecodeCount">
+        <property name="text">
+         <string>--</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="labelDecodeLatency">
+        <property name="text">
+         <string>Decode latency:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLabel" name="lblDecodeLatency">
+        <property name="text">
+         <string>--</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="labelLastDts">
+        <property name="text">
+         <string>Last DTs:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QLabel" name="lblLastDts">
+        <property name="text">
+         <string>--</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="QGroupBox" name="groupControls">
      <property name="title">
       <string>Controls</string>

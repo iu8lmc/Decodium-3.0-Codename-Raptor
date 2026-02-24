@@ -31,6 +31,8 @@ public:
   Q_SIGNAL void framesWritten (qint64) const;
   Q_SIGNAL void soundcardDriftUpdated(double driftMsPerPeriod, double driftPpm) const;
   Q_SLOT void setBlockSize (unsigned);
+  Q_SLOT void setNtpOffset(double offsetMs);
+  Q_SLOT void setDriftCorrection(double correctionMs);
 
 protected:
   qint64 readData (char * /* data */, qint64 /* maxSize */) override
@@ -61,6 +63,10 @@ private:
   qint64 m_totalInputFrames {0};
   double m_measuredDriftPpm {0.0};
   static constexpr int DRIFT_EMIT_INTERVAL_MS = 30000;
+
+  // Time corrections applied to period boundary
+  double m_ntpOffsetMs {0.0};       // NTP offset correction
+  double m_dtCorrectionMs {0.0};    // DT feedback correction
 };
 
 #endif
