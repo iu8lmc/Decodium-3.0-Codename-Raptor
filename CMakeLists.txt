@@ -48,7 +48,7 @@ project (wsjtx
   VERSION 3.0.0.0
   LANGUAGES C CXX Fortran
   )
-set (PROJECT_DESCRIPTION "Decodium 3 FT2: Digital Modes for Weak Signal Communications in Amateur Radio")
+set (PROJECT_DESCRIPTION "Decodium v3.0 SE KP5/NP3VI: Digital Modes for Weak Signal Communications in Amateur Radio")
 set (CMAKE_PROJECT_DESCRIPTION ${PROJECT_DESCRIPTION})
 set (CMAKE_AUTOUIC ON)
 
@@ -78,7 +78,7 @@ set (wsjtx_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_
 #
 # project information
 #
-set (PROJECT_BUNDLE_NAME "Decodium 3 FT2")
+set (PROJECT_BUNDLE_NAME "Decodium v3.0 SE DXpedition KP5/NP3VI")
 set (PROJECT_VENDOR "IU8LMC")
 set (PROJECT_CONTACT "IU8LMC <qrz.com/db/IU8LMC>")
 set (PROJECT_COPYRIGHT "See Help | Copyright info")
@@ -302,6 +302,7 @@ set (wsjtx_CXXSRCS
   widgets/QSYMessage.cpp 
   widgets/QSYMessageCreator.cpp
   widgets/qsymonitor.cpp
+  widgets/TimeSyncPanel.cpp
   )
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
@@ -795,6 +796,7 @@ set (wsjtx_UISRCS
   widgets/QSYMessage.ui
   widgets/QSYMessageCreator.ui
   widgets/qsymonitor.ui
+  widgets/TimeSyncPanel.ui
   )
 
 set (UDP_library_CXXSRCS

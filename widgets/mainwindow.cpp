@@ -4738,6 +4738,7 @@ void MainWindow::createStatusBar()                           //createStatusBar
       ntp_status_label.setToolTip("NTP disabled");
       m_ntpOffset_ms = 0.0;
     }
+    if (m_timeSyncPanel) m_timeSyncPanel->syncNtpEnabled(checked);
   });
   statusBar()->addWidget(&ntp_checkbox);
 
@@ -4752,6 +4753,7 @@ void MainWindow::createStatusBar()                           //createStatusBar
       m_ntpClient->setCustomServer(m_ntpCustomServer);
       if (m_ntpEnabled) m_ntpClient->syncNow();
     }
+    if (m_timeSyncPanel) m_timeSyncPanel->syncCustomServer(m_ntpCustomServer);
   });
   statusBar()->addWidget(&ntp_server_edit);
 
@@ -5249,6 +5251,62 @@ void MainWindow::on_actionQSY_Monitor_triggered()
   m_qsymonitorWidget->showNormal();
   m_qsymonitorWidget->raise();
   m_qsymonitorWidget->activateWindow();
+}
+
+void MainWindow::on_actionTime_Sync_triggered()
+{
+  if (!m_timeSyncPanel) {
+    m_timeSyncPanel.reset(new TimeSyncPanel{m_settings, m_ntpClient, this});
+    connect(this, &MainWindow::finished,
+            m_timeSyncPanel.data(), &TimeSyncPanel::close);
+
+    // Panel → MainWindow: NTP enable toggle
+    connect(m_timeSyncPanel.data(), &TimeSyncPanel::ntpEnableToggled,
+            this, [this](bool en) {
+      m_ntpEnabled = en;
+      ntp_checkbox.setChecked(en);
+      if (m_ntpClient) {
+        m_ntpClient->setEnabled(en);
+      }
+      if (!en) {
+        m_ntpOffset_ms = 0;
+        ntp_status_label.setText("NTP: OFF");
+        ntp_status_label.setStyleSheet("QLabel{color:#888;background:#333}");
+        ntp_status_label.setToolTip("NTP disabled");
+      }
+    });
+
+    // Panel → MainWindow: custom server changed
+    connect(m_timeSyncPanel.data(), &TimeSyncPanel::customServerChanged,
+            this, [this](QString const& server) {
+      m_ntpCustomServer = server;
+      if (m_ntpClient) {
+        m_ntpClient->setCustomServer(server);
+        if (m_ntpEnabled) m_ntpClient->syncNow();
+      }
+    });
+
+    // Panel → MainWindow: sync now
+    connect(m_timeSyncPanel.data(), &TimeSyncPanel::syncNowRequested,
+            this, [this]() {
+      if (m_ntpClient && m_ntpEnabled) m_ntpClient->syncNow();
+    });
+
+    // Sync initial state to panel
+    m_timeSyncPanel->syncNtpEnabled(m_ntpEnabled);
+    m_timeSyncPanel->syncCustomServer(m_ntpCustomServer);
+    int srvCount = m_ntpClient ? m_ntpClient->lastServerCount() : 0;
+    if (srvCount > 0) {
+      m_timeSyncPanel->updateNtpOffset(m_ntpOffset_ms, srvCount);
+    }
+    m_timeSyncPanel->updateNtpSyncStatus(
+      m_ntpClient ? m_ntpClient->isSynced() : false,
+      m_ntpEnabled ? "Initializing..." : "NTP disabled");
+    m_timeSyncPanel->updateSoundcardDrift(m_soundcardDriftMsPerPeriod, m_soundcardDriftPpm);
+  }
+  m_timeSyncPanel->showNormal();
+  m_timeSyncPanel->raise();
+  m_timeSyncPanel->activateWindow();
 }
 
 void MainWindow::on_fox_log_action_triggered()
@@ -18922,6 +18980,8 @@ void MainWindow::onNtpOffsetUpdated(double offsetMs)
     ntp_status_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
   else
     ntp_status_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
+
+  if (m_timeSyncPanel) m_timeSyncPanel->updateNtpOffset(offsetMs, srvCount);
 }
 
 void MainWindow::onNtpSyncStatusChanged(bool synced, QString const& statusText)
@@ -18931,6 +18991,8 @@ void MainWindow::onNtpSyncStatusChanged(bool synced, QString const& statusText)
     ntp_status_label.setStyleSheet("QLabel{color:#888;background:#333}");
   }
   ntp_status_label.setToolTip(statusText);
+
+  if (m_timeSyncPanel) m_timeSyncPanel->updateNtpSyncStatus(synced, statusText);
 }
 
 void MainWindow::onSoundcardDriftUpdated(double driftMsPerPeriod, double driftPpm)
@@ -18956,5 +19018,7 @@ void MainWindow::onSoundcardDriftUpdated(double driftMsPerPeriod, double driftPp
     dt_correction_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
   else
     dt_correction_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
+
+  if (m_timeSyncPanel) m_timeSyncPanel->updateSoundcardDrift(driftMsPerPeriod, driftPpm);
 }
 

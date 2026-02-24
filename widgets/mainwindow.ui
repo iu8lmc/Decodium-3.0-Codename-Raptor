@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Decodium 3 FT2</string>
+   <string>Decodium v3.0 SE KP5</string>
   </property>
   <property name="toolTip">
    <string/>
@@ -959,6 +959,19 @@
             <string>Auto CQ</string>
            </property>
            <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="cbAutoTogglePeriod">
+           <property name="toolTip">
+            <string>Auto CQ: toggle Tx Even/1st after repeated CQ without response</string>
+           </property>
+           <property name="text">
+            <string>Alt 1/2</string>
+           </property>
+           <property name="checked">
             <bool>true</bool>
            </property>
           </widget>
@@ -4794,6 +4807,7 @@ QPushButton[state=&quot;ok&quot;] {
     <addaction name="actionSWL_Mode"/>
     <addaction name="actionQSYMessage_Creator"/>
     <addaction name="actionQSY_Monitor"/>
+    <addaction name="actionTime_Sync"/>
     <addaction name="actionEnable_QSY_Popups"/>
     <addaction name="actionBand_Buttons"/>
     <addaction name="actionVHF_UHF_Buttons"/>
@@ -5027,7 +5041,7 @@ QPushButton[state=&quot;ok&quot;] {
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About Decodium 3 FT2</string>
+    <string>About Decodium v3.0 SE KP5</string>
    </property>
    <property name="menuRole">
     <enum>QAction::AboutRole</enum>
@@ -5616,23 +5630,23 @@ QPushButton[state=&quot;ok&quot;] {
   </action>
   <action name="actionQuick_Start_Guide_to_WSJT_X_2_7_and_QMAP">
    <property name="text">
-    <string>Quick-Start Guide to Decodium 3 FT2 and QMAP</string>
+    <string>Quick-Start Guide to Decodium v3.0 SE KP5 and QMAP</string>
    </property>
   </action>
   <action name="actionWSJT_X_improved_Home_Page">
    <property name="text">
-    <string>Decodium 3 FT2 Home Page</string>
+    <string>Decodium v3.0 SE KP5 Home Page</string>
    </property>
    <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go to the Decodium 3 FT2 home page.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go to the Decodium v3.0 SE KP5 home page.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionThe_additional_features_of_wsjt_x_improved">
    <property name="text">
-    <string>The additional features of Decodium 3 FT2</string>
+    <string>The additional features of Decodium v3.0 SE KP5</string>
    </property>
    <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overview on the additional features of Decodium 3 FT2.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overview on the additional features of Decodium v3.0 SE KP5.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionRecommended_Audio_Settings">
@@ -5868,6 +5882,11 @@ QPushButton[state=&quot;ok&quot;] {
    </property>
    <property name="text">
     <string>QSY Monitor</string>
+   </property>
+  </action>
+  <action name="actionTime_Sync">
+   <property name="text">
+    <string>Time Synchronization...</string>
    </property>
   </action>
   <action name="actionIgnoreB4">

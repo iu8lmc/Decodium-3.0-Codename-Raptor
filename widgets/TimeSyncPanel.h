@@ -1,0 +1,66 @@
+// -*- Mode: C++ -*-
+#ifndef TIMESYNCPANEL_H
+#define TIMESYNCPANEL_H
+
+#include <QDialog>
+#include <QTimer>
+#include <QVector>
+#include <QDateTime>
+
+class QSettings;
+class NtpClient;
+
+namespace Ui {
+class TimeSyncPanel;
+}
+
+class TimeSyncPanel : public QDialog
+{
+  Q_OBJECT
+
+public:
+  explicit TimeSyncPanel(QSettings *settings, NtpClient *ntpClient, QWidget *parent = nullptr);
+  ~TimeSyncPanel() override;
+
+  void updateNtpOffset(double offsetMs, int serverCount);
+  void updateNtpSyncStatus(bool synced, QString const& statusText);
+  void updateSoundcardDrift(double driftMsPerPeriod, double driftPpm);
+  void syncNtpEnabled(bool enabled);
+  void syncCustomServer(QString const& server);
+
+Q_SIGNALS:
+  void ntpEnableToggled(bool enabled);
+  void customServerChanged(QString const& server);
+  void syncNowRequested();
+
+protected:
+  void closeEvent(QCloseEvent *event) override;
+
+private Q_SLOTS:
+  void onClockTick();
+  void on_btnSyncNow_clicked();
+  void on_btnClearHistory_clicked();
+  void on_cbNtpEnabled_toggled(bool checked);
+  void on_editCustomServer_editingFinished();
+
+private:
+  struct OffsetEntry {
+    QDateTime time;
+    double offsetMs;
+    int serverCount;
+  };
+
+  void read_settings();
+  void write_settings();
+
+  QSettings *settings_;
+  NtpClient *ntpClient_;
+  Ui::TimeSyncPanel *ui;
+  QTimer clockTimer_;
+  double lastOffsetMs_ {0.0};
+  bool synced_ {false};
+  QVector<OffsetEntry> history_;
+  static constexpr int MAX_HISTORY = 100;
+};
+
+#endif // TIMESYNCPANEL_H
