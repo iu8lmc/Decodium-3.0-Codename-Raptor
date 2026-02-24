@@ -316,7 +316,7 @@ namespace
   auto quint32_max = std::numeric_limits<quint32>::max ();
   constexpr int N_WIDGETS {38};
   constexpr int default_rx_audio_buffer_frames {-1}; // lets Qt decide
-  constexpr int default_tx_audio_buffer_frames {-1}; // lets Qt decide
+  constexpr int default_tx_audio_buffer_frames {16384}; // ~341ms @ 48kHz, prevents underrun on Windows
 
   bool message_is_73 (int type, QStringList const& msg_parts)
   {
@@ -563,7 +563,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
         m_config.udp_server_name (), m_config.udp_server_port (),
         m_config.udp_interface_names (), m_config.udp_TTL (),
         this}},
-  m_psk_Reporter {&m_config, QString {"Decodium 3 FT2 v" + version () + " " + m_revision}.simplified ()},
+  m_psk_Reporter {&m_config, QString {"Decodium v3.0 SE DXpedition KP5/NP3VI v" + version () + " " + m_revision}.simplified ()},
   m_manual {&m_network_manager},
   m_block_udp_status_updates {false},
   m_useDarkStyle {false},
@@ -573,6 +573,18 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->setupUi(this);
   setUnifiedTitleAndToolBarOnMac (true);
   createStatusBar();
+
+  // FT2 Digital Mode logo
+  {
+    QString logoPath = QApplication::applicationDirPath() + "/ft2logo.png";
+    QPixmap logoPix(logoPath);
+    if(!logoPix.isNull()) {
+      QLabel *logoLabel = new QLabel(this);
+      logoLabel->setPixmap(logoPix.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+      logoLabel->setAlignment(Qt::AlignCenter);
+      ui->horizontalLayout_6->addWidget(logoLabel);
+    }
+  }
 
   // NTP Time Synchronization
   m_ntpClient = new NtpClient(this);
@@ -650,6 +662,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   // hook up the detector signals, slots and disposal
   connect (this, &MainWindow::FFTSize, m_detector, &Detector::setBlockSize);
   connect(m_detector, &Detector::framesWritten, this, &MainWindow::dataSink);
+  connect(m_detector, &Detector::soundcardDriftUpdated, this, &MainWindow::onSoundcardDriftUpdated);
   connect (&m_audioThread, &QThread::finished, m_detector, &QObject::deleteLater);
 
   // setup the waterfall
@@ -1577,7 +1590,7 @@ void MainWindow::not_GA_warning_message ()
 {
   if(m_config.my_callsign()=="IU8LMC") return;    //IU8LMC mod
   MessageBox::critical_message (this,
-                                "This is a pre-release version of Decodium 3 FT2 " + version (false) + " made\n"
+                                "This is a pre-release version of Decodium v3.0 SE KP5 " + version (false) + " made\n"
                                 "available for testing purposes.  By design it will\n"
                                 "be nonfunctional after April 30, 2026.");
   auto now = QDateTime::currentDateTimeUtc ();
@@ -1753,8 +1766,7 @@ void MainWindow::writeSettings()
   m_settings->setValue("EchoCW",ui->rbEchoCW->isChecked());
   m_settings->setValue("EchoMessage",ui->leEchoMessage->text());
   m_settings->setValue("DTtol",m_DTtol);
-  m_settings->setValue("DTCorrection_ms", m_dtCorrection_ms);
-  m_settings->setValue("DTFeedbackEnabled", m_dtFeedbackEnabled);
+  // DTCorrection_ms and DTFeedbackEnabled no longer saved (DT feedback disabled)
   m_settings->setValue("NTPOffset_ms", m_ntpOffset_ms);
   m_settings->setValue("NTPEnabled", m_ntpEnabled);
   m_settings->setValue("NTPCustomServer", m_ntpCustomServer);
@@ -1887,7 +1899,7 @@ void MainWindow::writeSettings()
 void MainWindow::update_tx5(const QString &qsy_text)
 {
   if (m_hisCall=="") {
-    QMessageBox::warning(this, "Decodium 3 FT2","There must be a callsign in the\n DX Call Box to send QSY Request");
+    QMessageBox::warning(this, "Decodium v3.0 SE KP5","There must be a callsign in the\n DX Call Box to send QSY Request");
   } else {
     QString text = qsy_text;
     ui->tx6->setText(text.replace("$DX",m_hisCall));
@@ -1948,7 +1960,7 @@ void MainWindow::readSettings()
   ui->respondComboBox->setCurrentIndex(m_settings->value("RespondCQ",0).toInt());
   ui->comboBoxHoundSort->setCurrentIndex(m_settings->value("HoundSort",3).toInt());
   ui->sbNlist->setValue(m_settings->value("FoxNlist",12).toInt());
-  m_Nslots=m_settings->value("FoxNslots",3).toInt();
+  m_Nslots=m_settings->value("FoxNslots",1).toInt();
   m_Nslots0=m_Nslots;
   if(!m_config.superFox()) ui->sbNslots->setValue(m_Nslots);
   ui->sbSerialNumber->setValue (m_settings->value ("SerialNumber", 1).toInt ());
@@ -2106,10 +2118,11 @@ void MainWindow::readSettings()
   ui->cbRxAll->setChecked (m_settings->value ("RxAll", false).toBool());
 // m_bShMsgs=m_settings->value("ShMsgs",false).toBool();
   m_bSWL=m_settings->value("SWL",false).toBool();
-  m_dtCorrection_ms = m_settings->value("DTCorrection_ms", 0.0).toDouble();
-  m_dtFeedbackEnabled = m_settings->value("DTFeedbackEnabled", true).toBool();
+  // DT feedback permanently disabled - replaced by soundcard drift detection
+  m_dtCorrection_ms = 0.0;
+  m_dtFeedbackEnabled = false;
   m_ntpOffset_ms = m_settings->value("NTPOffset_ms", 0.0).toDouble();
-  m_ntpEnabled = m_settings->value("NTPEnabled", true).toBool();
+  m_ntpEnabled = m_settings->value("NTPEnabled", false).toBool();
   ntp_checkbox.setChecked(m_ntpEnabled);
   m_ntpCustomServer = m_settings->value("NTPCustomServer", "").toString();
   ntp_server_edit.setText(m_ntpCustomServer);
@@ -4425,7 +4438,7 @@ QString MainWindow::userAgent() {
   QString platform = "(" + QSysInfo::prettyProductName()+"; "+QSysInfo::productType() + " " + QSysInfo::productVersion() + "; " +
                      QSysInfo::currentCpuArchitecture() + "; " +
                      QString("rv:%1").arg(QSysInfo::kernelVersion()) + ")";
-  QString userAgent = QString{"Decodium3FT2/" + version() + "_" + m_revision}.simplified() + " " +platform;
+  QString userAgent = QString{"Decodium3SE-KP5/" + version() + "_" + m_revision}.simplified() + " " +platform;
   return userAgent;
   }
 
@@ -4635,11 +4648,9 @@ void MainWindow::statusChanged()
       ui->sbNslots->setValue(m_Nslots0);
     }
   } else {
-    ui->sbNslots->setVisible(true);
+    ui->sbNslots->setVisible(false);   // Nascondere sbNslots per non-Fox
     ui->pbFreeText->setVisible(false);
     ui->cbSendMsg->setVisible(false);
-    ui->sbNslots->setMaximum(5);
-    ui->sbNslots->setValue(m_Nslots0);
   }
   if (SpecOp::HOUND==m_specOp) ui->cbRxAll->setVisible(!m_config.superFox());
   if ((SpecOp::HOUND!=m_specOp && SpecOp::FOX!=m_specOp) or !m_config.superFox()) {
@@ -4709,7 +4720,8 @@ void MainWindow::createStatusBar()                           //createStatusBar
   dt_correction_label.setAlignment(Qt::AlignHCenter);
   dt_correction_label.setMinimumSize(QSize{90, 18});
   dt_correction_label.setFrameStyle(QFrame::Panel | QFrame::Sunken);
-  dt_correction_label.setText("DT:0ms");
+  dt_correction_label.setText("DT:OFF");
+  dt_correction_label.setStyleSheet("QLabel{color:#888;background:#333}");
   statusBar()->addWidget(&dt_correction_label);
 
   ntp_checkbox.setText("NTP");
@@ -4940,7 +4952,7 @@ void MainWindow::on_stopButton_clicked()                       //stopButton
   pounce = false;
   m_autoCQ = false;
   ui->autoCQButton->setChecked(false);
-  ui->autoButton->setChecked(false);  // ensure auoButton is unchecked
+  ui->autoButton->setChecked(false);  // ensure autoButton is unchecked
   m_autoButtonState = false;   //avt 10/2/25
   //debugToFile(QString{"onStopButton m_autoButtonState:%1"}.arg(m_autoButtonState));   //avt 2/2/24
   filtered = false;
@@ -5533,7 +5545,7 @@ void MainWindow::on_actionKeyboard_shortcuts_triggered()
   <tr><td><b>Esc      </b></td><td>Stop Tx, abort QSO, clear next-call queue</td></tr>
   <tr><td><b>F1       </b></td><td>Online User's Guide (Alt: transmit Tx6)</td></tr>
   <tr><td><b>Shift+F1  </b></td><td>Copyright Notice</td></tr>
-  <tr><td><b>Ctrl+F1  </b></td><td>About Decodium 3 FT2</td></tr>
+  <tr><td><b>Ctrl+F1  </b></td><td>About Decodium v3.0 SE KP5</td></tr>
   <tr><td><b>F2       </b></td><td>Open settings window (Alt: transmit Tx2)</td></tr>
   <tr><td><b>F3       </b></td><td>Display keyboard shortcuts (Alt: transmit Tx3)</td></tr>
   <tr><td><b>F4       </b></td><td>Clear DX Call, DX Grid, Tx messages 1-4 (Alt: transmit Tx4)</td></tr>
@@ -6122,60 +6134,9 @@ void MainWindow::decodeDone ()
   }
   to_jt9(m_ihsym,-1,1);                //Tell jt9 we know it has finished
 
-  // DT Feedback Loop: update clock correction from collected DT samples
-  m_dtLastSampleCount = m_dtSamples.size();  // always show actual count
-  if(m_dtFeedbackEnabled && !m_diskData && m_dtLastSampleCount >= m_dtMinSamples) {
-    QVector<double> sorted = m_dtSamples;
-    std::sort(sorted.begin(), sorted.end());
-    int n = m_dtLastSampleCount;
-    double medianDT = (n % 2 == 0) ?
-      (sorted[n/2-1] + sorted[n/2]) / 2.0 : sorted[n/2];
-
-    // Quality gate: compute stddev, skip if too dispersed
-    // FT2 has 6.67x better DT precision → tighter stddev gate (0.2s vs 0.5s)
-    double sum = 0, sum2 = 0;
-    for(auto v : m_dtSamples) { sum += v; sum2 += v*v; }
-    double mean = sum / n;
-    double variance = sum2/n - mean*mean;
-    double stddev = (variance > 0.0) ? sqrt(variance) : 0.0;
-    double stddevLimit = (m_mode=="FT2") ? 0.2 : 0.5;
-
-    if(stddev < stddevLimit) {  // only apply if samples are consistent
-      // DT values from the decoder are ABSOLUTE measurements (not affected
-      // by m_dtCorrection_ms) because the audio buffer is independent of
-      // the clock correction. Use EMA to converge to the true median DT.
-      double newCorr = medianDT * 1000.0;
-      double baseAlpha = (m_mode=="FT2") ? 0.4 : m_dtSmoothFactor;
-
-      // Fast bootstrap: jump directly on first measurement
-      double alpha;
-      if(qAbs(m_dtCorrection_ms) < 1.0 && qAbs(newCorr) > 10.0) {
-        alpha = 1.0;  // first correction, jump directly
-      } else {
-        // Adaptive alpha: converge faster when error is large
-        double error = qAbs(newCorr - m_dtCorrection_ms);
-        alpha = (error > 200.0) ? qMin(baseAlpha * 2.0, 0.8) : baseAlpha;
-      }
-
-      m_dtCorrection_ms = m_dtCorrection_ms*(1.0-alpha) + newCorr*alpha;
-
-      // Wider clamps: NTP handles coarse clock error, DT handles audio latency
-      double clampMs = (m_ntpClient && m_ntpClient->isSynced()) ? 300.0 : 2000.0;
-      if(m_dtCorrection_ms > clampMs) m_dtCorrection_ms = clampMs;
-      if(m_dtCorrection_ms < -clampMs) m_dtCorrection_ms = -clampMs;
-    }
-  }
-  m_dtSamples.clear();  // Reset for next period
-  // Update DT status bar label
-  int dtRounded = qRound(m_dtCorrection_ms);
-  QString dtText = QString("DT:%1%2ms(%3)")
-    .arg(dtRounded > 0 ? "+" : "")
-    .arg(dtRounded)
-    .arg(m_dtLastSampleCount);
-  dt_correction_label.setText(dtText);
-  if(qAbs(m_dtCorrection_ms) < 50) dt_correction_label.setStyleSheet("QLabel{color:#000;background:#00ff00}");
-  else if(qAbs(m_dtCorrection_ms) < 200) dt_correction_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
-  else dt_correction_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
+  // DT Feedback Loop disabled - soundcard drift detection handles this now
+  // DT label is updated by onSoundcardDriftUpdated() signal from Detector
+  m_dtSamples.clear();
 
   m_startAnother=m_loopall;
   if(m_bNoMoreFiles) {
@@ -8091,7 +8052,7 @@ void MainWindow::guiUpdate()
   // Use precise system time + DT feedback correction + NTP offset
   // DT > 0 means signals arrive late → our clock is FAST → subtract correction
   // NTP offset > 0 means our clock is ahead of UTC → subtract offset
-  qint64 ms = (preciseCurrentMSecsSinceEpoch() - qRound64(m_dtCorrection_ms) - qRound64(m_ntpOffset_ms)) % 86400000;
+  qint64 ms = (preciseCurrentMSecsSinceEpoch() - qRound64(m_ntpOffset_ms)) % 86400000;
   if(ms < 0) ms += 86400000;  // handle negative modulo
   int nsec=ms/1000;
   double tsec=0.001*ms;
@@ -8153,7 +8114,7 @@ void MainWindow::guiUpdate()
       if(onAirFreq!=m_onAirFreq0) {
         m_onAirFreq0=onAirFreq;
         auto const& message = tr ("Please choose another Tx frequency."
-                                  " Decodium 3 FT2 will not knowingly transmit another"
+                                  " Decodium v3.0 SE KP5 will not knowingly transmit another"
                                   " mode in the WSPR sub-band on 30m.");
         QTimer::singleShot (0, [=] { // don't block guiUpdate
             MessageBox::warning_message (this, tr ("WSPR Guard Band"), message);
@@ -8172,7 +8133,7 @@ void MainWindow::guiUpdate()
           if (m_tune) stop_tuning();
           auto const& message = tr ("Please choose another dial frequency.\n"
                                     "Must be 3Khz away from %1.\n"
-                                    "Decodium 3 FT2 will not operate in Fox mode\n"
+                                    "Decodium v3.0 SE KP5 will not operate in Fox mode\n"
                                     "overlapping the standard FT8 sub-bands.").arg(ft8Freq[i]);
           QTimer::singleShot (0, [=] {               // don't block guiUpdate
             MessageBox::warning_message (this, tr ("Fox Mode warning"), message);
@@ -8189,7 +8150,7 @@ void MainWindow::guiUpdate()
           if (m_auto) auto_tx_mode (false);
           if (m_tune) stop_tuning();
           auto const& message = tr ("Please choose another dial frequency.\n"
-                                    "Decodium 3 FT2 will not operate in Fox mode\n"
+                                    "Decodium v3.0 SE KP5 will not operate in Fox mode\n"
                                     "overlapping the WSPR sub-bands.").arg(ft8Freq[i]);
           QTimer::singleShot (0, [=] {               // don't block guiUpdate
             MessageBox::warning_message (this, tr ("Fox Mode warning"), message);
@@ -8366,16 +8327,16 @@ void MainWindow::guiUpdate()
             char ft8msgbits[77];
             genft8_(message, &i3, &n3, msgsent, const_cast<char *> (ft8msgbits),
                     const_cast<int *> (itone), (FCL)37, (FCL)37);
-            int nsym=79;
-            int nsps=4*1920;
-            float fsample=48000.0;
-            float bt=2.0;
-            float f0=ui->TxFreqSpinBox->value() - m_XIT;
-            int icmplx=0;
-            int nwave=nsym*nsps;
-            gen_ft8wave_(const_cast<int *>(itone),&nsym,&nsps,&bt,&fsample,&f0,foxcom_.wave,
-                         foxcom_.wave,&icmplx,&nwave);
-            if(SpecOp::FOX == m_specOp) {
+            if (SpecOp::FOX == m_specOp) {
+              int nsym=79;
+              int nsps=4*1920;
+              float fsample=48000.0;
+              float bt=2.0;
+              float f0=ui->TxFreqSpinBox->value() - m_XIT;
+              int icmplx=0;
+              int nwave=nsym*nsps;
+              gen_ft8wave_(const_cast<int *>(itone),&nsym,&nsps,&bt,&fsample,&f0,foxcom_.wave,
+                           foxcom_.wave,&icmplx,&nwave);
               //Fox must generate the full Tx waveform, not just an itone[] array.
               QString fm = QString::fromStdString(message).trimmed();
               foxGenWaveform(0,fm);
@@ -8394,6 +8355,17 @@ void MainWindow::guiUpdate()
                 writeFoxTxMsgs();
                 sfox_tx();
               }
+            } else {
+              // Single-slot (unico path per non-Fox)
+              int nsym=79;
+              int nsps=4*1920;
+              float fsample=48000.0;
+              float bt=2.0;
+              float f0=ui->TxFreqSpinBox->value() - m_XIT;
+              int icmplx=0;
+              int nwave=nsym*nsps;
+              gen_ft8wave_(const_cast<int *>(itone),&nsym,&nsps,&bt,&fsample,&f0,foxcom_.wave,
+                           foxcom_.wave,&icmplx,&nwave);
             }
           }
         }
@@ -8405,15 +8377,15 @@ void MainWindow::guiUpdate()
             char ft2msgbits[77];
             genft2_(message, &ichk, msgsent, const_cast<char *> (ft2msgbits),
                     const_cast<int *>(itone), (FCL)37, (FCL)37);
-            int nsym=103;
-            int nsps=4*288;    // 1152 at 48000 Hz TX
-            float fsample=48000.0;
-            float f0=ui->TxFreqSpinBox->value() - m_XIT;
-            int nwave=(nsym+2)*nsps;
-            int icmplx=0;
-            gen_ft2wave_(const_cast<int *>(itone),&nsym,&nsps,&fsample,&f0,foxcom_.wave,
-                         foxcom_.wave,&icmplx,&nwave);
-            if(SpecOp::FOX == m_specOp) {
+            if (SpecOp::FOX == m_specOp) {
+              int nsym=103;
+              int nsps=4*288;    // 1152 at 48000 Hz TX
+              float fsample=48000.0;
+              float f0=ui->TxFreqSpinBox->value() - m_XIT;
+              int nwave=(nsym+2)*nsps;
+              int icmplx=0;
+              gen_ft2wave_(const_cast<int *>(itone),&nsym,&nsps,&fsample,&f0,foxcom_.wave,
+                           foxcom_.wave,&icmplx,&nwave);
               //Fox must generate the full Tx waveform, not just an itone[] array.
               QString fm = QString::fromStdString(message).trimmed();
               foxGenWaveform(0,fm);
@@ -8426,6 +8398,16 @@ void MainWindow::guiUpdate()
               foxcom_.bSendMsg=ui->cbSendMsg->isChecked();
               memcpy(foxcom_.textMsg, m_freeTextMsg.leftJustified(26,' ').toLatin1(),26);
               foxgenft2_();
+            } else {
+              // Single-slot (unico path per non-Fox)
+              int nsym=103;
+              int nsps=4*288;    // 1152 at 48000 Hz TX
+              float fsample=48000.0;
+              float f0=ui->TxFreqSpinBox->value() - m_XIT;
+              int nwave=(nsym+2)*nsps;
+              int icmplx=0;
+              gen_ft2wave_(const_cast<int *>(itone),&nsym,&nsps,&fsample,&f0,foxcom_.wave,
+                           foxcom_.wave,&icmplx,&nwave);
             }
           }
         }
@@ -8632,6 +8614,44 @@ void MainWindow::guiUpdate()
   }
 
   if (g_iptt == 1 && m_iptt0 == 0) {
+    // Auto CQ retry logic (only when Auto CQ mode is active)
+    if (m_autoCQ && !m_tune) {
+      if (m_ntx >= 2 && m_ntx <= 4) {
+        // Rule 1: Tx2/Tx3/Tx4 repeated 3 times without response → return to CQ (Tx6)
+        if (m_ntx == m_lastNtx) {
+          ++m_txRetryCount;
+          if (m_txRetryCount >= MAX_TX_RETRIES) {
+            qDebug () << "AutoCQ: Tx" << m_ntx << "sent" << MAX_TX_RETRIES << "times without response, returning to CQ";
+            m_txRetryCount = 0;
+            m_lastNtx = -1;
+            m_cqRetryCount = 0;
+            // Reset to CQ without disabling TX (set CALLING so clearDX skips auto_tx_mode(false))
+            QTimer::singleShot (0, this, [this] () {
+              m_QSOProgress = CALLING;
+              clearDX ();
+            });
+          }
+        } else {
+          m_txRetryCount = 0;
+          m_lastNtx = m_ntx;
+        }
+      } else if (m_ntx == 6) {
+        // Rule 2: CQ (Tx6) repeated 10 times without response → toggle Tx Even/1st
+        ++m_cqRetryCount;
+        if (m_cqRetryCount >= MAX_CQ_RETRIES && ui->cbAutoTogglePeriod->isChecked ()) {
+          m_cqRetryCount = 0;
+          m_txFirst = !m_txFirst;
+          ui->txFirstCheckBox->setChecked (m_txFirst);
+          qDebug () << "AutoCQ: CQ sent" << MAX_CQ_RETRIES << "times without response, toggling Tx period to"
+                    << (m_txFirst ? "1st" : "Even");
+        }
+        m_txRetryCount = 0;
+        m_lastNtx = 6;
+      } else {
+        m_txRetryCount = 0;
+        m_lastNtx = m_ntx;
+      }
+    }
     auto const& current_message = QString::fromLatin1 (msgsent);
     if(m_config.watchdog () && m_mode!="WSPR" && m_mode!="FST4W"
        && current_message != m_msgSent0) {
@@ -9725,6 +9745,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
              || "RR73" == word_3
              || ("R" == word_3 && m_QSOProgress != REPORT))) {
           if((m_mode=="FT2" or m_mode=="FT4") and "RR73" == word_3) m_dateTimeRcvdRR73=QDateTime::currentDateTimeUtc();
+          m_txRetryCount = 0; m_lastNtx = -1; m_cqRetryCount = 0;  // Reset Tx retry counter on valid response
           m_bTUmsg=false;
           m_nextCall="";   //### Temporary: disable use of "TU;" message
           if(SpecOp::RTTY == m_specOp and m_nextCall!="") {
@@ -9798,6 +9819,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                    (m_mode=="MSK144" or m_mode=="FT8" or m_mode=="FT2" or m_mode=="FT4" || "Q65" == m_mode)))
                   && word_3.startsWith ('R')) {
           m_ntx=4;
+          m_txRetryCount = 0; m_lastNtx = -1; m_cqRetryCount = 0;  // Reset Tx retry counter on R+rpt response
           m_QSOProgress = ROGERS;
           if(SpecOp::RTTY == m_specOp) {
             int n=t.size();
@@ -10003,6 +10025,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
 void MainWindow::setTxMsg(int n)
 {
   m_ntx=n;
+  if (n != m_lastNtx) { m_txRetryCount = 0; m_lastNtx = -1; m_cqRetryCount = 0; }  // Reset Tx retry counter when Tx changes
   if(n==1) ui->txrb1->setChecked(true);
   if(n==2) ui->txrb2->setChecked(true);
   if(n==3) ui->txrb3->setChecked(true);
@@ -10376,6 +10399,7 @@ void MainWindow::clearDX ()
   m_qsoStart.clear ();
   m_qsoStop.clear ();
   m_inQSOwith.clear();
+  m_txRetryCount = 0; m_lastNtx = -1; m_cqRetryCount = 0;  // Reset Tx retry counter on QSO clear
   genStdMsgs (QString {});
   if ((m_mode=="FT8" or m_mode=="FT2") and SpecOp::HOUND == m_specOp) {
     m_ntx=1;
@@ -12928,7 +12952,7 @@ void MainWindow::on_stopTxButton_clicked()                    // Stop Tx
       mindBPoints=99;                     // reset points
   }
   pounce = false;
-  ui->autoButton->setChecked(false);  // ensure auoButton is unchecked
+  ui->autoButton->setChecked(false);  // ensure autoButton is unchecked
   m_autoButtonState = false;   //avt 10/2/25
   debugToFile(QString{"onStopTxButt 1 m_autoButtonState:%1"}.arg(m_autoButtonState));   //avt 2/2/24
   filtered = false;
@@ -13608,7 +13632,7 @@ void MainWindow::pskSetLocal ()
   if (rig_information.contains("OmniRig")) rig_information = "N/A (OmniRig)";
   if (rig_information == "FLRig") rig_information = "N/A (FLRig)";
   if (rig_information.contains("TCI Cli")) rig_information = "N/A (TCI)";
-  m_psk_Reporter.setLocalStation(m_config.my_callsign (), m_config.my_grid (), antenna_description, rig_information, QString {"Decodium 3 FT2 v" + version () + " " + m_revision}.simplified ());
+  m_psk_Reporter.setLocalStation(m_config.my_callsign (), m_config.my_grid (), antenna_description, rig_information, QString {"Decodium v3.0 SE KP5 v" + version () + " " + m_revision}.simplified ());
 }
 
 void MainWindow::transmitDisplay (bool transmitting)
@@ -14433,7 +14457,7 @@ void MainWindow::WSPR_scheduling ()
     int n=t.right (1).toInt (&ok);
     if (!ok || 0 == n) return;
 
-    qint64 ms = (preciseCurrentMSecsSinceEpoch() - qRound64(m_dtCorrection_ms) - qRound64(m_ntpOffset_ms)) % 86400000;
+    qint64 ms = (preciseCurrentMSecsSinceEpoch() - qRound64(m_ntpOffset_ms)) % 86400000;
     if(ms < 0) ms += 86400000;  // handle negative modulo
     int nsec=ms/1000;
     int ntr=m_TRperiod;
@@ -14993,14 +15017,17 @@ void MainWindow::on_sbNlist_valueChanged(int n)
 
 void MainWindow::on_sbNslots_valueChanged(int n)
 {
-  if(m_specOp!=SpecOp::FOX) return;
-  if(m_config.superFox()) return;  // Don't allow setting m_Nslots manually in SF mode
+  if(m_config.superFox() && m_specOp==SpecOp::FOX) return;
   m_Nslots=n;
-  if(m_specOp!=SpecOp::FOX) return;
-  QString t;
-  t = t.asprintf(" NSlots %d",m_Nslots);
-  writeFoxQSO(t);
+  if(m_specOp==SpecOp::FOX) {
+    QString t;
+    t = t.asprintf(" NSlots %d",m_Nslots);
+    writeFoxQSO(t);
+  }
   if(!m_config.superFox()) m_Nslots0=n;
+  // Update multi-slot markers on waterfall
+  int spacing = (m_mode=="FT2") ? 200 : 60;
+  m_wideGraph->setMultiSlot(m_Nslots, spacing);
 }
 
 void MainWindow::FoxReset(QString reason="")
@@ -15751,6 +15778,7 @@ void MainWindow::foxQueueTopCallCommand()
       selectHound(houndCallLine, true);  // alt double-click gets put at top of queue
     }
 }
+
 
 void MainWindow::foxGenWaveform(int i,QString fm)
 {
@@ -16949,9 +16977,9 @@ void MainWindow::on_actionDiagnostic_mode_triggered()
             "                                     DIAGNOSTIC MODE\n"
             "\n"
             "You have switched to diagnostic mode. It allows you to collect data to\n"
-            "troubleshoot problems with Decodium 3 FT2, or its communication with your rig.\n"
+            "troubleshoot problems with Decodium v3.0 SE KP5, or its communication with your rig.\n"
             "\n"
-            "The diagnostic mode is active after closing and restarting Decodium 3 FT2,\n"
+            "The diagnostic mode is active after closing and restarting Decodium v3.0 SE KP5,\n"
             "and is then automatically deactivated when the program is next closed.\n"
             "In the diagnostic mode a new \"logs\" folder appears on your screen, and\n"
             "in it two files are created: \"wsjtx_syslog.log\" and \"WSJT-X_RigControl.log\".\n"
@@ -17133,7 +17161,7 @@ void MainWindow::check_button_color()
     }
     if (pounce && !m_auto) {
         ui->autoButton->setStyleSheet("QPushButton {background-color: #ff7a05; border: 1px solid #32414B; border-radius: 5px; padding: 3px; outline: none; min-width: 5em;}");
-        ui->autoButton->setChecked(false);  // ensure auoButton is unchecked
+        ui->autoButton->setChecked(false);  // ensure autoButton is unchecked
         m_autoButtonState = false;   //avt 10/2/25
         debugToFile(QString{"onStopTxButt 2 m_autoButtonState:%1"}.arg(m_autoButtonState));   //avt 2/2/24
     }
@@ -18233,11 +18261,11 @@ void MainWindow::on_actionDownload_from_LOTW_triggered()
   QString logFilePathName = m_config.writeable_data_dir().absolutePath() + "/" + FULL_LOG_FNAME;
   if (m_firstLotwDl and QFile::exists(logFilePathName)) {
     if (MessageBox::No == MessageBox::query_message (this,
-      QString {"This is your first request to download your complete QSO history from LOTW by Decodium 3 FT2.\n\n"} +
+      QString {"This is your first request to download your complete QSO history from LOTW by Decodium v3.0 SE KP5.\n\n"} +
       QString {"IMPORTANT!!! Before continuing:\n"} +
       QString {"- Be sure you have already uploaded your current QSOs to LOTW, by whatever method you previously used (manually with TQSL and wsjt_log.adi, or automatically with a separate logging program).\n"} +
       QString {"- Allow enough time after this upload for LOTW to process it.\n\n"} +
-      QString {"Note: All QSO activity is archived in the 'Decodium 3 FT2 log directory', which is accessible from the File menu.\n\n"} +
+      QString {"Note: All QSO activity is archived in the 'Decodium v3.0 SE KP5 log directory', which is accessible from the File menu.\n\n"} +
       QString {"Are you ready to continue with downloading QSOs from LOTW?"})) return;
 
     //backup log file
@@ -18686,7 +18714,7 @@ void MainWindow::lotwError (QProcess * process, QProcess::ProcessError)
 //avt
 void MainWindow::download (QUrl url) {
   QNetworkRequest request {url};
-  request.setRawHeader("User-Agent", "Decodium3FT2 Downloader");
+  request.setRawHeader("User-Agent", "Decodium3SE-KP5 Downloader");
   request.setOriginatingObject (this);
 
   // this blocks for a second or two the first time it is used on
@@ -18882,11 +18910,15 @@ void MainWindow::onNtpOffsetUpdated(double offsetMs)
 {
   m_ntpOffset_ms = offsetMs;
   int rounded = qRound(offsetMs);
-  QString text = QString("NTP:%1%2ms").arg(rounded > 0 ? "+" : "").arg(rounded);
+  int srvCount = m_ntpClient ? m_ntpClient->lastServerCount() : 0;
+  QString text = QString("NTP:%1%2ms(%3srv)")
+    .arg(rounded > 0 ? "+" : "")
+    .arg(rounded)
+    .arg(srvCount);
   ntp_status_label.setText(text);
-  if(qAbs(offsetMs) < 100)
+  if(qAbs(offsetMs) < 20)
     ntp_status_label.setStyleSheet("QLabel{color:#000;background:#00ff00}");
-  else if(qAbs(offsetMs) < 500)
+  else if(qAbs(offsetMs) < 100)
     ntp_status_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
   else
     ntp_status_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
@@ -18899,5 +18931,30 @@ void MainWindow::onNtpSyncStatusChanged(bool synced, QString const& statusText)
     ntp_status_label.setStyleSheet("QLabel{color:#888;background:#333}");
   }
   ntp_status_label.setToolTip(statusText);
+}
+
+void MainWindow::onSoundcardDriftUpdated(double driftMsPerPeriod, double driftPpm)
+{
+  m_soundcardDriftPpm = driftPpm;
+  m_soundcardDriftMsPerPeriod = driftMsPerPeriod;
+
+  // Update the DT label with soundcard drift info
+  QString text = QString("SC:%1%2ppm")
+    .arg(driftPpm > 0 ? "+" : "")
+    .arg(driftPpm, 0, 'f', 1);
+  dt_correction_label.setText(text);
+  dt_correction_label.setToolTip(
+    QString("Soundcard drift: %1 ppm (%2%3 ms/period)")
+    .arg(driftPpm, 0, 'f', 2)
+    .arg(driftMsPerPeriod > 0 ? "+" : "")
+    .arg(driftMsPerPeriod, 0, 'f', 2));
+
+  // Color: green if drift low, yellow if medium, red if high
+  if(qAbs(driftPpm) < 10.0)
+    dt_correction_label.setStyleSheet("QLabel{color:#000;background:#00ff00}");
+  else if(qAbs(driftPpm) < 50.0)
+    dt_correction_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
+  else
+    dt_correction_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
 }
 
