@@ -62,7 +62,7 @@ public:
     auto file = name_we + '_' + lang + '-' + version () + ".html";
     auto target = url.resolved (file);
     QNetworkRequest request {target};
-    request.setRawHeader ("User-Agent", "Decodium3FT2 Manual Checker");
+    request.setRawHeader ("User-Agent", "Decodium3SE-KP5 Manual Checker");
     request.setOriginatingObject (new token {url, lang, name_we, this});
     auto * reply = qnam_->head (request);
     outstanding_requests_ << reply;
@@ -85,7 +85,7 @@ public:
                     file = tok->name_we_ + '_' + tok->lang_ + '-' + version () + ".html";
                     target = tok->url_.resolved (file);
                     QNetworkRequest request {target};
-                    request.setRawHeader ("User-Agent", "Decodium3FT2 Manual Checker");
+                    request.setRawHeader ("User-Agent", "Decodium3SE-KP5 Manual Checker");
                     request.setOriginatingObject (tok);
                     auto * reply = qnam_->head (request);
                     outstanding_requests_ << reply;

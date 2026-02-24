@@ -4,6 +4,8 @@
 #include <objbase.h>
 #include <QThread>
 #include <QEventLoop>
+#include <QProcess>
+#include <QFile>
 
 #include "qt_helpers.hpp"
 
@@ -127,6 +129,38 @@ int OmniRigTransceiver::do_start ()
     {
       if (wrapped_) wrapped_->start (0);
 
+      // Ensure OmniRig.exe is running before COM activation
+      {
+        bool running = false;
+        {
+          OmniRig::OmniRigX test {this};
+          running = !test.isNull ();
+        }
+        if (!running)
+          {
+            QStringList paths = {
+              "C:/Program Files (x86)/Afreet/OmniRig/OmniRig.exe",
+              "C:/Program Files/Afreet/OmniRig/OmniRig.exe"
+            };
+            for (auto const& path : paths)
+              {
+                if (QFile::exists (path))
+                  {
+                    CAT_INFO ("OmniRig not running, launching: " << path);
+                    QProcess::startDetached (path, {});
+                    // Wait for COM server to become available (up to 5 seconds)
+                    for (int i = 0; i < 10; ++i)
+                      {
+                        QThread::msleep (500);
+                        OmniRig::OmniRigX test2 {this};
+                        if (!test2.isNull ()) break;
+                      }
+                    break;
+                  }
+              }
+          }
+      }
+
       omni_rig_.reset (new OmniRig::OmniRigX {this});
       if (omni_rig_->isNull ())
         {
@@ -145,7 +179,6 @@ int OmniRigTransceiver::do_start ()
       connect (&*omni_rig_
                , SIGNAL (CustomReply (int, QVariant const&, QVariant const&))
                , this, SLOT (handle_custom_reply (int, QVariant const&, QVariant const&)));
-
       CAT_INFO ("OmniRig s/w version: " << static_cast<quint16> (omni_rig_->SoftwareVersion () >> 16)
                 << '.' << static_cast<quint16> (omni_rig_->SoftwareVersion () & 0xffff)
                 << " i/f version: " << static_cast<int> (omni_rig_->InterfaceVersion () >> 8 & 0xff)
@@ -172,7 +205,8 @@ int OmniRigTransceiver::do_start ()
         {
           // leave some time for Omni-Rig to do its first poll
           QThread::msleep (300);
-          if (OmniRig::ST_ONLINE == rig_->Status ())
+          auto st = rig_->Status ();
+          if (OmniRig::ST_ONLINE == st)
             {
               break;
             }

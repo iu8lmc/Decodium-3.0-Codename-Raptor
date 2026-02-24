@@ -706,6 +706,31 @@ void CPlotter::DrawOverlay()                   //DrawOverlay()
     painter0.drawLine(x2,yTxTop,x2,yTxTop+yh);
   }
 
+  // === Multi-slot markers (orange dashed goal posts + bars) ===
+  if(m_Nslots > 1 && (m_mode=="FT8" || m_mode=="FT2")) {
+    QPen penSlot(QColor(255,165,0), 2, Qt::DashLine);   // orange dashed
+    painter0.setPen(penSlot);
+    for(int i=1; i<m_Nslots; i++) {
+      float slotFreq = m_txFreq + i * m_slotSpacing;
+      x1=XfromFreq(slotFreq);
+      x2=XfromFreq(slotFreq + bw);
+      // Goal post on frequency scale
+      painter0.drawLine(x1,yTxTop,x1,yTxTop+yh);
+      painter0.drawLine(x1,yTxTop,x2,yTxTop);
+      painter0.drawLine(x2,yTxTop,x2,yTxTop+yh);
+    }
+    if(m_bars) {
+      overPainter.setPen(QColor(255,165,0));             // orange bars
+      for(int i=1; i<m_Nslots; i++) {
+        float slotFreq = m_txFreq + i * m_slotSpacing;
+        int sx1=XfromFreq(slotFreq);
+        int sx2=XfromFreq(slotFreq + bw);
+        overPainter.drawLine(sx1,0,sx1,m_h);
+        overPainter.drawLine(sx2,0,sx2,m_h);
+      }
+    }
+  }
+
   QPainter hoverPainter(&m_HoverOverlayPixmap);
   if (m_bars) {
     if (!hoverPainter.isActive()) hoverPainter.begin(this);
@@ -1002,6 +1027,12 @@ void CPlotter::setSuperFox(bool b)
 {
   m_bSuperFox=b;
   if(m_bSuperFox) m_bSuperHound=false;
+}
+void CPlotter::setMultiSlot(int nslots, int spacing)
+{
+  m_Nslots=nslots;
+  m_slotSpacing=spacing;
+  DrawOverlay();
 }
 void CPlotter::setSuperHound(bool b)
 {

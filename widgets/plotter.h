@@ -82,6 +82,8 @@ public:
   void setTol(int n);
   void setSuperFox(bool b);
   void setSuperHound(bool b);
+  void setMultiSlot(int nslots, int spacing);
+  int  nSlots() const {return m_Nslots;}
   void setRxBand(QString band);
   void setReference(bool b) {m_bReference = b;}
   bool Reference() const {return m_bReference;}
@@ -133,6 +135,8 @@ private:
   bool    m_bResized;
   bool    m_bSuperFox=false;
   bool    m_bSuperHound=false;
+  qint32  m_Nslots=1;
+  qint32  m_slotSpacing=60;
   bool	  m_bars;
   bool    m_freq;
   float   m_fSpan;

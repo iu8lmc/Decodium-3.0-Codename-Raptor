@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Decodium 3 FT2</string>
+   <string>Decodium v3.0 SE KP5</string>
   </property>
   <widget class="QLabel" name="label">
    <property name="geometry">

@@ -133,7 +133,7 @@ void RemoteFile::download (QUrl url)
       url.setScheme ("http");
     }
   QNetworkRequest request {url};
-  request.setRawHeader ("User-Agent", "Decodium3FT2 Sample Downloader");
+  request.setRawHeader ("User-Agent", "Decodium3SE-KP5 Sample Downloader");
   request.setOriginatingObject (this);
 
   // this blocks for a second or two the first time it is used on

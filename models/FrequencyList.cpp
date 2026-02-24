@@ -151,7 +151,7 @@ namespace
       {7038600, Modes::FST4W, IARURegions::ALL, "","", QDateTime(), QDateTime(), false},
       {7056000, Modes::FT8, IARURegions::ALL, "","", QDateTime(), QDateTime(), false}, // DXpedition
       {7074000, Modes::FT8, IARURegions::ALL, "","", QDateTime(), QDateTime(), true},
-      {7052000, Modes::FT2, IARURegions::ALL, "","", QDateTime(), QDateTime(), true},
+      {7062000, Modes::FT2, IARURegions::ALL, "","", QDateTime(), QDateTime(), true},
       {7076000, Modes::JT65, IARURegions::ALL, "","", QDateTime(), QDateTime(), false},
       {7078000, Modes::JT9, IARURegions::ALL, "","", QDateTime(), QDateTime(), false},
       {7047500, Modes::FT4, IARURegions::ALL, "","", QDateTime(), QDateTime(), true}, // provisional - moved

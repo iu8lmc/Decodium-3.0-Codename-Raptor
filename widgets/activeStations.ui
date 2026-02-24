@@ -204,7 +204,7 @@
         </sizepolicy>
        </property>
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Click on a line to call that station. &lt;/p&gt;&lt;p&gt;When using QMAP, single click to transfer QSO data and sked frequency to Decodium 3 FT2, and double click to call that station.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Click on a line to call that station. &lt;/p&gt;&lt;p&gt;When using QMAP, single click to transfer QSO data and sked frequency to Decodium v3.0 SE KP5, and double click to call that station.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>

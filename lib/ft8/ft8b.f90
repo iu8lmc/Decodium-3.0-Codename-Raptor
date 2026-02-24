@@ -246,7 +246,7 @@ subroutine ft8b(dd0,newdat,nQSOProgress,nfqso,nftx,ndepth,nzhsym,lapon,     &
   call normalizebmet(bmetd,174)
   call normalizebmet(bmete,174)
 
-  scalefac=2.83
+  scalefac=3.2
   llra=scalefac*bmeta
   llrb=scalefac*bmetb
   llrc=scalefac*bmetc

@@ -2340,7 +2340,7 @@ comments field.</string>
           <item row="4" column="0">
            <widget class="QCheckBox" name="log_as_RTTY_check_box">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some logging programs will not accept Decodium 3 FT2 mode names.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some logging programs will not accept Decodium v3.0 SE KP5 mode names.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Con&amp;vert mode to RTTY</string>
@@ -2440,7 +2440,7 @@ comments field.</string>
             <item row="1" column="1">
              <widget class="QSpinBox" name="udp_server_port_spin_box">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter the service port number of the UDP server that Decodium 3 FT2 should send updates to. If this is zero no updates will be sent.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter the service port number of the UDP server that Decodium v3.0 SE KP5 should send updates to. If this is zero no updates will be sent.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="maximum">
                <number>65534</number>
@@ -2460,7 +2460,7 @@ comments field.</string>
             <item row="2" column="1">
              <widget class="CheckableItemComboBox" name="udp_interfaces_combo_box">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When sending updates to a multicast group address it is necessary to specify which network interface(s) to send them to. If the loop-back interface is multicast capable then at least that one will be selected.&lt;/p&gt;&lt;p&gt;For most users the loop-back interface is all that is needed, that will allow multiple other applications on the same machine to interoperate with Decodium 3 FT2. If applications running on other hosts are to receive status updates then a suitable network interface should be used.&lt;/p&gt;&lt;p&gt;On some Linux systems it may be necessary to enable multicast on the loop-back network interface.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When sending updates to a multicast group address it is necessary to specify which network interface(s) to send them to. If the loop-back interface is multicast capable then at least that one will be selected.&lt;/p&gt;&lt;p&gt;For most users the loop-back interface is all that is needed, that will allow multiple other applications on the same machine to interoperate with Decodium v3.0 SE KP5. If applications running on other hosts are to receive status updates then a suitable network interface should be used.&lt;/p&gt;&lt;p&gt;On some Linux systems it may be necessary to enable multicast on the loop-back network interface.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -2494,7 +2494,7 @@ comments field.</string>
             <item>
              <widget class="QCheckBox" name="accept_udp_requests_check_box">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;With this enabled Decodium 3 FT2 will accept certain requests back from a UDP server that receives decode messages.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;With this enabled Decodium v3.0 SE KP5 will accept certain requests back from a UDP server that receives decode messages.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Accept UDP requests</string>
@@ -2535,7 +2535,7 @@ comments field.</string>
           <item row="0" column="0" colspan="2">
            <widget class="QCheckBox" name="enable_n1mm_broadcast_check_box">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When checked, Decodium 3 FT2 will broadcast a logged contact in ADIF format to the configured hostname and port. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When checked, Decodium v3.0 SE KP5 will broadcast a logged contact in ADIF format to the configured hostname and port. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Enable logged contact ADIF broadcast</string>
@@ -2572,7 +2572,7 @@ comments field.</string>
           <item row="2" column="1">
            <widget class="QSpinBox" name="n1mm_server_port_spin_box">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter the port number that Decodium 3 FT2 should use for UDP broadcasts of ADIF log information. For N1MM Logger+, this value should be 2333. If this is zero,  no updates will be broadcast.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter the port number that Decodium v3.0 SE KP5 should use for UDP broadcasts of ADIF log information. For N1MM Logger+, this value should be 2333. If this is zero,  no updates will be broadcast.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
              <number>65534</number>
@@ -2608,7 +2608,7 @@ comments field.</string>
        <item>
         <widget class="QGroupBox" name="groupBox_3">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;See &amp;quot;Frequency Calibration&amp;quot; in the Decodium 3 FT2 User Guide for details of how to determine these parameters for your radio.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;See &amp;quot;Frequency Calibration&amp;quot; in the Decodium v3.0 SE KP5 User Guide for details of how to determine these parameters for your radio.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="title">
           <string>Frequency Calibration</string>
@@ -2828,14 +2828,14 @@ Right click for insert and delete options.</string>
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Push to reset all highlight items above to default values and priorities.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
-               <string>Reset Highlighting to Decodium 3 FT2 default</string>
+               <string>Reset Highlighting to Decodium v3.0 SE KP5 default</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QPushButton" name="reset_highlighting_to_defaults2_push_button">
               <property name="text">
-               <string>Reset Highlighting to Decodium 3 FT2 Improved default</string>
+               <string>Reset Highlighting to Decodium v3.0 SE KP5 Improved default</string>
               </property>
              </widget>
             </item>

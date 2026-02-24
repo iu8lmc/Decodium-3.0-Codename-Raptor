@@ -132,7 +132,7 @@ contains
        if(ndepth.le.2) lrefinedt=.false.
        call timer('sub_ft8b',0)
        do i=1,ndec_early
-          if(xdt_save(i)-0.5.lt.0.396) then
+          if(xdt_save(i)-0.5.lt.0.500) then
              call subtractft8(dd,itone_save(1,i),f1_save(i),xdt_save(i),  &
                   lrefinedt)
              lsubtracted(i)=.true.
@@ -178,8 +178,8 @@ contains
     if(ndepth.eq.1) npass=2
     do ipass=1,npass
       newdat=.true.
-      syncmin=1.3
-      if(ndepth.le.2) syncmin=2.1
+      syncmin=1.0
+      if(ndepth.le.2) syncmin=1.8
 !      if(nzhsym.eq.41) syncmin=2.0
       if(ipass.eq.1) then
         lsubtract=.true.

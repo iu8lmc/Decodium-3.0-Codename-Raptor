@@ -44,6 +44,7 @@ public:
   void   setTol(int n);
   void   setSuperFox(bool b);
   void   setSuperHound(bool b);
+  void   setMultiSlot(int nslots, int spacing);
   int    smoothYellow();
   void   setRxBand (QString const& band);
   void   setWSPRtransmitted();
