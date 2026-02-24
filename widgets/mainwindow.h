@@ -1037,13 +1037,19 @@ private:
   bool m_externalCtrl;         //avt  10/1/25
   bool m_autoButtonState;     //avt 10/2/25
 
-  //---- DT Feedback Loop (disabled - replaced by soundcard drift detection) ----
+  //---- DT Feedback Loop ----
   QVector<double> m_dtSamples;        // DT values collected in current period
   double m_dtCorrection_ms {0.0};     // accumulated time correction (milliseconds)
-  double m_dtSmoothFactor {0.3};      // exponential smoothing factor (0-1)
+  double m_dtSmoothFactor {0.3};      // EMA smoothing factor (0-1)
   int m_dtMinSamples {3};             // minimum decodes before applying correction
-  bool m_dtFeedbackEnabled {false};   // permanently disabled
+  bool m_dtFeedbackEnabled {true};    // enabled — applies NTP+DT correction to Detector
   int m_dtLastSampleCount {0};        // sample count for status display
+
+  // Decode timing statistics
+  qint64 m_decodeStartMs {0};         // timestamp when decode was triggered
+  double m_lastDecodeLatencyMs {0.0}; // last decode cycle latency
+  double m_avgDtValue {0.0};          // EMA of DT values across periods
+  int m_totalDecodesForDt {0};        // total decodes used for DT calculation
 
   // Soundcard clock drift detection
   double m_soundcardDriftPpm {0.0};
@@ -1119,6 +1125,7 @@ private:
   void rm_tb4(QString houndCall);
   void read_wav_file (QString const& fname);
   void decodeDone ();
+  void applyDtFeedback ();
   bool subProcessFailed (QProcess *, int exit_code, QProcess::ExitStatus);
   void subProcessError (QProcess *, QProcess::ProcessError);
   void statusUpdate () const;

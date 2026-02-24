@@ -663,6 +663,8 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   connect (this, &MainWindow::FFTSize, m_detector, &Detector::setBlockSize);
   connect(m_detector, &Detector::framesWritten, this, &MainWindow::dataSink);
   connect(m_detector, &Detector::soundcardDriftUpdated, this, &MainWindow::onSoundcardDriftUpdated);
+  // Forward NTP offset to Detector for period boundary correction
+  connect(m_ntpClient, &NtpClient::offsetUpdated, m_detector, &Detector::setNtpOffset);
   connect (&m_audioThread, &QThread::finished, m_detector, &QObject::deleteLater);
 
   // setup the waterfall
@@ -1293,6 +1295,8 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   if (m_ntpEnabled) {
     m_ntpClient->setInitialOffset(m_ntpOffset_ms);
     m_ntpClient->setEnabled(true);
+    // Forward initial NTP offset to Detector for period boundary correction
+    if (m_detector) m_detector->setNtpOffset(m_ntpOffset_ms);
   }
 
   if(m_mode=="Q65") {
@@ -2118,9 +2122,9 @@ void MainWindow::readSettings()
   ui->cbRxAll->setChecked (m_settings->value ("RxAll", false).toBool());
 // m_bShMsgs=m_settings->value("ShMsgs",false).toBool();
   m_bSWL=m_settings->value("SWL",false).toBool();
-  // DT feedback permanently disabled - replaced by soundcard drift detection
+  // DT feedback re-enabled — works together with soundcard drift and NTP correction
   m_dtCorrection_ms = 0.0;
-  m_dtFeedbackEnabled = false;
+  m_dtFeedbackEnabled = true;
   m_ntpOffset_ms = m_settings->value("NTPOffset_ms", 0.0).toDouble();
   m_ntpEnabled = m_settings->value("NTPEnabled", false).toBool();
   ntp_checkbox.setChecked(m_ntpEnabled);
@@ -6086,6 +6090,7 @@ void MainWindow::decode()                                       //decode()
         memcpy(to, from, qMin(mem_jt9->size(), size));
         mem_jt9->unlock ();
         to_jt9(m_ihsym,1,-1);                //Send m_ihsym to jt9[.exe] and start decoding
+        m_decodeStartMs = QDateTime::currentMSecsSinceEpoch();
         decodeBusy(true);
       }
     }
@@ -6192,9 +6197,8 @@ void MainWindow::decodeDone ()
   }
   to_jt9(m_ihsym,-1,1);                //Tell jt9 we know it has finished
 
-  // DT Feedback Loop disabled - soundcard drift detection handles this now
-  // DT label is updated by onSoundcardDriftUpdated() signal from Detector
-  m_dtSamples.clear();
+  // DT Feedback Loop: apply correction from decoded DT values
+  applyDtFeedback();
 
   m_startAnother=m_loopall;
   if(m_bNoMoreFiles) {
@@ -6219,6 +6223,67 @@ void MainWindow::decodeDone ()
                         and m_ActiveStationsWidget!=NULL) {
     refreshPileupList();
   }
+}
+
+void MainWindow::applyDtFeedback()
+{
+  m_dtLastSampleCount = m_dtSamples.size();
+
+  if (m_dtFeedbackEnabled && m_dtSamples.size() >= m_dtMinSamples && !m_diskData) {
+    // Use median for robustness against outliers
+    QVector<double> sorted = m_dtSamples;
+    std::sort(sorted.begin(), sorted.end());
+    double medianDt = sorted[sorted.size() / 2];
+
+    // EMA smoothing of median DT
+    if (m_totalDecodesForDt == 0) {
+      m_avgDtValue = medianDt;
+    } else {
+      m_avgDtValue = m_dtSmoothFactor * medianDt + (1.0 - m_dtSmoothFactor) * m_avgDtValue;
+    }
+    m_totalDecodesForDt += m_dtSamples.size();
+
+    // Convert DT (seconds) to ms correction — negative DT means we're
+    // starting too early, so we need positive correction
+    double correctionStep = -m_avgDtValue * 1000.0 * m_dtSmoothFactor;
+
+    // Clamp correction step to avoid wild jumps (max 50ms per period)
+    correctionStep = qBound(-50.0, correctionStep, 50.0);
+    m_dtCorrection_ms += correctionStep;
+
+    // Clamp total correction to sane range (+/-500ms)
+    m_dtCorrection_ms = qBound(-500.0, m_dtCorrection_ms, 500.0);
+
+    // Apply to Detector
+    if (m_detector) m_detector->setDriftCorrection(m_dtCorrection_ms);
+  }
+
+  // Calculate decode latency
+  if (m_decodeStartMs > 0) {
+    m_lastDecodeLatencyMs = QDateTime::currentMSecsSinceEpoch() - m_decodeStartMs;
+    m_decodeStartMs = 0;
+  }
+
+  // Forward timing stats to TimeSyncPanel
+  if (m_timeSyncPanel) {
+    m_timeSyncPanel->updateDecodeTiming(
+      m_dtSamples,
+      m_avgDtValue,
+      m_dtCorrection_ms,
+      m_lastDecodeLatencyMs,
+      m_dtLastSampleCount);
+  }
+
+  // Update status bar DT label with actual DT info
+  if (m_dtLastSampleCount > 0) {
+    QString text = QString("DT:%1%2ms(%3)")
+      .arg(m_dtCorrection_ms > 0 ? "+" : "")
+      .arg(m_dtCorrection_ms, 0, 'f', 1)
+      .arg(m_dtLastSampleCount);
+    dt_correction_label.setText(text);
+  }
+
+  m_dtSamples.clear();
 }
 
 void MainWindow::refreshPileupList()
