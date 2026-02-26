@@ -38,6 +38,12 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
     "K3WYC, KA1GT, KA6MAL, KA9Q, KB1ZMX, KD6EKQ, KG4IYS, KI7MT, "
     "KK1D, ND0B, PY1ZRJ, PY2SDR, VE1SKY, VK3ACF, VK4BDJ, "
     "VK7MO, VR2UPU, W3DJS, W4TI, W4TV, and W9MDB.</p>"
+    "<hr>"
+    "<p><b>Bundled Tools:</b></p>"
+    "<p><b>ChronoGPS v2.4.6</b> — GPS/NTP time synchronization<br>"
+    "by Yoshiharu Tsukuura, <b>JP1LRT</b> — "
+    "<a href=\"https://github.com/jp1lrt/ChronoGPS\">github.com/jp1lrt/ChronoGPS</a><br>"
+    "MIT License &copy; 2026 JP1LRT</p>"
     "<p align=\"center\"><img src=\":/icon_128x128.png\" /></p>"
     "<p>Decodium v3.0 FT2 is licensed under the terms of Version 3 "
     "of the <a href=\"https://www.gnu.org/licenses/gpl-3.0.txt\">GNU General Public License (GPL)</a></p>");
