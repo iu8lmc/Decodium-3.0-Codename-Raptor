@@ -67,6 +67,10 @@ private:
   // Time corrections applied to period boundary
   double m_ntpOffsetMs {0.0};       // NTP offset correction
   double m_dtCorrectionMs {0.0};    // DT feedback correction
+
+  // Soundcard drift compensation for period boundary prediction
+  qint64 m_periodStartMs {0};       // wall-clock at last period boundary
+  qint64 m_droppedFrames {0};       // cumulative dropped frames counter
 };
 
 #endif

@@ -563,7 +563,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
         m_config.udp_server_name (), m_config.udp_server_port (),
         m_config.udp_interface_names (), m_config.udp_TTL (),
         this}},
-  m_psk_Reporter {&m_config, QString {"Decodium v3.0 SE DXpedition KP5/NP3VI v" + version () + " " + m_revision}.simplified ()},
+  m_psk_Reporter {&m_config, QString {"Decodium v3.0 FT2 Raptor v" + version () + " " + m_revision}.simplified ()},
   m_manual {&m_network_manager},
   m_block_udp_status_updates {false},
   m_useDarkStyle {false},
@@ -573,18 +573,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->setupUi(this);
   setUnifiedTitleAndToolBarOnMac (true);
   createStatusBar();
-
-  // FT2 Digital Mode logo
-  {
-    QString logoPath = QApplication::applicationDirPath() + "/ft2logo.png";
-    QPixmap logoPix(logoPath);
-    if(!logoPix.isNull()) {
-      QLabel *logoLabel = new QLabel(this);
-      logoLabel->setPixmap(logoPix.scaled(200, 200, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-      logoLabel->setAlignment(Qt::AlignCenter);
-      ui->horizontalLayout_6->addWidget(logoLabel);
-    }
-  }
 
   // NTP Time Synchronization
   m_ntpClient = new NtpClient(this);
@@ -942,6 +930,20 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->actionMSK144->setActionGroup(modeGroup);
   ui->actionQ65->setActionGroup(modeGroup);
   ui->actionFreqCal->setActionGroup(modeGroup);
+
+  // Decodium FT2-only: hide all non-FT2 mode actions
+  ui->actionFST4->setVisible(false);
+  ui->actionFST4W->setVisible(false);
+  ui->actionFT4->setVisible(false);
+  ui->actionFT8->setVisible(false);
+  ui->actionJT9->setVisible(false);
+  ui->actionJT65->setVisible(false);
+  ui->actionJT4->setVisible(false);
+  ui->actionWSPR->setVisible(false);
+  ui->actionEcho->setVisible(false);
+  ui->actionMSK144->setVisible(false);
+  ui->actionQ65->setVisible(false);
+  ui->actionFreqCal->setVisible(false);
 
   QActionGroup* saveGroup = new QActionGroup(this);
   ui->actionNone->setActionGroup(saveGroup);
@@ -1594,7 +1596,7 @@ void MainWindow::not_GA_warning_message ()
 {
   if(m_config.my_callsign()=="IU8LMC") return;    //IU8LMC mod
   MessageBox::critical_message (this,
-                                "This is a pre-release version of Decodium v3.0 SE KP5 " + version (false) + " made\n"
+                                "This is a pre-release version of Decodium v3.0 FT2 Raptor " + version (false) + " made\n"
                                 "available for testing purposes.  By design it will\n"
                                 "be nonfunctional after April 30, 2026.");
   auto now = QDateTime::currentDateTimeUtc ();
@@ -1903,7 +1905,7 @@ void MainWindow::writeSettings()
 void MainWindow::update_tx5(const QString &qsy_text)
 {
   if (m_hisCall=="") {
-    QMessageBox::warning(this, "Decodium v3.0 SE KP5","There must be a callsign in the\n DX Call Box to send QSY Request");
+    QMessageBox::warning(this, "Decodium v3.0 FT2 Raptor","There must be a callsign in the\n DX Call Box to send QSY Request");
   } else {
     QString text = qsy_text;
     ui->tx6->setText(text.replace("$DX",m_hisCall));
@@ -1976,7 +1978,7 @@ void MainWindow::readSettings()
   m_settings->endGroup();
 
   m_settings->beginGroup("Common");
-  m_mode=m_settings->value("Mode","FT8").toString();
+  m_mode="FT2";  // Decodium FT2-only: always force FT2 mode
   m_settings->endGroup();
 
   // do this outside of settings group because it uses groups internally
@@ -4442,7 +4444,7 @@ QString MainWindow::userAgent() {
   QString platform = "(" + QSysInfo::prettyProductName()+"; "+QSysInfo::productType() + " " + QSysInfo::productVersion() + "; " +
                      QSysInfo::currentCpuArchitecture() + "; " +
                      QString("rv:%1").arg(QSysInfo::kernelVersion()) + ")";
-  QString userAgent = QString{"Decodium3SE-KP5/" + version() + "_" + m_revision}.simplified() + " " +platform;
+  QString userAgent = QString{"Decodium3FT2-Raptor/" + version() + "_" + m_revision}.simplified() + " " +platform;
   return userAgent;
   }
 
@@ -4527,14 +4529,14 @@ void MainWindow::displayDialFrequency ()
 
 void MainWindow::stopWRTimeout()
 {
-  auto_tx_mode(false);
+  if (!m_autoCQ) auto_tx_mode(false);
 }
 
 void MainWindow::stopWCTimeout()
 {
   if (ui->DX_Call_Button->isChecked()) {
     ui->DX_Call_Button->click ();
-    auto_tx_mode(false);
+    if (!m_autoCQ) auto_tx_mode(false);
   }
   no_wait_and_call = false;
 }
@@ -4655,6 +4657,10 @@ void MainWindow::statusChanged()
     ui->sbNslots->setVisible(false);   // Nascondere sbNslots per non-Fox
     ui->pbFreeText->setVisible(false);
     ui->cbSendMsg->setVisible(false);
+    // Reset multi-slot markers — bande visibili solo in Fox mode
+    m_Nslots=1;
+    int spacing = (m_mode=="FT2") ? 200 : 60;
+    m_wideGraph->setMultiSlot(1, spacing);
   }
   if (SpecOp::HOUND==m_specOp) ui->cbRxAll->setVisible(!m_config.superFox());
   if ((SpecOp::HOUND!=m_specOp && SpecOp::FOX!=m_specOp) or !m_config.superFox()) {
@@ -5607,7 +5613,7 @@ void MainWindow::on_actionKeyboard_shortcuts_triggered()
   <tr><td><b>Esc      </b></td><td>Stop Tx, abort QSO, clear next-call queue</td></tr>
   <tr><td><b>F1       </b></td><td>Online User's Guide (Alt: transmit Tx6)</td></tr>
   <tr><td><b>Shift+F1  </b></td><td>Copyright Notice</td></tr>
-  <tr><td><b>Ctrl+F1  </b></td><td>About Decodium v3.0 SE KP5</td></tr>
+  <tr><td><b>Ctrl+F1  </b></td><td>About Decodium v3.0 FT2 Raptor</td></tr>
   <tr><td><b>F2       </b></td><td>Open settings window (Alt: transmit Tx2)</td></tr>
   <tr><td><b>F3       </b></td><td>Display keyboard shortcuts (Alt: transmit Tx3)</td></tr>
   <tr><td><b>F4       </b></td><td>Clear DX Call, DX Grid, Tx messages 1-4 (Alt: transmit Tx4)</td></tr>
@@ -6229,11 +6235,38 @@ void MainWindow::applyDtFeedback()
 {
   m_dtLastSampleCount = m_dtSamples.size();
 
-  if (m_dtFeedbackEnabled && m_dtSamples.size() >= m_dtMinSamples && !m_diskData) {
+  // #7: FT2 adaptive thresholds — need fewer samples due to shorter period
+  int minSamples = m_dtMinSamples;
+  if (m_mode == "FT2") minSamples = 2;  // FT2: 2 decodes enough (shorter period)
+
+  if (m_dtFeedbackEnabled && m_dtSamples.size() >= minSamples && !m_diskData) {
     // Use median for robustness against outliers
     QVector<double> sorted = m_dtSamples;
     std::sort(sorted.begin(), sorted.end());
     double medianDt = sorted[sorted.size() / 2];
+
+    // #4: Adaptive EMA — faster convergence at startup, more stability when settled
+    // FT2 uses more aggressive warm-up (converge in 2-3 periods = 7-11s)
+    if (m_mode == "FT2") {
+      if (m_totalDecodesForDt < 10) {
+        m_dtSmoothFactor = 0.6;    // FT2 warm-up: converge very fast
+      } else if (qAbs(m_avgDtValue) < 0.1) {
+        m_dtSmoothFactor = 0.2;    // FT2 stable: maintain precision
+      } else {
+        m_dtSmoothFactor = 0.35;   // FT2 transitional
+      }
+    } else {
+      if (m_totalDecodesForDt < 20) {
+        m_dtSmoothFactor = 0.5;    // warm-up: converge quickly
+      } else if (qAbs(m_avgDtValue) < 0.1) {
+        m_dtSmoothFactor = 0.15;   // stable: maintain precision
+      } else {
+        m_dtSmoothFactor = 0.3;    // transitional: balanced
+      }
+    }
+
+    // #3: Save previous avgDt for derivative calculation
+    m_prevAvgDtValue = m_avgDtValue;
 
     // EMA smoothing of median DT
     if (m_totalDecodesForDt == 0) {
@@ -6243,19 +6276,42 @@ void MainWindow::applyDtFeedback()
     }
     m_totalDecodesForDt += m_dtSamples.size();
 
-    // Convert DT (seconds) to ms correction — negative DT means we're
-    // starting too early, so we need positive correction
-    double correctionStep = -m_avgDtValue * 1000.0 * m_dtSmoothFactor;
+    // #3: Predictive DT — use derivative to anticipate next period's correction
+    // dtRate = change in avgDt per period (positive = DT growing = drifting late)
+    double dtRate = m_avgDtValue - m_prevAvgDtValue;
+    // Predicted DT for next period = current + rate of change
+    double predictedDt = m_avgDtValue + dtRate;
 
-    // Clamp correction step to avoid wild jumps (max 50ms per period)
-    correctionStep = qBound(-50.0, correctionStep, 50.0);
+    // Convert predicted DT (seconds) to ms correction — negative DT means we're
+    // starting too early, so we need positive correction
+    double correctionStep = -predictedDt * 1000.0 * m_dtSmoothFactor;
+
+    // Clamp correction step — tighter for FT2 (short period, small steps safer)
+    double maxStep = (m_mode == "FT2") ? 30.0 : 50.0;
+    correctionStep = qBound(-maxStep, correctionStep, maxStep);
     m_dtCorrection_ms += correctionStep;
 
-    // Clamp total correction to sane range (+/-500ms)
-    m_dtCorrection_ms = qBound(-500.0, m_dtCorrection_ms, 500.0);
+    // Clamp total correction — tighter for FT2 (should never be far off sync)
+    double maxTotal = (m_mode == "FT2") ? 300.0 : 500.0;
+    m_dtCorrection_ms = qBound(-maxTotal, m_dtCorrection_ms, maxTotal);
 
     // Apply to Detector
     if (m_detector) m_detector->setDriftCorrection(m_dtCorrection_ms);
+
+    // #5: NTP vs DT cross-validation — warn if corrections are diverging
+    if (m_ntpEnabled && qAbs(m_ntpOffset_ms) > 1.0) {
+      // If DT correction is >3x the NTP offset magnitude and in opposite direction,
+      // something may be wrong (wrong TR period, clock source issue, etc.)
+      bool diverging = qAbs(m_dtCorrection_ms) > 3.0 * qAbs(m_ntpOffset_ms)
+                        && m_dtCorrection_ms * m_ntpOffset_ms < 0;  // opposite signs
+      if (diverging) {
+        m_ntpDtDivergenceCount++;
+      } else {
+        m_ntpDtDivergenceCount = 0;
+      }
+    } else {
+      m_ntpDtDivergenceCount = 0;
+    }
   }
 
   // Calculate decode latency
@@ -6271,7 +6327,10 @@ void MainWindow::applyDtFeedback()
       m_avgDtValue,
       m_dtCorrection_ms,
       m_lastDecodeLatencyMs,
-      m_dtLastSampleCount);
+      m_dtLastSampleCount,
+      m_soundcardDriftPpm,
+      m_ntpDtDivergenceCount,
+      m_dtSmoothFactor);
   }
 
   // Update status bar DT label with actual DT info
@@ -6281,6 +6340,13 @@ void MainWindow::applyDtFeedback()
       .arg(m_dtCorrection_ms, 0, 'f', 1)
       .arg(m_dtLastSampleCount);
     dt_correction_label.setText(text);
+    // Color based on convergence quality
+    if (qAbs(m_avgDtValue) < 0.1)
+      dt_correction_label.setStyleSheet("QLabel{color:#000;background:#00ff00}");
+    else if (qAbs(m_avgDtValue) < 0.3)
+      dt_correction_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
+    else
+      dt_correction_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
   }
 
   m_dtSamples.clear();
@@ -6740,11 +6806,13 @@ void MainWindow::readFromStdout()                             //readFromStdout
       // Exclude low-confidence AP decodes ("?" marker) — DT less reliable
       if(!decodedtext.isLowConfidence()) {
         int snr = decodedtext.snr();
-        if(snr >= -18) {  // reliable signals (lowered from -10 for more samples)
+        // #7: FT2 uses lower SNR threshold (-20) to collect more DT samples
+        // FT2 has 6.67x better DT precision so even weaker signals give usable DT
+        int snrThreshold = (m_mode=="FT2") ? -20 : -18;
+        if(snr >= snrThreshold) {
           float dt_val = decodedtext.dt();
-          // FT2 has 6.67x better DT precision (24ms symbol vs 160ms FT8)
-          // so use tighter outlier rejection: ±1.0s for FT2, ±2.0s for FT8/FT4
-          float dtLimit = (m_mode=="FT2") ? 1.0f : 2.0f;
+          // #7: FT2 tighter outlier rejection (±0.5s) due to higher DT precision
+          float dtLimit = (m_mode=="FT2") ? 0.5f : 2.0f;
           if(qAbs(dt_val) < dtLimit) {
             m_dtSamples.append(dt_val);
           }
@@ -8237,7 +8305,7 @@ void MainWindow::guiUpdate()
       if(onAirFreq!=m_onAirFreq0) {
         m_onAirFreq0=onAirFreq;
         auto const& message = tr ("Please choose another Tx frequency."
-                                  " Decodium v3.0 SE KP5 will not knowingly transmit another"
+                                  " Decodium v3.0 FT2 Raptor will not knowingly transmit another"
                                   " mode in the WSPR sub-band on 30m.");
         QTimer::singleShot (0, [=] { // don't block guiUpdate
             MessageBox::warning_message (this, tr ("WSPR Guard Band"), message);
@@ -8256,7 +8324,7 @@ void MainWindow::guiUpdate()
           if (m_tune) stop_tuning();
           auto const& message = tr ("Please choose another dial frequency.\n"
                                     "Must be 3Khz away from %1.\n"
-                                    "Decodium v3.0 SE KP5 will not operate in Fox mode\n"
+                                    "Decodium v3.0 FT2 Raptor will not operate in Fox mode\n"
                                     "overlapping the standard FT8 sub-bands.").arg(ft8Freq[i]);
           QTimer::singleShot (0, [=] {               // don't block guiUpdate
             MessageBox::warning_message (this, tr ("Fox Mode warning"), message);
@@ -8273,7 +8341,7 @@ void MainWindow::guiUpdate()
           if (m_auto) auto_tx_mode (false);
           if (m_tune) stop_tuning();
           auto const& message = tr ("Please choose another dial frequency.\n"
-                                    "Decodium v3.0 SE KP5 will not operate in Fox mode\n"
+                                    "Decodium v3.0 FT2 Raptor will not operate in Fox mode\n"
                                     "overlapping the WSPR sub-bands.").arg(ft8Freq[i]);
           QTimer::singleShot (0, [=] {               // don't block guiUpdate
             MessageBox::warning_message (this, tr ("Fox Mode warning"), message);
@@ -8284,7 +8352,7 @@ void MainWindow::guiUpdate()
     }
 
     if (m_config.watchdog() && m_mode!="WSPR" && m_mode!="FST4W"
-        && m_idleMinutes >= m_config.watchdog ()) {
+        && m_idleMinutes >= m_config.watchdog () && !m_autoCQ) {
       tx_watchdog (true);       // disable transmit
     }
 
@@ -8684,8 +8752,10 @@ void MainWindow::guiUpdate()
         if (is_externalCtrlMode() or  (m_config.repeat_Tx() && (m_mode=="MSK144" or m_mode=="Q65"))) {    //avt 10/2/25
            stopWRTimer.start(int(20000.0*m_TRperiod));  // send RR73 up to 10 times
         } else {
-          auto_tx_mode (false);  //avt 11/20/20 leave Tx enabled fo external controller next action 12/12/21 MSK144 not under external ctrl
-          statusUpdate();      //avt 11/17/20 so that external controller is notified
+          if (!m_autoCQ) {
+            auto_tx_mode (false);  //avt 11/20/20 leave Tx enabled fo external controller next action 12/12/21 MSK144 not under external ctrl
+            statusUpdate();      //avt 11/17/20 so that external controller is notified
+          }
           if(b and !is_externalCtrlMode()) {
             m_ntx=6;
             ui->txrb6->setChecked(true);
@@ -8920,7 +8990,7 @@ void MainWindow::guiUpdate()
           watchdog_label.setStyleSheet ("QLabel{color: #000000; background-color: #ffff00}");
           watchdog_label.setText (" HWD:1m ");
         }
-        if(tHound >= 300) {
+        if(tHound >= 300 && !m_autoCQ) {
           auto_tx_mode(false);
           statusUpdate ();
           watchdog_label.setStyleSheet ("QLabel{color: #ffffff; background-color: #ff0000}");
@@ -9812,8 +9882,10 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
           if (SpecOp::NA_VHF==m_specOp && m_mode=="FT4" && m_config.NCCC_Sprint()) {
               if (m_auto && (m_config.prompt_to_log() || m_config.autoLog())) logQSOTimer.start(0);
               QTimer::singleShot (int(850.0*m_TRperiod), [=] {
-                auto_tx_mode(false);
-                if (m_auto) ui->autoButton->click();
+                if (!m_autoCQ) {
+                  auto_tx_mode(false);
+                  if (m_auto) ui->autoButton->click();
+                }
               });
               if (m_config.prompt_to_log() || m_config.autoLog()) {  // prevent dupe logbook entries
                 no_logging = true;
@@ -10502,7 +10574,7 @@ void MainWindow::TxAgain()
 void MainWindow::clearDX ()
 {
   set_dateTimeQSO (-1);
-  if (m_QSOProgress != CALLING) {
+  if (m_QSOProgress != CALLING && !m_autoCQ) {
     auto_tx_mode (false);
   }
   ui->dxCallEntry->clear ();
@@ -11679,6 +11751,11 @@ void MainWindow::on_actionFT2_triggered()
   ui->txb6->setEnabled(true);
   ui->txFirstCheckBox->setEnabled(true);
   ui->cbAutoSeq->setEnabled(true);
+  // Decodium FT2: faster NTP refresh and tighter RTT filter
+  if (m_ntpClient) {
+    m_ntpClient->setRefreshInterval(30000);  // 30s for FT2
+    m_ntpClient->setMaxRtt(50.0);            // discard RTT > 50ms
+  }
   initExternalCtrl();
   statusChanged();
 }
@@ -13755,7 +13832,7 @@ void MainWindow::pskSetLocal ()
   if (rig_information.contains("OmniRig")) rig_information = "N/A (OmniRig)";
   if (rig_information == "FLRig") rig_information = "N/A (FLRig)";
   if (rig_information.contains("TCI Cli")) rig_information = "N/A (TCI)";
-  m_psk_Reporter.setLocalStation(m_config.my_callsign (), m_config.my_grid (), antenna_description, rig_information, QString {"Decodium v3.0 SE KP5 v" + version () + " " + m_revision}.simplified ());
+  m_psk_Reporter.setLocalStation(m_config.my_callsign (), m_config.my_grid (), antenna_description, rig_information, QString {"Decodium v3.0 FT2 Raptor v" + version () + " " + m_revision}.simplified ());
 }
 
 void MainWindow::transmitDisplay (bool transmitting)
@@ -14908,7 +14985,7 @@ void MainWindow::tx_watchdog (bool triggered)
     {
       m_bTxTime=false;
       if (m_tune) stop_tuning ();
-      if (m_auto) auto_tx_mode (false);
+      if (m_auto && !m_autoCQ) auto_tx_mode (false);
       // Highlight watchdog label red when watchdog stops TXing, and keep the value
       if ((m_config.watchdog () && m_mode!="WSPR" && m_mode!="FST4W") && !m_config.button_coloring_disabled()) {
         watchdog_label.setStyleSheet ("QLabel{color: #ffffff; background-color: #ff0000}");
@@ -17100,9 +17177,9 @@ void MainWindow::on_actionDiagnostic_mode_triggered()
             "                                     DIAGNOSTIC MODE\n"
             "\n"
             "You have switched to diagnostic mode. It allows you to collect data to\n"
-            "troubleshoot problems with Decodium v3.0 SE KP5, or its communication with your rig.\n"
+            "troubleshoot problems with Decodium v3.0 FT2 Raptor, or its communication with your rig.\n"
             "\n"
-            "The diagnostic mode is active after closing and restarting Decodium v3.0 SE KP5,\n"
+            "The diagnostic mode is active after closing and restarting Decodium v3.0 FT2 Raptor,\n"
             "and is then automatically deactivated when the program is next closed.\n"
             "In the diagnostic mode a new \"logs\" folder appears on your screen, and\n"
             "in it two files are created: \"wsjtx_syslog.log\" and \"WSJT-X_RigControl.log\".\n"
@@ -18384,11 +18461,11 @@ void MainWindow::on_actionDownload_from_LOTW_triggered()
   QString logFilePathName = m_config.writeable_data_dir().absolutePath() + "/" + FULL_LOG_FNAME;
   if (m_firstLotwDl and QFile::exists(logFilePathName)) {
     if (MessageBox::No == MessageBox::query_message (this,
-      QString {"This is your first request to download your complete QSO history from LOTW by Decodium v3.0 SE KP5.\n\n"} +
+      QString {"This is your first request to download your complete QSO history from LOTW by Decodium v3.0 FT2 Raptor.\n\n"} +
       QString {"IMPORTANT!!! Before continuing:\n"} +
       QString {"- Be sure you have already uploaded your current QSOs to LOTW, by whatever method you previously used (manually with TQSL and wsjt_log.adi, or automatically with a separate logging program).\n"} +
       QString {"- Allow enough time after this upload for LOTW to process it.\n\n"} +
-      QString {"Note: All QSO activity is archived in the 'Decodium v3.0 SE KP5 log directory', which is accessible from the File menu.\n\n"} +
+      QString {"Note: All QSO activity is archived in the 'Decodium v3.0 FT2 Raptor log directory', which is accessible from the File menu.\n\n"} +
       QString {"Are you ready to continue with downloading QSOs from LOTW?"})) return;
 
     //backup log file
@@ -18837,7 +18914,7 @@ void MainWindow::lotwError (QProcess * process, QProcess::ProcessError)
 //avt
 void MainWindow::download (QUrl url) {
   QNetworkRequest request {url};
-  request.setRawHeader("User-Agent", "Decodium3SE-KP5 Downloader");
+  request.setRawHeader("User-Agent", "Decodium3FT2-Raptor Downloader");
   request.setOriginatingObject (this);
 
   // this blocks for a second or two the first time it is used on

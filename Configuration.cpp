@@ -2179,7 +2179,6 @@ void Configuration::impl::initialize_models ()
   ui_->show_country_names_check_box->setChecked (show_country_names_);
   if (!ui_->DXCC_check_box->isChecked()) {
     ui_->ppfx_check_box->setEnabled (false);
-    ui_->show_country_names_check_box->setEnabled (false);
   }
   ui_->Map_Grid_to_State->setChecked(gridMap_);
   ui_->Map_All_Messages->setChecked(gridMapAll_);
@@ -2267,8 +2266,7 @@ void Configuration::impl::initialize_models ()
     }
   ui_->udp_TTL_spin_box->setValue (udp_TTL_);
   ui_->accept_udp_requests_check_box->setChecked (accept_udp_requests_);
-  ui_->accept_udp_requests_check_box->setEnabled(false);      //avt 12/28/23  prevent disabling "accept UDP requests"
-  ui_->accept_udp_requests_check_box->setChecked(true);       //avt 10/1/25
+  ui_->accept_udp_requests_check_box->setEnabled(true);
   ui_->n1mm_server_name_line_edit->setText (n1mm_server_name_);
   ui_->n1mm_server_port_spin_box->setValue (n1mm_server_port_);
   ui_->enable_n1mm_broadcast_check_box->setChecked (broadcast_to_n1mm_);
@@ -2676,7 +2674,7 @@ void Configuration::impl::read_settings ()
   n1mm_server_name_ = settings_->value ("N1MMServer", "127.0.0.1").toString ();
   n1mm_server_port_ = settings_->value ("N1MMServerPort", 2333).toUInt ();
   broadcast_to_n1mm_ = settings_->value ("BroadcastToN1MM", false).toBool ();
-  accept_udp_requests_ = true; //avt 12/28/23 always accept UDP requests
+  accept_udp_requests_ = settings_->value ("AcceptUDPRequests", true).toBool ();
   udpWindowToFront_ = settings_->value ("udpWindowToFront",false).toBool ();
   udpWindowRestore_ = settings_->value ("udpWindowRestore",false).toBool ();
   calibration_.intercept = settings_->value ("CalibrationIntercept", 0.).toDouble ();
@@ -3975,13 +3973,7 @@ void Configuration::impl::display_file_information ()
 
 void Configuration::impl::on_DXCC_check_box_clicked(bool checked)
 {
-    if (checked) {
-        ui_->ppfx_check_box->setEnabled (true);
-        ui_->show_country_names_check_box->setEnabled (true);
-    } else {
-        ui_->ppfx_check_box->setEnabled (false);
-        ui_->show_country_names_check_box->setEnabled (false);
-    }
+    ui_->ppfx_check_box->setEnabled (checked);
 }
 
 void Configuration::impl::on_PTT_port_combo_box_activated (int /* index */)

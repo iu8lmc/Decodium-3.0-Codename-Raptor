@@ -1,8 +1,8 @@
-#define MyAppName "Decodium 3.0 FT2 x64"
+#define MyAppName "Decodium 3.0 FT2 Raptor x64"
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "wsjtx.exe"
-#define MyBuildTag "2402261000"
+#define MyBuildTag "2602260045"
 #define DistDir "dist_64bit"
 
 [Setup]
@@ -42,6 +42,7 @@ Source: "{#DistDir}\wsprd.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\rigctl-wsjtx.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\rigctld-wsjtx.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\rigctlcom-wsjtx.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#DistDir}\udp_daemon.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 ; DLLs
 Source: "{#DistDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion

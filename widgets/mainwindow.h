@@ -1051,6 +1051,11 @@ private:
   double m_avgDtValue {0.0};          // EMA of DT values across periods
   int m_totalDecodesForDt {0};        // total decodes used for DT calculation
 
+  // #3: Predictive DT — track derivative for 1-period-ahead prediction
+  double m_prevAvgDtValue {0.0};      // previous period's avgDt for derivative
+  // #5: NTP vs DT cross-validation
+  int m_ntpDtDivergenceCount {0};     // consecutive periods where NTP and DT diverge
+
   // Soundcard clock drift detection
   double m_soundcardDriftPpm {0.0};
   double m_soundcardDriftMsPerPeriod {0.0};

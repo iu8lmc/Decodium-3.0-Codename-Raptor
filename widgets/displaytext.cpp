@@ -557,6 +557,45 @@ void DisplayText::displayDecodedText(DecodedText const& decodedText, QString con
         }
       else
         {
+          // Show country name for CQ calls even when DXCC tracking is off
+          if (m_config->show_country_names())
+            {
+              auto const& looked_up = logBook.countries ()->lookup (dxCall);
+              if (m_bPrincipalPrefix) {
+                  extra += looked_up.primary_prefix;
+              } else {
+                  auto countryName = looked_up.entity_name;
+                  countryName.replace ("Islands", "Is.");
+                  countryName.replace ("Island", "Is.");
+                  countryName.replace ("North ", "N. ");
+                  countryName.replace ("Northern ", "N. ");
+                  countryName.replace ("South ", "S. ");
+                  countryName.replace ("East ", "E. ");
+                  countryName.replace ("Eastern ", "E. ");
+                  countryName.replace ("West ", "W. ");
+                  countryName.replace ("Western ", "W. ");
+                  countryName.replace ("Central ", "C. ");
+                  countryName.replace (" and ", " & ");
+                  countryName.replace ("Republic", "Rep.");
+                  countryName.replace ("United States of America", "U.S.A.");
+                  countryName.replace ("United States", "U.S.A.");
+                  countryName.replace ("Fed. Rep. of ", "");
+                  countryName.replace ("French ", "Fr.");
+                  countryName.replace ("Asiatic", "AS");
+                  countryName.replace ("European", "EU");
+                  countryName.replace ("African", "AF");
+                  if (!(m_config->include_WAE_entities())) {
+                    countryName.replace ("Bear Is.", "Svalbard");
+                    countryName.replace ("Shetland Is.", "Scotland");
+                    countryName.replace ("AF Italy", "Italy");
+                    countryName.replace ("Sicily", "Italy");
+                    countryName.replace ("Vienna Intl Ctr", "Austria");
+                    countryName.replace ("AF Turkey", "Turkey");
+                    countryName.replace ("EU Turkey", "Turkey");
+                  }
+                  extra += countryName;
+              }
+            }
           message = leftJustifyAppendage (message, extra);
           highlight_types types {Highlight::CQ};
           if (m_config && m_config->lotw_users ().user (decodedText.CQersCall()))

@@ -847,6 +847,7 @@ set (all_C_and_CXXSRCS
 
 set (TOP_LEVEL_RESOURCES
   icons/Darwin/wsjtx.iconset/icon_128x128.png
+  artwork/ft2logo.png
   contrib/gpl-v3-logo.svg
   artwork/splash.png
   )
@@ -874,6 +875,7 @@ set (PALETTE_FILES
   Palettes/Orange.pal
   Palettes/Pink.pal
   Palettes/Rainbow.pal
+  Palettes/Raptor.pal
   Palettes/Scope.pal
   Palettes/Sunburst.pal
   Palettes/VK4BDJ.pal
