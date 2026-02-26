@@ -238,8 +238,8 @@ void TimeSyncPanel::updateDecodeTiming(QVector<double> const& dtSamples,
 
   // #8: EMA factor display (shows adaptive state)
   QString emaState;
-  if (emaFactor >= 0.45) emaState = " (warm-up)";
-  else if (emaFactor <= 0.2) emaState = " (stable)";
+  if (emaFactor >= 0.25) emaState = " (warm-up)";
+  else if (emaFactor <= 0.12) emaState = " (stable)";
   else emaState = " (tracking)";
   ui->lblEmaFactor->setText(QString::number(emaFactor, 'f', 2) + emaState);
 

@@ -6245,15 +6245,15 @@ void MainWindow::applyDtFeedback()
     std::sort(sorted.begin(), sorted.end());
     double medianDt = sorted[sorted.size() / 2];
 
-    // #4: Adaptive EMA — faster convergence at startup, more stability when settled
-    // FT2 uses more aggressive warm-up (converge in 2-3 periods = 7-11s)
+    // #4: Adaptive EMA — conservative to avoid oscillation with NTP active
+    // FT2 uses gentler factors since 3.75s period means rapid updates
     if (m_mode == "FT2") {
       if (m_totalDecodesForDt < 10) {
-        m_dtSmoothFactor = 0.6;    // FT2 warm-up: converge very fast
+        m_dtSmoothFactor = 0.3;    // FT2 warm-up: moderate convergence
       } else if (qAbs(m_avgDtValue) < 0.1) {
-        m_dtSmoothFactor = 0.2;    // FT2 stable: maintain precision
+        m_dtSmoothFactor = 0.1;    // FT2 stable: gentle tracking
       } else {
-        m_dtSmoothFactor = 0.35;   // FT2 transitional
+        m_dtSmoothFactor = 0.2;    // FT2 transitional
       }
     } else {
       if (m_totalDecodesForDt < 20) {
@@ -6265,9 +6265,6 @@ void MainWindow::applyDtFeedback()
       }
     }
 
-    // #3: Save previous avgDt for derivative calculation
-    m_prevAvgDtValue = m_avgDtValue;
-
     // EMA smoothing of median DT
     if (m_totalDecodesForDt == 0) {
       m_avgDtValue = medianDt;
@@ -6276,15 +6273,12 @@ void MainWindow::applyDtFeedback()
     }
     m_totalDecodesForDt += m_dtSamples.size();
 
-    // #3: Predictive DT — use derivative to anticipate next period's correction
-    // dtRate = change in avgDt per period (positive = DT growing = drifting late)
-    double dtRate = m_avgDtValue - m_prevAvgDtValue;
-    // Predicted DT for next period = current + rate of change
-    double predictedDt = m_avgDtValue + dtRate;
-
-    // Convert predicted DT (seconds) to ms correction — negative DT means we're
+    // Convert averaged DT (seconds) to ms correction — negative DT means we're
     // starting too early, so we need positive correction
-    double correctionStep = -predictedDt * 1000.0 * m_dtSmoothFactor;
+    // NOTE: Predictive correction (dtRate extrapolation) was removed because it
+    // amplified oscillations when combined with NTP feedback. Simple proportional
+    // correction is more stable with 3.75s FT2 periods.
+    double correctionStep = -m_avgDtValue * 1000.0 * m_dtSmoothFactor;
 
     // Clamp correction step — tighter for FT2 (short period, small steps safer)
     double maxStep = (m_mode == "FT2") ? 30.0 : 50.0;
@@ -11753,8 +11747,8 @@ void MainWindow::on_actionFT2_triggered()
   ui->cbAutoSeq->setEnabled(true);
   // Decodium FT2: faster NTP refresh and tighter RTT filter
   if (m_ntpClient) {
-    m_ntpClient->setRefreshInterval(30000);  // 30s for FT2
-    m_ntpClient->setMaxRtt(50.0);            // discard RTT > 50ms
+    m_ntpClient->setRefreshInterval(60000);  // 60s for FT2 (was 30s — too frequent destabilizes DT)
+    m_ntpClient->setMaxRtt(100.0);           // default RTT filter (50ms rejected too many servers)
   }
   initExternalCtrl();
   statusChanged();
