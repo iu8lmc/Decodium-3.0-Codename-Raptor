@@ -192,7 +192,7 @@ contains
 ! ndepth=1: 1 pass, no subtraction
 
       max_iterations=40
-      syncmin=0.82
+      syncmin=0.90
       dosubtract=.true.
       doosd=.true.
       nsp=3
@@ -279,7 +279,7 @@ contains
                if(smax.lt.0.9) cycle
                if(iseg.gt.1 .and. smax.lt.smax1) cycle
                f1=f0+real(idfbest)
-               if( f1.le.10.0 .or. f1.ge.5500.0 ) cycle
+               if( f1.le.10.0 .or. f1.ge.4990.0 ) cycle
                call timer('ft2down ',0)
                call ft2_downsample(dd,dobigfft,f1,cb) !Final downsample, corrected f0
                call timer('ft2down ',1)
@@ -427,11 +427,11 @@ contains
                   message77=0
                   dmin=0.0
 
-                  ndeep=4
-                  maxosd=4
+                  ndeep=3
+                  maxosd=3
                   if(abs(nfqso-f1).le.napwid) then
-                     ndeep=4
-                     maxosd=4
+                     ndeep=3
+                     maxosd=3
                   endif
                   if(.not.doosd) maxosd = -1
                   call timer('dec174_91 ',0)
@@ -464,9 +464,9 @@ contains
                      if(snr.gt.0.0) then
                         xsnr=10*log10(snr)-13.0
                      else
-                        xsnr=-24.0
+                        xsnr=-21.0
                      endif
-                     nsnr=nint(max(-24.0,xsnr))
+                     nsnr=nint(max(-21.0,xsnr))
                      xdt=ibest/1333.33 - 0.5
                      qual=1.0-(nharderror+dmin)/60.0
                      call this%callback(smax,nsnr,xdt,f1,message,iaptype,qual)

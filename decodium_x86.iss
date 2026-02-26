@@ -2,7 +2,7 @@
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "wsjtx.exe"
-#define MyBuildTag "2602260045"
+#define MyBuildTag "2602261018"
 #define DistDir "dist_32bit"
 
 [Setup]

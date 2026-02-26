@@ -2123,9 +2123,9 @@ void MainWindow::readSettings()
   ui->cbRxAll->setChecked (m_settings->value ("RxAll", false).toBool());
 // m_bShMsgs=m_settings->value("ShMsgs",false).toBool();
   m_bSWL=m_settings->value("SWL",false).toBool();
-  // DT feedback re-enabled — works together with soundcard drift and NTP correction
+  // DT feedback disabled — was causing alarming values in TimeSyncPanel
   m_dtCorrection_ms = 0.0;
-  m_dtFeedbackEnabled = true;
+  m_dtFeedbackEnabled = false;
   m_ntpOffset_ms = m_settings->value("NTPOffset_ms", 0.0).toDouble();
   m_ntpEnabled = m_settings->value("NTPEnabled", false).toBool();
   ntp_checkbox.setChecked(m_ntpEnabled);
@@ -6202,7 +6202,7 @@ void MainWindow::decodeDone ()
   }
   to_jt9(m_ihsym,-1,1);                //Tell jt9 we know it has finished
 
-  // DT Feedback Loop: apply correction from decoded DT values
+  // DT Feedback Loop: update TimeSyncPanel display (correction disabled via m_dtFeedbackEnabled=false)
   applyDtFeedback();
 
   m_startAnother=m_loopall;
