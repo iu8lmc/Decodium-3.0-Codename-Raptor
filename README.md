@@ -158,4 +158,4 @@ build_installers.bat
 - **WSJT-X 3.0.0** fork by WM8Q (avantol)
 - **Decodium v3.0 FT2 Raptor** by IU8LMC
 
-73 de IU8LMC
+73 de IU8LMC Martino   IZ8XXE Mimmo
