@@ -1300,6 +1300,19 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     // NTP offset displayed in TimeSyncPanel only — not injected into Detector
   }
 
+  // Auto-launch ChronoGPS if enabled in settings
+  {
+    QSettings s;
+    s.beginGroup("TimeSyncPanel");
+    if (s.value("chronoAutoLaunch", false).toBool()) {
+      QString chronoPath = QCoreApplication::applicationDirPath() + "/ChronoGPS.exe";
+      if (QFile::exists(chronoPath)) {
+        QProcess::startDetached(chronoPath, QStringList{});
+      }
+    }
+    s.endGroup();
+  }
+
   if(m_mode=="Q65") {
     m_score=0;
     read_log();
@@ -12856,6 +12869,18 @@ void MainWindow::on_actionErase_WSPR_hashtable_triggered()
 void MainWindow::on_actionOpen_log_directory_triggered ()
 {
   QDesktopServices::openUrl (QUrl::fromLocalFile (m_config.writeable_data_dir ().absolutePath ()));
+}
+
+void MainWindow::on_actionLaunchChronoGPS_triggered ()
+{
+  QString chronoPath = QCoreApplication::applicationDirPath () + "/ChronoGPS.exe";
+  if (QFile::exists (chronoPath)) {
+    QProcess::startDetached (chronoPath, QStringList{});
+  } else {
+    MessageBox::warning_message (this, tr ("ChronoGPS not found"),
+      tr ("ChronoGPS.exe was not found in the application directory.\n"
+          "Please ensure ChronoGPS.exe is in the same folder as Decodium."));
+  }
 }
 
 void MainWindow::on_bandComboBox_currentIndexChanged (int index)

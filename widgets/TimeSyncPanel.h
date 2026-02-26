@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QVector>
 #include <QDateTime>
+#include <QProcess>
 
 class QSettings;
 class NtpClient;
@@ -51,6 +52,13 @@ private Q_SLOTS:
   void on_cbNtpEnabled_toggled(bool checked);
   void on_editCustomServer_editingFinished();
 
+  // ChronoGPS slots
+  void on_btnLaunchChrono_clicked();
+  void on_btnStopChrono_clicked();
+  void on_cbChronoAutoLaunch_toggled(bool checked);
+  void checkChronoStatus();
+  void updateChronoButtons(bool running);
+
 private:
   struct OffsetEntry {
     QDateTime time;
@@ -79,6 +87,10 @@ private:
   QVector<double> correctionHistory_;   // last N correction values for trend
   int stablePeriodsCount_ {0};         // consecutive periods with |avgDt| < 0.1
   static constexpr int MAX_CORRECTION_HISTORY = 20;
+
+  // ChronoGPS process management
+  QTimer chronoStatusTimer_;
+  bool chronoAutoLaunch_ {false};
 };
 
 #endif // TIMESYNCPANEL_H
