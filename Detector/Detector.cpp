@@ -4,7 +4,6 @@
 #include <QDebug>
 #include <math.h>
 #include "commons.h"
-#include "PrecisionTime.hpp"
 
 #include "moc_Detector.cpp"
 
@@ -57,34 +56,9 @@ void Detector::clear ()
 qint64 Detector::writeData (char const * data, qint64 maxSize)
 {
   static unsigned mstr0=999999;
-
-  // Use high-resolution timer (~1us on Windows) instead of QDateTime (~15ms)
-  qint64 ms0 = preciseCurrentMSecsSinceEpoch() % 86400000;
-
-  // No timing corrections applied to period boundary — stock WSJT-X behavior.
-  // NTP offset and DT feedback are displayed in TimeSyncPanel for monitoring
-  // but NOT injected here, because shifting the period boundary corrupts
-  // the audio window and degrades decoder performance.
-  unsigned mstr = ms0 % int(1000.0*m_period);
-
-  if(mstr < mstr0) {
-    // Flush any partial data in the intermediate downsample buffer before reset
-    // This prevents losing up to 300ms of audio at period boundaries
-    if (m_downSampleFactor > 1 && m_bufferPos > 0) {
-      qint32 fullBlock = m_samplesPerFFT * m_downSampleFactor;
-      for (unsigned i = m_bufferPos; i < static_cast<unsigned>(fullBlock); ++i) {
-        m_buffer[i] = 0;
-      }
-      qint32 framesToProcess = fullBlock;
-      qint32 framesAfterDownSample = m_samplesPerFFT;
-      if (dec_data.params.kin >= 0 &&
-          dec_data.params.kin < (NTMAX*12000 - framesAfterDownSample)) {
-        fil4_(&m_buffer[0], &framesToProcess, &dec_data.d2[dec_data.params.kin],
-            &framesAfterDownSample);
-        dec_data.params.kin += framesAfterDownSample;
-        Q_EMIT framesWritten(dec_data.params.kin);
-      }
-    }
+  qint64 ms0 = QDateTime::currentMSecsSinceEpoch() % 86400000;
+  unsigned mstr = ms0 % int(1000.0*m_period); // ms into the nominal Tx start time
+  if(mstr < mstr0) {              //When mstr has wrapped around to 0, restart the buffer
     dec_data.params.kin = 0;
     m_bufferPos = 0;
   }
@@ -98,34 +72,27 @@ qint64 Detector::writeData (char const * data, qint64 maxSize)
   size_t framesAccepted (qMin (static_cast<size_t> (maxSize /
                                                     bytesPerFrame ()), framesAcceptable));
 
-  // Soundcard clock drift measurement — informational only, displayed in TimeSyncPanel.
-  // NOT used to modify period boundary detection.
-  size_t framesDelivered = static_cast<size_t>(maxSize / bytesPerFrame());
-  m_totalInputFrames += framesDelivered;
-  qint64 ms0_raw = preciseCurrentMSecsSinceEpoch();
+  // Soundcard clock drift measurement
+  m_totalInputFrames += framesAccepted;
+  qint64 ms0_raw = QDateTime::currentMSecsSinceEpoch();
   if (m_driftStartMs == 0) {
     m_driftStartMs = ms0_raw;
     m_driftLastEmitMs = ms0_raw;
-    m_totalInputFrames = framesDelivered;  // reset to just this batch
+    m_totalInputFrames = framesAccepted;  // reset to just this batch
   } else {
     qint64 elapsedMs = ms0_raw - m_driftStartMs;
     if (elapsedMs >= 10000 && (ms0_raw - m_driftLastEmitMs) >= DRIFT_EMIT_INTERVAL_MS) {
       double elapsedSec = elapsedMs / 1000.0;
-      double nominalInputRate = static_cast<double>(m_frameRate) * m_downSampleFactor;
+      double nominalInputRate = static_cast<double>(m_frameRate * m_downSampleFactor);
       double actualRate = static_cast<double>(m_totalInputFrames) / elapsedSec;
-      double ppm = (actualRate / nominalInputRate - 1.0) * 1e6;
-      // Sanity gate: ignore wildly implausible values (startup transient, etc.)
-      if (qAbs(ppm) < 500.0) {
-        m_measuredDriftPpm = ppm;
-        double driftMsPerPeriod = m_measuredDriftPpm * m_period / 1000.0;
-        m_driftLastEmitMs = ms0_raw;
-        Q_EMIT soundcardDriftUpdated(driftMsPerPeriod, m_measuredDriftPpm);
-      }
+      m_measuredDriftPpm = (actualRate / nominalInputRate - 1.0) * 1e6;
+      double driftMsPerPeriod = m_measuredDriftPpm * m_period / 1000.0;
+      m_driftLastEmitMs = ms0_raw;
+      Q_EMIT soundcardDriftUpdated(driftMsPerPeriod, m_measuredDriftPpm);
     }
   }
 
   if (framesAccepted < static_cast<size_t> (maxSize / bytesPerFrame ())) {
-    m_droppedFrames += (maxSize / bytesPerFrame () - framesAccepted);
     qDebug () << "dropped " << maxSize / bytesPerFrame () - framesAccepted
                 << " frames of data on the floor!"
                 << dec_data.params.kin << mstr;
