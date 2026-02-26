@@ -7,18 +7,46 @@ GTAGS
 *~
 junk*
 jnq*
-!*.exe
 *.o
 *.mod
 *.pro.user
-*.txt
 *.bak
-!**/CMakeLists.txt
-!**/*.txt
 __pycache__
-cmake-build-debug
-cmake-build-release
-CMakeFiles
-fnd
+
+# Build directories
+build/
+build32/
+cmake-build-debug/
+cmake-build-release/
+CMakeFiles/
+
+# Distribution directories
+dist_32bit/
+dist_64bit/
+Decodium3_FT2_x64/
+Decodium_3.0_*/
+docker-output/
+
+# Installer and archive artifacts
+*.exe
+!artwork/*.exe
+*.zip
+*.rar
+*.pkg.tar.zst
+
+# Fortran temp
 lib/77bit/tmp
 lib/tmp
+fnd
+
+# Plugin artifacts
+ft2_plugin/
+ft2_plugin.rar
+
+# Claude / IDE temp files
+.claude/
+tmpclaude-*
+.zip
+
+# Temporary scripts
+sign_all.bat
