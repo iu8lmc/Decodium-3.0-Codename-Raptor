@@ -55,14 +55,12 @@ private:
   // the input sample rate
   unsigned m_bufferPos;
 
-  // Soundcard clock drift measurement (informational — displayed in TimeSyncPanel)
+  // Soundcard clock drift measurement
   qint64 m_driftStartMs {0};
   qint64 m_driftLastEmitMs {0};
   qint64 m_totalInputFrames {0};
   double m_measuredDriftPpm {0.0};
   static constexpr int DRIFT_EMIT_INTERVAL_MS = 30000;
-
-  qint64 m_droppedFrames {0};       // cumulative dropped frames counter
 };
 
 #endif
