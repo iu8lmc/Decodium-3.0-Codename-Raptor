@@ -71,15 +71,12 @@ qint64 Detector::writeData (char const * data, qint64 maxSize)
   // #6: Use high-resolution timer (~1us on Windows) instead of QDateTime (~15ms)
   qint64 ms0 = preciseCurrentMSecsSinceEpoch() % 86400000;
 
-  // #1: Apply NTP + DT + soundcard drift correction to period boundary
-  // Drift compensation: predict how much the soundcard clock has drifted
-  // since the last period boundary, and compensate proactively
-  double driftCompensationMs = 0.0;
-  if (m_periodStartMs > 0 && qAbs(m_measuredDriftPpm) > 0.1) {
-    double elapsedSincePeriodStart = (preciseCurrentMSecsSinceEpoch() - m_periodStartMs) / 1000.0;
-    driftCompensationMs = m_measuredDriftPpm * elapsedSincePeriodStart / 1000.0;
-  }
-  double totalCorrectionMs = m_ntpOffsetMs + m_dtCorrectionMs + driftCompensationMs;
+  // #1: Apply NTP + DT correction to period boundary
+  // NOTE: Predictive soundcard drift compensation was removed because it
+  // continuously changed mstr within a period, causing false boundary
+  // detections and jitter. DT feedback already handles drift at period
+  // boundaries. The drift PPM is still measured and displayed in TimeSyncPanel.
+  double totalCorrectionMs = m_ntpOffsetMs + m_dtCorrectionMs;
   qint64 ms0_corrected = ms0 + qRound64(totalCorrectionMs);
   if (ms0_corrected < 0) ms0_corrected += 86400000;
   if (ms0_corrected >= 86400000) ms0_corrected -= 86400000;
