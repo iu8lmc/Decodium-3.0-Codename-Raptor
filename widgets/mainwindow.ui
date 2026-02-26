@@ -5019,6 +5019,8 @@ QPushButton[state=&quot;ok&quot;] {
     <addaction name="separator"/>
     <addaction name="actionFrequency_calibration"/>
     <addaction name="actionSolve_FreqCal"/>
+    <addaction name="separator"/>
+    <addaction name="actionLaunchChronoGPS"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuConfig"/>
@@ -5232,6 +5234,14 @@ QPushButton[state=&quot;ok&quot;] {
   <action name="actionOpen_log_directory">
    <property name="text">
     <string>Open log directory</string>
+   </property>
+  </action>
+  <action name="actionLaunchChronoGPS">
+   <property name="text">
+    <string>Launch ChronoGPS (GPS/NTP Sync)</string>
+   </property>
+   <property name="toolTip">
+    <string>Launch ChronoGPS time synchronization tool by JP1LRT</string>
    </property>
   </action>
   <action name="actionJT4">
