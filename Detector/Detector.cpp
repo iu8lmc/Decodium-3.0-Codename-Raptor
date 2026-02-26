@@ -54,40 +54,23 @@ void Detector::clear ()
   // qFill (dec_data.d2, dec_data.d2 + sizeof (dec_data.d2) / sizeof (dec_data.d2[0]), 0);
 }
 
-void Detector::setNtpOffset(double offsetMs)
-{
-  m_ntpOffsetMs = offsetMs;
-}
-
-void Detector::setDriftCorrection(double correctionMs)
-{
-  m_dtCorrectionMs = correctionMs;
-}
-
 qint64 Detector::writeData (char const * data, qint64 maxSize)
 {
   static unsigned mstr0=999999;
 
-  // #6: Use high-resolution timer (~1us on Windows) instead of QDateTime (~15ms)
+  // Use high-resolution timer (~1us on Windows) instead of QDateTime (~15ms)
   qint64 ms0 = preciseCurrentMSecsSinceEpoch() % 86400000;
 
-  // #1: Apply NTP + DT correction to period boundary
-  // NOTE: Predictive soundcard drift compensation was removed because it
-  // continuously changed mstr within a period, causing false boundary
-  // detections and jitter. DT feedback already handles drift at period
-  // boundaries. The drift PPM is still measured and displayed in TimeSyncPanel.
-  double totalCorrectionMs = m_ntpOffsetMs + m_dtCorrectionMs;
-  qint64 ms0_corrected = ms0 + qRound64(totalCorrectionMs);
-  if (ms0_corrected < 0) ms0_corrected += 86400000;
-  if (ms0_corrected >= 86400000) ms0_corrected -= 86400000;
-  unsigned mstr = ms0_corrected % int(1000.0*m_period); // ms into the nominal Tx start time
+  // No timing corrections applied to period boundary — stock WSJT-X behavior.
+  // NTP offset and DT feedback are displayed in TimeSyncPanel for monitoring
+  // but NOT injected here, because shifting the period boundary corrupts
+  // the audio window and degrades decoder performance.
+  unsigned mstr = ms0 % int(1000.0*m_period);
 
-  // #2: Improved period boundary reset — flush pending buffer before resetting
   if(mstr < mstr0) {
     // Flush any partial data in the intermediate downsample buffer before reset
     // This prevents losing up to 300ms of audio at period boundaries
     if (m_downSampleFactor > 1 && m_bufferPos > 0) {
-      // Zero-pad the remaining buffer to complete the block
       qint32 fullBlock = m_samplesPerFFT * m_downSampleFactor;
       for (unsigned i = m_bufferPos; i < static_cast<unsigned>(fullBlock); ++i) {
         m_buffer[i] = 0;
@@ -104,7 +87,6 @@ qint64 Detector::writeData (char const * data, qint64 maxSize)
     }
     dec_data.params.kin = 0;
     m_bufferPos = 0;
-    m_periodStartMs = preciseCurrentMSecsSinceEpoch();
   }
   mstr0=mstr;
 
@@ -116,9 +98,8 @@ qint64 Detector::writeData (char const * data, qint64 maxSize)
   size_t framesAccepted (qMin (static_cast<size_t> (maxSize /
                                                     bytesPerFrame ()), framesAcceptable));
 
-  // Soundcard clock drift measurement — count all frames delivered by audio
-  // subsystem, not just those accepted into the decode buffer, so that
-  // buffer wrap-arounds and drops don't corrupt the drift estimate.
+  // Soundcard clock drift measurement — informational only, displayed in TimeSyncPanel.
+  // NOT used to modify period boundary detection.
   size_t framesDelivered = static_cast<size_t>(maxSize / bytesPerFrame());
   m_totalInputFrames += framesDelivered;
   qint64 ms0_raw = preciseCurrentMSecsSinceEpoch();

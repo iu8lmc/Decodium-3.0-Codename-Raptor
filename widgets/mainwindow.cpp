@@ -651,8 +651,8 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   connect (this, &MainWindow::FFTSize, m_detector, &Detector::setBlockSize);
   connect(m_detector, &Detector::framesWritten, this, &MainWindow::dataSink);
   connect(m_detector, &Detector::soundcardDriftUpdated, this, &MainWindow::onSoundcardDriftUpdated);
-  // Forward NTP offset to Detector for period boundary correction
-  connect(m_ntpClient, &NtpClient::offsetUpdated, m_detector, &Detector::setNtpOffset);
+  // NTP offset is displayed in TimeSyncPanel but NOT injected into Detector
+  // (shifting period boundary corrupts audio window and degrades decoding)
   connect (&m_audioThread, &QThread::finished, m_detector, &QObject::deleteLater);
 
   // setup the waterfall
@@ -1297,8 +1297,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   if (m_ntpEnabled) {
     m_ntpClient->setInitialOffset(m_ntpOffset_ms);
     m_ntpClient->setEnabled(true);
-    // Forward initial NTP offset to Detector for period boundary correction
-    if (m_detector) m_detector->setNtpOffset(m_ntpOffset_ms);
+    // NTP offset displayed in TimeSyncPanel only — not injected into Detector
   }
 
   if(m_mode=="Q65") {
@@ -6289,8 +6288,8 @@ void MainWindow::applyDtFeedback()
     double maxTotal = (m_mode == "FT2") ? 300.0 : 500.0;
     m_dtCorrection_ms = qBound(-maxTotal, m_dtCorrection_ms, maxTotal);
 
-    // Apply to Detector
-    if (m_detector) m_detector->setDriftCorrection(m_dtCorrection_ms);
+    // DT correction is computed for TimeSyncPanel display only — NOT applied
+    // to Detector (shifting period boundary degrades decoder performance)
 
     // #5: NTP vs DT cross-validation — warn if corrections are diverging
     if (m_ntpEnabled && qAbs(m_ntpOffset_ms) > 1.0) {
