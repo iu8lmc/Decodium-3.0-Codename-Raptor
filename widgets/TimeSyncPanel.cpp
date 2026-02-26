@@ -7,6 +7,9 @@
 #include <QSettings>
 #include <QCloseEvent>
 #include <QListWidgetItem>
+#include <QCoreApplication>
+#include <QFile>
+#include <QPixmap>
 #include <cmath>
 
 TimeSyncPanel::TimeSyncPanel(QSettings *settings, NtpClient *ntpClient, QWidget *parent)
@@ -32,6 +35,22 @@ TimeSyncPanel::TimeSyncPanel(QSettings *settings, NtpClient *ntpClient, QWidget 
 
   // Initial clock display
   onClockTick();
+
+  // ChronoGPS icon
+  QString iconPath = QCoreApplication::applicationDirPath() + "/chronogps_icon.ico";
+  if (QFile::exists(iconPath)) {
+    QPixmap iconPix(iconPath);
+    if (!iconPix.isNull()) {
+      ui->lblChronoIcon->setPixmap(iconPix.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
+  }
+
+  // ChronoGPS status timer — check every 2s
+  connect(&chronoStatusTimer_, &QTimer::timeout, this, &TimeSyncPanel::checkChronoStatus);
+  chronoStatusTimer_.start(2000);
+
+  // Initial status check
+  checkChronoStatus();
 
   read_settings();
 }
@@ -301,6 +320,57 @@ void TimeSyncPanel::on_editCustomServer_editingFinished()
   Q_EMIT customServerChanged(ui->editCustomServer->text().trimmed());
 }
 
+void TimeSyncPanel::on_btnLaunchChrono_clicked()
+{
+  QString chronoPath = QCoreApplication::applicationDirPath() + "/ChronoGPS.exe";
+  if (QFile::exists(chronoPath)) {
+    QProcess::startDetached(chronoPath, QStringList{});
+    // Check status after a short delay to let the process start
+    QTimer::singleShot(1000, this, &TimeSyncPanel::checkChronoStatus);
+  } else {
+    ui->lblChronoStatus->setText("Not found");
+    ui->lblChronoStatus->setStyleSheet("font-size: 12pt; font-weight: bold; color: #ff8800;");
+  }
+}
+
+void TimeSyncPanel::on_btnStopChrono_clicked()
+{
+  QProcess taskkill;
+  taskkill.start("taskkill", QStringList{"/IM", "ChronoGPS.exe"});
+  taskkill.waitForFinished(3000);
+  QTimer::singleShot(500, this, &TimeSyncPanel::checkChronoStatus);
+}
+
+void TimeSyncPanel::on_cbChronoAutoLaunch_toggled(bool checked)
+{
+  chronoAutoLaunch_ = checked;
+}
+
+void TimeSyncPanel::checkChronoStatus()
+{
+  QProcess tasklist;
+  tasklist.start("tasklist", QStringList{"/FI", "IMAGENAME eq ChronoGPS.exe", "/NH"});
+  tasklist.waitForFinished(2000);
+  QString output = QString::fromLocal8Bit(tasklist.readAllStandardOutput());
+  bool running = output.contains("ChronoGPS.exe", Qt::CaseInsensitive);
+  updateChronoButtons(running);
+}
+
+void TimeSyncPanel::updateChronoButtons(bool running)
+{
+  if (running) {
+    ui->lblChronoStatus->setText("Running");
+    ui->lblChronoStatus->setStyleSheet("font-size: 12pt; font-weight: bold; color: #00ff00;");
+    ui->btnLaunchChrono->setEnabled(false);
+    ui->btnStopChrono->setEnabled(true);
+  } else {
+    ui->lblChronoStatus->setText("Stopped");
+    ui->lblChronoStatus->setStyleSheet("font-size: 12pt; font-weight: bold; color: #ff4444;");
+    ui->btnLaunchChrono->setEnabled(true);
+    ui->btnStopChrono->setEnabled(false);
+  }
+}
+
 void TimeSyncPanel::closeEvent(QCloseEvent *event)
 {
   write_settings();
@@ -311,6 +381,8 @@ void TimeSyncPanel::read_settings()
 {
   settings_->beginGroup("TimeSyncPanel");
   restoreGeometry(settings_->value("geometry").toByteArray());
+  chronoAutoLaunch_ = settings_->value("chronoAutoLaunch", false).toBool();
+  ui->cbChronoAutoLaunch->setChecked(chronoAutoLaunch_);
   settings_->endGroup();
 }
 
@@ -318,5 +390,6 @@ void TimeSyncPanel::write_settings()
 {
   settings_->beginGroup("TimeSyncPanel");
   settings_->setValue("geometry", saveGeometry());
+  settings_->setValue("chronoAutoLaunch", chronoAutoLaunch_);
   settings_->endGroup();
 }
