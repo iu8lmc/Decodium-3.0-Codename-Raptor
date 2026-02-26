@@ -95,6 +95,15 @@ void NtpClient::setCustomServer(QString const& server)
   m_customServer = server.trimmed();
 }
 
+void NtpClient::setRefreshInterval(int ms)
+{
+  m_refreshIntervalMs = qBound(10000, ms, 300000);
+  if (m_refreshTimer.isActive()) {
+    m_refreshTimer.start(m_refreshIntervalMs);
+  }
+}
+
+
 void NtpClient::syncNow()
 {
   if (!m_enabled) return;
@@ -202,8 +211,8 @@ void NtpClient::onReadyRead()
     double offset = ((t2Ms - t1Ms) + (t3Ms - t4Ms)) / 2.0;
     double rtt = (t4Ms - t1Ms) - (t3Ms - t2Ms);  // round-trip time
 
-    // Discard high-latency responses (RTT > 100ms = noisy)
-    if (rtt > 100.0) continue;
+    // Discard high-latency responses (configurable threshold, default 100ms)
+    if (rtt > m_maxRttMs) continue;
 
     // Sanity gate: discard offsets > 1 hour
     if (std::abs(offset) > MAX_OFFSET_MS) continue;
@@ -284,8 +293,8 @@ void NtpClient::onQueryTimeout()
   }
   m_synced = true;
 
-  // Restore normal refresh interval after successful sync
-  m_refreshTimer.setInterval(REFRESH_INTERVAL_MS);
+  // Restore configured refresh interval after successful sync
+  m_refreshTimer.setInterval(m_refreshIntervalMs);
 
   Q_EMIT offsetUpdated(m_offsetMs);
   Q_EMIT syncStatusChanged(true, QString("NTP synced: %1 servers, offset %2 ms")

@@ -24,6 +24,8 @@ public:
   void setEnabled(bool enabled);
   void syncNow();
   void setCustomServer(QString const& server);
+  void setRefreshInterval(int ms);
+  void setMaxRtt(double ms) { m_maxRttMs = qBound(10.0, ms, 500.0); }
   double offsetMs() const { return m_offsetMs; }
   bool isSynced() const { return m_synced; }
   int lastServerCount() const { return m_lastServerCount; }
@@ -81,6 +83,8 @@ private:
   bool m_enabled {false};
   int m_pendingDnsLookups {0};
   QString m_customServer;
+  int m_refreshIntervalMs {REFRESH_INTERVAL_MS};
+  double m_maxRttMs {100.0};  // RTT filter threshold (default 100ms)
 };
 
 #endif // NTP_CLIENT_HPP__

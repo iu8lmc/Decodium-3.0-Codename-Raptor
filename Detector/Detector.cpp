@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <math.h>
 #include "commons.h"
+#include "PrecisionTime.hpp"
 
 #include "moc_Detector.cpp"
 
@@ -66,16 +67,47 @@ void Detector::setDriftCorrection(double correctionMs)
 qint64 Detector::writeData (char const * data, qint64 maxSize)
 {
   static unsigned mstr0=999999;
-  qint64 ms0 = QDateTime::currentMSecsSinceEpoch() % 86400000;
-  // Apply NTP + DT correction to improve period boundary alignment
-  double totalCorrectionMs = m_ntpOffsetMs + m_dtCorrectionMs;
+
+  // #6: Use high-resolution timer (~1us on Windows) instead of QDateTime (~15ms)
+  qint64 ms0 = preciseCurrentMSecsSinceEpoch() % 86400000;
+
+  // #1: Apply NTP + DT + soundcard drift correction to period boundary
+  // Drift compensation: predict how much the soundcard clock has drifted
+  // since the last period boundary, and compensate proactively
+  double driftCompensationMs = 0.0;
+  if (m_periodStartMs > 0 && qAbs(m_measuredDriftPpm) > 0.1) {
+    double elapsedSincePeriodStart = (preciseCurrentMSecsSinceEpoch() - m_periodStartMs) / 1000.0;
+    driftCompensationMs = m_measuredDriftPpm * elapsedSincePeriodStart / 1000.0;
+  }
+  double totalCorrectionMs = m_ntpOffsetMs + m_dtCorrectionMs + driftCompensationMs;
   qint64 ms0_corrected = ms0 + qRound64(totalCorrectionMs);
   if (ms0_corrected < 0) ms0_corrected += 86400000;
   if (ms0_corrected >= 86400000) ms0_corrected -= 86400000;
   unsigned mstr = ms0_corrected % int(1000.0*m_period); // ms into the nominal Tx start time
-  if(mstr < mstr0) {              //When mstr has wrapped around to 0, restart the buffer
+
+  // #2: Improved period boundary reset — flush pending buffer before resetting
+  if(mstr < mstr0) {
+    // Flush any partial data in the intermediate downsample buffer before reset
+    // This prevents losing up to 300ms of audio at period boundaries
+    if (m_downSampleFactor > 1 && m_bufferPos > 0) {
+      // Zero-pad the remaining buffer to complete the block
+      qint32 fullBlock = m_samplesPerFFT * m_downSampleFactor;
+      for (unsigned i = m_bufferPos; i < static_cast<unsigned>(fullBlock); ++i) {
+        m_buffer[i] = 0;
+      }
+      qint32 framesToProcess = fullBlock;
+      qint32 framesAfterDownSample = m_samplesPerFFT;
+      if (dec_data.params.kin >= 0 &&
+          dec_data.params.kin < (NTMAX*12000 - framesAfterDownSample)) {
+        fil4_(&m_buffer[0], &framesToProcess, &dec_data.d2[dec_data.params.kin],
+            &framesAfterDownSample);
+        dec_data.params.kin += framesAfterDownSample;
+        Q_EMIT framesWritten(dec_data.params.kin);
+      }
+    }
     dec_data.params.kin = 0;
     m_bufferPos = 0;
+    m_periodStartMs = preciseCurrentMSecsSinceEpoch();
   }
   mstr0=mstr;
 
@@ -92,7 +124,7 @@ qint64 Detector::writeData (char const * data, qint64 maxSize)
   // buffer wrap-arounds and drops don't corrupt the drift estimate.
   size_t framesDelivered = static_cast<size_t>(maxSize / bytesPerFrame());
   m_totalInputFrames += framesDelivered;
-  qint64 ms0_raw = QDateTime::currentMSecsSinceEpoch();
+  qint64 ms0_raw = preciseCurrentMSecsSinceEpoch();
   if (m_driftStartMs == 0) {
     m_driftStartMs = ms0_raw;
     m_driftLastEmitMs = ms0_raw;
@@ -115,6 +147,7 @@ qint64 Detector::writeData (char const * data, qint64 maxSize)
   }
 
   if (framesAccepted < static_cast<size_t> (maxSize / bytesPerFrame ())) {
+    m_droppedFrames += (maxSize / bytesPerFrame () - framesAccepted);
     qDebug () << "dropped " << maxSize / bytesPerFrame () - framesAccepted
                 << " frames of data on the floor!"
                 << dec_data.params.kin << mstr;

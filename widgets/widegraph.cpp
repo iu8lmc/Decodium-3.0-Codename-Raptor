@@ -319,6 +319,13 @@ void WideGraph::setMode(QString mode)                              //setMode
   // Update multi-slot spacing for the new mode
   int spacing = (m_mode=="FT2") ? 200 : 60;
   ui->widePlot->setMultiSlot(ui->widePlot->nSlots(), spacing);
+  // FT2 optimization: no waterfall averaging (period already very short 3.75s)
+  // and boost 2D spectrum smoothing for better visibility
+  if (m_mode=="FT2") {
+    m_waterfallAvg = 1;
+    ui->waterfallAvgSpinBox->setValue(1);
+    ui->widePlot->setWaterfallAvg(1);
+  }
   ui->widePlot->DrawOverlay();
   ui->widePlot->update();
 }

@@ -162,7 +162,10 @@ void TimeSyncPanel::updateDecodeTiming(QVector<double> const& dtSamples,
                                         double avgDt,
                                         double dtCorrectionMs,
                                         double decodeLatencyMs,
-                                        int sampleCount)
+                                        int sampleCount,
+                                        double driftPpm,
+                                        int ntpDtDivergence,
+                                        double emaFactor)
 {
   lastAvgDt_ = avgDt;
   lastDtCorrection_ = dtCorrectionMs;
@@ -178,9 +181,21 @@ void TimeSyncPanel::updateDecodeTiming(QVector<double> const& dtSamples,
   else
     ui->lblAvgDt->setStyleSheet("color:#ff4444;");
 
-  // DT Correction
-  ui->lblDtCorrection->setText(QString("%1%2 ms")
-    .arg(dtCorrectionMs > 0 ? "+" : "").arg(dtCorrectionMs, 0, 'f', 1));
+  // DT Correction with trend indicator
+  correctionHistory_.append(dtCorrectionMs);
+  if (correctionHistory_.size() > MAX_CORRECTION_HISTORY)
+    correctionHistory_.removeFirst();
+  QString trend;
+  if (correctionHistory_.size() >= 3) {
+    double recent = correctionHistory_.last();
+    double older = correctionHistory_[correctionHistory_.size() - 3];
+    double delta = recent - older;
+    if (delta > 2.0) trend = " ^";      // increasing
+    else if (delta < -2.0) trend = " v"; // decreasing
+    else trend = " =";                   // stable
+  }
+  ui->lblDtCorrection->setText(QString("%1%2 ms%3")
+    .arg(dtCorrectionMs > 0 ? "+" : "").arg(dtCorrectionMs, 0, 'f', 1).arg(trend));
 
   // Decode count
   ui->lblDecodeCount->setText(QString::number(sampleCount));
@@ -200,6 +215,55 @@ void TimeSyncPanel::updateDecodeTiming(QVector<double> const& dtSamples,
     dtList << QString("%1%2").arg(dt > 0 ? "+" : "").arg(dt, 0, 'f', 2);
   }
   ui->lblLastDts->setText(dtList.join(", "));
+
+  // #8: Convergence indicator — green if stable for 3+ periods
+  if (qAbs(avgDt) < 0.1 && sampleCount > 0) {
+    stablePeriodsCount_++;
+  } else {
+    stablePeriodsCount_ = 0;
+  }
+  if (stablePeriodsCount_ >= 3) {
+    ui->lblConvergence->setText("LOCKED");
+    ui->lblConvergence->setStyleSheet("color:#00ff00; font-weight:bold;");
+  } else if (stablePeriodsCount_ >= 1) {
+    ui->lblConvergence->setText("Converging...");
+    ui->lblConvergence->setStyleSheet("color:#ffff00;");
+  } else if (sampleCount > 0) {
+    ui->lblConvergence->setText("Adjusting");
+    ui->lblConvergence->setStyleSheet("color:#ff8800;");
+  } else {
+    ui->lblConvergence->setText("No data");
+    ui->lblConvergence->setStyleSheet("color:#888;");
+  }
+
+  // #8: EMA factor display (shows adaptive state)
+  QString emaState;
+  if (emaFactor >= 0.45) emaState = " (warm-up)";
+  else if (emaFactor <= 0.2) emaState = " (stable)";
+  else emaState = " (tracking)";
+  ui->lblEmaFactor->setText(QString::number(emaFactor, 'f', 2) + emaState);
+
+  // #8: Soundcard drift compensation display
+  if (qAbs(driftPpm) > 0.1) {
+    ui->lblDriftApplied->setText(QString("%1%2 ppm (active)")
+      .arg(driftPpm > 0 ? "+" : "").arg(driftPpm, 0, 'f', 1));
+    ui->lblDriftApplied->setStyleSheet("color:#00ff00;");
+  } else {
+    ui->lblDriftApplied->setText("< 0.1 ppm (idle)");
+    ui->lblDriftApplied->setStyleSheet("color:#888;");
+  }
+
+  // #8: Warning display for NTP vs DT divergence
+  if (ntpDtDivergence >= 5) {
+    ui->lblWarning->setText("NTP/DT diverging! Check clock source.");
+    ui->lblWarning->setStyleSheet("color:#ff4444; font-weight:bold;");
+  } else if (ntpDtDivergence >= 3) {
+    ui->lblWarning->setText("NTP/DT mismatch detected");
+    ui->lblWarning->setStyleSheet("color:#ffff00;");
+  } else {
+    ui->lblWarning->setText("None");
+    ui->lblWarning->setStyleSheet("color:#00ff00;");
+  }
 }
 
 void TimeSyncPanel::syncNtpEnabled(bool enabled)

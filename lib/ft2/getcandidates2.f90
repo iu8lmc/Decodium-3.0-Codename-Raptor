@@ -44,7 +44,7 @@ subroutine getcandidates2(dd,fa,fb,syncmin,nfqso,maxcand,savg,candidate,   &
   nfa=fa/df
   if(nfa.lt.nint(200.0/df)) nfa=nint(200.0/df)
   nfb=fb/df
-  if(nfb.gt.nint(4910.0/df)) nfb=nint(4910.0/df)
+  if(nfb.gt.nint(5500.0/df)) nfb=nint(5500.0/df)
   call ft2_baseline(savg,nfa,nfb,sbase)
   if(any(sbase(nfa:nfb).le.0)) return
   savsm(nfa:nfb)=savsm(nfa:nfb)/sbase(nfa:nfb)
@@ -58,7 +58,7 @@ subroutine getcandidates2(dd,fa,fb,syncmin,nfqso,maxcand,savg,candidate,   &
         del=0.
         if(den.ne.0.0)  del=0.5*(savsm(i-1)-savsm(i+1))/den
         fpeak=(i+del)*df+f_offset
-        if(fpeak.lt.200.0 .or. fpeak.gt.4910.0) cycle
+        if(fpeak.lt.200.0 .or. fpeak.gt.5500.0) cycle
         speak=savsm(i) - 0.25*(savsm(i-1)-savsm(i+1))*del
         ncand=ncand+1
         candidatet(1,ncand)=fpeak
@@ -79,5 +79,28 @@ subroutine getcandidates2(dd,fa,fb,syncmin,nfqso,maxcand,savg,candidate,   &
         n2=n2+1
      endif
   enddo
+
+! Sort each group by sync power (column 2) descending — strongest first
+! Near-nfqso group: indices 1..nq
+  do i=1,nq-1
+     do j=i+1,nq
+        if(candidate(2,j).gt.candidate(2,i)) then
+           tmp1=candidate(1,i); tmp2=candidate(2,i)
+           candidate(1,i)=candidate(1,j); candidate(2,i)=candidate(2,j)
+           candidate(1,j)=tmp1; candidate(2,j)=tmp2
+        endif
+     enddo
+  enddo
+! Far group: indices nq+1..ncand
+  do i=nq+1,ncand-1
+     do j=i+1,ncand
+        if(candidate(2,j).gt.candidate(2,i)) then
+           tmp1=candidate(1,i); tmp2=candidate(2,i)
+           candidate(1,i)=candidate(1,j); candidate(2,i)=candidate(2,j)
+           candidate(1,j)=tmp1; candidate(2,j)=tmp2
+        endif
+     enddo
+  enddo
+
 return
 end subroutine getcandidates2

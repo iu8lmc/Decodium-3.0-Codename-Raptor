@@ -148,7 +148,11 @@ void CPlotter::draw(float swide[], bool bScroll, bool bRed)
   if (!m_TRperiod) return;      // not ready to plot yet
   int j,j0;
   float y,y2,ymin;
-  double fac = sqrt(m_binsPerPixel*m_waterfallAvg/15.0);
+  // Normalize gain by TR period — shorter periods (FT2=3.75s) accumulate less
+  // energy per waterfall row, so we boost gain proportionally.
+  // Reference baseline is 15s (FT8). FT2 gets sqrt(15/3.75)=2x boost.
+  double periodNorm = (m_TRperiod > 0.0) ? 15.0 / m_TRperiod : 1.0;
+  double fac = sqrt(m_binsPerPixel*m_waterfallAvg*periodNorm/15.0);
   double gain = fac*pow(10.0,0.015*m_plotGain);
   double gain2d = pow(10.0,0.02*(m_plot2dGain));
 
@@ -261,6 +265,7 @@ void CPlotter::draw(float swide[], bool bScroll, bool bRed)
 
   if(swide[0]>1.0e29) m_line=0;
   if(m_mode=="FT4" and m_line==34) m_line=0;
+  if(m_mode=="FT2" and m_line==17) m_line=0;  // FT2: half FT4 period → half pixel count
   if(m_line == painter1.fontMetrics ().height () && m_timestamp!=0) {
     painter1.setPen(Qt::white);
     QString t;
