@@ -2123,9 +2123,9 @@ void MainWindow::readSettings()
   ui->cbRxAll->setChecked (m_settings->value ("RxAll", false).toBool());
 // m_bShMsgs=m_settings->value("ShMsgs",false).toBool();
   m_bSWL=m_settings->value("SWL",false).toBool();
-  // DT feedback disabled — was causing alarming values in TimeSyncPanel
+  // DT feedback enabled — computes EMA/convergence for TimeSyncPanel display only
   m_dtCorrection_ms = 0.0;
-  m_dtFeedbackEnabled = false;
+  m_dtFeedbackEnabled = true;
   m_ntpOffset_ms = m_settings->value("NTPOffset_ms", 0.0).toDouble();
   m_ntpEnabled = m_settings->value("NTPEnabled", false).toBool();
   ntp_checkbox.setChecked(m_ntpEnabled);
