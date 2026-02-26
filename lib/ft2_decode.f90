@@ -28,7 +28,7 @@ contains
       use timer_module, only: timer
       use packjt77
       include 'ft2/ft2_params.f90'
-      parameter (MAXCAND=300)
+      parameter (MAXCAND=200)
       class(ft2_decoder), intent(inout) :: this
       procedure(ft2_decode_callback) :: callback
       parameter (NSS=NSPS/NDOWN,NDMAX=NMAX/NDOWN)
@@ -195,7 +195,7 @@ contains
       syncmin=0.82
       dosubtract=.true.
       doosd=.true.
-      nsp=4
+      nsp=3
       if(ndepth.eq.2) then
          doosd=.false.
       endif
@@ -212,9 +212,6 @@ contains
          elseif(isp.eq.3) then
             nd2=ndecodes-nd1
             if(nd2.eq.0) exit
-         elseif(isp.eq.4) then
-            nd3=ndecodes-nd1-nd2
-            if(nd3.eq.0) exit
          endif
 
          candidate=0.0
@@ -239,7 +236,7 @@ contains
                   if(isync.eq.1) then
                      idfmin=-12
                      idfmax=12
-                     idfstp=2
+                     idfstp=3
                      ibmin=-688
                      ibmax=2024
                      if(iseg.eq.1) then
