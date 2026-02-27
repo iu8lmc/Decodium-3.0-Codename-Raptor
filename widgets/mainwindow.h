@@ -848,6 +848,7 @@ private:
   QLabel auto_tx_label;
   QLabel band_hopping_label;
   QLabel ndecodes_label;
+  QLabel dt_correction_label;
   QProgressBar progressBar;
   QLabel watchdog_label;
 
@@ -1036,6 +1037,20 @@ private:
   bool m_externalCtrl;         //avt  10/1/25
   bool m_autoButtonState;     //avt 10/2/25
 
+  //---- DT Display (no correction applied) ----
+  QVector<double> m_dtSamples;        // DT values collected in current period
+  double m_dtCorrection_ms {0.0};     // accumulated correction (display only)
+  double m_dtSmoothFactor {0.3};      // EMA smoothing factor
+  int m_dtMinSamples {3};             // minimum decodes before computing
+  bool m_dtFeedbackEnabled {true};    // enables DT collection & display
+  int m_dtLastSampleCount {0};        // sample count for display
+
+  qint64 m_decodeStartMs {0};         // timestamp when decode was triggered
+  double m_lastDecodeLatencyMs {0.0}; // last decode cycle latency
+  double m_avgDtValue {0.0};          // EMA of DT values across periods
+  int m_totalDecodesForDt {0};        // total decodes used for DT calculation
+  int m_ntpDtDivergenceCount {0};     // consecutive NTP/DT divergence periods
+
   // NTP Time Synchronization
   NtpClient *m_ntpClient {nullptr};
   double m_ntpOffset_ms {0.0};
@@ -1106,6 +1121,7 @@ private:
   void rm_tb4(QString houndCall);
   void read_wav_file (QString const& fname);
   void decodeDone ();
+  void applyDtFeedback ();
   bool subProcessFailed (QProcess *, int exit_code, QProcess::ExitStatus);
   void subProcessError (QProcess *, QProcess::ProcessError);
   void statusUpdate () const;

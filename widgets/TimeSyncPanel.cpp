@@ -155,6 +155,105 @@ void TimeSyncPanel::updateNtpSyncStatus(bool synced, QString const& statusText)
   ui->lblNtpStatus->setToolTip(statusText);
 }
 
+void TimeSyncPanel::updateDecodeTiming(QVector<double> const& dtSamples,
+                                        double avgDt,
+                                        double dtCorrectionMs,
+                                        double decodeLatencyMs,
+                                        int sampleCount,
+                                        double driftPpm,
+                                        int ntpDtDivergence,
+                                        double emaFactor)
+{
+  Q_UNUSED(driftPpm);
+  lastAvgDt_ = avgDt;
+  lastDtCorrection_ = dtCorrectionMs;
+  lastDecodeLatency_ = decodeLatencyMs;
+
+  // Avg DT with color (green if <0.3s, yellow <0.5s, red >=0.5s)
+  ui->lblAvgDt->setText(QString("%1%2 s")
+    .arg(avgDt > 0 ? "+" : "").arg(avgDt, 0, 'f', 3));
+  if (qAbs(avgDt) < 0.3)
+    ui->lblAvgDt->setStyleSheet("color:#00ff00;");
+  else if (qAbs(avgDt) < 0.5)
+    ui->lblAvgDt->setStyleSheet("color:#ffff00;");
+  else
+    ui->lblAvgDt->setStyleSheet("color:#ff4444;");
+
+  // DT Correction with trend indicator
+  correctionHistory_.append(dtCorrectionMs);
+  if (correctionHistory_.size() > MAX_CORRECTION_HISTORY)
+    correctionHistory_.removeFirst();
+  QString trend;
+  if (correctionHistory_.size() >= 3) {
+    double recent = correctionHistory_.last();
+    double older = correctionHistory_[correctionHistory_.size() - 3];
+    double delta = recent - older;
+    if (delta > 2.0) trend = " ^";      // increasing
+    else if (delta < -2.0) trend = " v"; // decreasing
+    else trend = " =";                   // stable
+  }
+  ui->lblDtCorrection->setText(QString("%1%2 ms%3")
+    .arg(dtCorrectionMs > 0 ? "+" : "").arg(dtCorrectionMs, 0, 'f', 1).arg(trend));
+
+  // Decode count
+  ui->lblDecodeCount->setText(QString::number(sampleCount));
+
+  // Decode latency with color
+  ui->lblDecodeLatency->setText(QString("%1 ms").arg(decodeLatencyMs, 0, 'f', 0));
+  if (decodeLatencyMs < 2000)
+    ui->lblDecodeLatency->setStyleSheet("color:#00ff00;");
+  else if (decodeLatencyMs < 5000)
+    ui->lblDecodeLatency->setStyleSheet("color:#ffff00;");
+  else
+    ui->lblDecodeLatency->setStyleSheet("color:#ff4444;");
+
+  // Last DTs list
+  QStringList dtList;
+  for (auto dt : dtSamples) {
+    dtList << QString("%1%2").arg(dt > 0 ? "+" : "").arg(dt, 0, 'f', 2);
+  }
+  ui->lblLastDts->setText(dtList.join(", "));
+
+  // #8: Convergence indicator — green if stable for 3+ periods
+  if (qAbs(avgDt) < 0.1 && sampleCount > 0) {
+    stablePeriodsCount_++;
+  } else {
+    stablePeriodsCount_ = 0;
+  }
+  if (stablePeriodsCount_ >= 3) {
+    ui->lblConvergence->setText("LOCKED");
+    ui->lblConvergence->setStyleSheet("color:#00ff00; font-weight:bold;");
+  } else if (stablePeriodsCount_ >= 1) {
+    ui->lblConvergence->setText("Converging...");
+    ui->lblConvergence->setStyleSheet("color:#ffff00;");
+  } else if (sampleCount > 0) {
+    ui->lblConvergence->setText("Adjusting");
+    ui->lblConvergence->setStyleSheet("color:#ff8800;");
+  } else {
+    ui->lblConvergence->setText("No data");
+    ui->lblConvergence->setStyleSheet("color:#888;");
+  }
+
+  // #8: EMA factor display (shows adaptive state)
+  QString emaState;
+  if (emaFactor >= 0.25) emaState = " (warm-up)";
+  else if (emaFactor <= 0.12) emaState = " (stable)";
+  else emaState = " (tracking)";
+  ui->lblEmaFactor->setText(QString::number(emaFactor, 'f', 2) + emaState);
+
+  // #8: Warning display for NTP vs DT divergence
+  if (ntpDtDivergence >= 5) {
+    ui->lblWarning->setText("NTP/DT diverging! Check clock source.");
+    ui->lblWarning->setStyleSheet("color:#ff4444; font-weight:bold;");
+  } else if (ntpDtDivergence >= 3) {
+    ui->lblWarning->setText("NTP/DT mismatch detected");
+    ui->lblWarning->setStyleSheet("color:#ffff00;");
+  } else {
+    ui->lblWarning->setText("None");
+    ui->lblWarning->setStyleSheet("color:#00ff00;");
+  }
+}
+
 void TimeSyncPanel::syncNtpEnabled(bool enabled)
 {
   ui->cbNtpEnabled->blockSignals(true);
