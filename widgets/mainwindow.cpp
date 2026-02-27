@@ -2133,6 +2133,8 @@ void MainWindow::readSettings()
   ui->cbRxAll->setChecked (m_settings->value ("RxAll", false).toBool());
 // m_bShMsgs=m_settings->value("ShMsgs",false).toBool();
   m_bSWL=m_settings->value("SWL",false).toBool();
+  m_dtCorrection_ms = 0.0;
+  m_dtFeedbackEnabled = true;
   m_ntpOffset_ms = m_settings->value("NTPOffset_ms", 0.0).toDouble();
   m_ntpEnabled = m_settings->value("NTPEnabled", false).toBool();
   ntp_checkbox.setChecked(m_ntpEnabled);
@@ -4733,6 +4735,13 @@ void MainWindow::createStatusBar()                           //createStatusBar
   ndecodes_label.setFrameStyle (QFrame::Panel | QFrame::Sunken);
   statusBar()->addWidget (&ndecodes_label);
 
+  dt_correction_label.setAlignment(Qt::AlignHCenter);
+  dt_correction_label.setMinimumSize(QSize{90, 18});
+  dt_correction_label.setFrameStyle(QFrame::Panel | QFrame::Sunken);
+  dt_correction_label.setText("DT:OFF");
+  dt_correction_label.setStyleSheet("QLabel{color:#888;background:#333}");
+  statusBar()->addWidget(&dt_correction_label);
+
   ntp_checkbox.setText("NTP");
   ntp_checkbox.setToolTip("Enable/disable internal NTP time synchronization");
   ntp_checkbox.setChecked(m_ntpEnabled);
@@ -6094,6 +6103,7 @@ void MainWindow::decode()                                       //decode()
         memcpy(to, from, qMin(mem_jt9->size(), size));
         mem_jt9->unlock ();
         to_jt9(m_ihsym,1,-1);                //Send m_ihsym to jt9[.exe] and start decoding
+        m_decodeStartMs = QDateTime::currentMSecsSinceEpoch();
         decodeBusy(true);
       }
     }
@@ -6200,6 +6210,9 @@ void MainWindow::decodeDone ()
   }
   to_jt9(m_ihsym,-1,1);                //Tell jt9 we know it has finished
 
+  // DT Feedback Loop: update TimeSyncPanel display (correction disabled via m_dtFeedbackEnabled=false)
+  applyDtFeedback();
+
   m_startAnother=m_loopall;
   if(m_bNoMoreFiles) {
     MessageBox::information_message(this, tr("No more files to open."));
@@ -6223,6 +6236,116 @@ void MainWindow::decodeDone ()
                         and m_ActiveStationsWidget!=NULL) {
     refreshPileupList();
   }
+}
+
+void MainWindow::applyDtFeedback()
+{
+  m_dtLastSampleCount = m_dtSamples.size();
+
+  // #7: FT2 adaptive thresholds — need fewer samples due to shorter period
+  int minSamples = m_dtMinSamples;
+  if (m_mode == "FT2") minSamples = 2;  // FT2: 2 decodes enough (shorter period)
+
+  if (m_dtFeedbackEnabled && m_dtSamples.size() >= minSamples && !m_diskData) {
+    // Use median for robustness against outliers
+    QVector<double> sorted = m_dtSamples;
+    std::sort(sorted.begin(), sorted.end());
+    double medianDt = sorted[sorted.size() / 2];
+
+    // #4: Adaptive EMA — conservative to avoid oscillation with NTP active
+    // FT2 uses gentler factors since 3.75s period means rapid updates
+    if (m_mode == "FT2") {
+      if (m_totalDecodesForDt < 10) {
+        m_dtSmoothFactor = 0.3;    // FT2 warm-up: moderate convergence
+      } else if (qAbs(m_avgDtValue) < 0.1) {
+        m_dtSmoothFactor = 0.1;    // FT2 stable: gentle tracking
+      } else {
+        m_dtSmoothFactor = 0.2;    // FT2 transitional
+      }
+    } else {
+      if (m_totalDecodesForDt < 20) {
+        m_dtSmoothFactor = 0.5;    // warm-up: converge quickly
+      } else if (qAbs(m_avgDtValue) < 0.1) {
+        m_dtSmoothFactor = 0.15;   // stable: maintain precision
+      } else {
+        m_dtSmoothFactor = 0.3;    // transitional: balanced
+      }
+    }
+
+    // EMA smoothing of median DT
+    if (m_totalDecodesForDt == 0) {
+      m_avgDtValue = medianDt;
+    } else {
+      m_avgDtValue = m_dtSmoothFactor * medianDt + (1.0 - m_dtSmoothFactor) * m_avgDtValue;
+    }
+    m_totalDecodesForDt += m_dtSamples.size();
+
+    // Convert averaged DT (seconds) to ms correction — negative DT means we're
+    // starting too early, so we need positive correction
+    double correctionStep = -m_avgDtValue * 1000.0 * m_dtSmoothFactor;
+
+    // Clamp correction step — tighter for FT2 (short period, small steps safer)
+    double maxStep = (m_mode == "FT2") ? 30.0 : 50.0;
+    correctionStep = qBound(-maxStep, correctionStep, maxStep);
+    m_dtCorrection_ms += correctionStep;
+
+    // Clamp total correction — tighter for FT2 (should never be far off sync)
+    double maxTotal = (m_mode == "FT2") ? 300.0 : 500.0;
+    m_dtCorrection_ms = qBound(-maxTotal, m_dtCorrection_ms, maxTotal);
+
+    // DT correction is computed for TimeSyncPanel display only — NOT applied
+    // to Detector (shifting period boundary degrades decoder performance)
+
+    // #5: NTP vs DT cross-validation — warn if corrections are diverging
+    if (m_ntpEnabled && qAbs(m_ntpOffset_ms) > 1.0) {
+      bool diverging = qAbs(m_dtCorrection_ms) > 3.0 * qAbs(m_ntpOffset_ms)
+                        && m_dtCorrection_ms * m_ntpOffset_ms < 0;  // opposite signs
+      if (diverging) {
+        m_ntpDtDivergenceCount++;
+      } else {
+        m_ntpDtDivergenceCount = 0;
+      }
+    } else {
+      m_ntpDtDivergenceCount = 0;
+    }
+  }
+
+  // Calculate decode latency
+  if (m_decodeStartMs > 0) {
+    m_lastDecodeLatencyMs = QDateTime::currentMSecsSinceEpoch() - m_decodeStartMs;
+    m_decodeStartMs = 0;
+  }
+
+  // Forward timing stats to TimeSyncPanel
+  if (m_timeSyncPanel) {
+    m_timeSyncPanel->updateDecodeTiming(
+      m_dtSamples,
+      m_avgDtValue,
+      m_dtCorrection_ms,
+      m_lastDecodeLatencyMs,
+      m_dtLastSampleCount,
+      0.0,                      // soundcard drift removed
+      m_ntpDtDivergenceCount,
+      m_dtSmoothFactor);
+  }
+
+  // Update status bar DT label with actual DT info
+  if (m_dtLastSampleCount > 0) {
+    QString text = QString("DT:%1%2ms(%3)")
+      .arg(m_dtCorrection_ms > 0 ? "+" : "")
+      .arg(m_dtCorrection_ms, 0, 'f', 1)
+      .arg(m_dtLastSampleCount);
+    dt_correction_label.setText(text);
+    // Color based on convergence quality
+    if (qAbs(m_avgDtValue) < 0.1)
+      dt_correction_label.setStyleSheet("QLabel{color:#000;background:#00ff00}");
+    else if (qAbs(m_avgDtValue) < 0.3)
+      dt_correction_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
+    else
+      dt_correction_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
+  }
+
+  m_dtSamples.clear();
 }
 
 void MainWindow::refreshPileupList()
@@ -6674,6 +6797,22 @@ void MainWindow::readFromStdout()                             //readFromStdout
            || (decodedtext.snr() < -24 && decodedtext.isLowConfidence()))))       // very weak + uncertain
       )
     {
+    // Collect DT samples for TimeSyncPanel display
+    if(!decodedtext.isLowConfidence()) {
+      int snr = decodedtext.snr();
+      // #7: FT2 uses lower SNR threshold (-20) to collect more DT samples
+      // FT2 has 6.67x better DT precision so even weaker signals give usable DT
+      int snrThreshold = (m_mode=="FT2") ? -20 : -18;
+      if(snr >= snrThreshold) {
+        float dt_val = decodedtext.dt();
+        // #7: FT2 tighter outlier rejection (±0.5s) due to higher DT precision
+        float dtLimit = (m_mode=="FT2") ? 0.5f : 2.0f;
+        if(qAbs(dt_val) < dtLimit) {
+          m_dtSamples.append(dt_val);
+        }
+      }
+    }
+
     if (m_mode!="FT8" and m_mode!="FT2" and m_mode!="FT4" and !m_mode.startsWith ("FST4") and m_mode!="Q65") {
       //Pad 22-char msg to at least 37 chars
       line_read = line_read.left(44) + "              " + line_read.mid(44);
@@ -11562,6 +11701,7 @@ void MainWindow::on_actionFT2_triggered()
   });
   m_mode="FT2";
   m_TRperiod=3.75;
+  m_dtSamples.clear();  // discard stale DT samples from previous mode
   bool bVHF=m_config.enable_VHF_features();
   m_bFast9=false;
   m_bFastMode=false;
@@ -11622,6 +11762,7 @@ void MainWindow::on_actionFT4_triggered()
     ui->cbHoldTxFreq->setChecked (HoldTxFreqStatus);
   });
   m_mode="FT4";
+  m_dtSamples.clear();  // discard stale DT samples from previous mode
   if(m_specOp==SpecOp::HOUND) {
     m_config.setSpecial_None();
     m_specOp=m_config.special_op_id();
@@ -11683,6 +11824,7 @@ void MainWindow::on_actionFT8_triggered()
     ui->cbHoldTxFreq->setChecked (HoldTxFreqStatus);
   });
   m_mode="FT8";
+  m_dtSamples.clear();  // discard stale DT samples from previous mode
   bool bVHF=m_config.enable_VHF_features();
   m_bFast9=false;
   m_bFastMode=false;
