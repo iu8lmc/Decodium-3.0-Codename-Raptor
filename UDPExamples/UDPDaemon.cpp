@@ -268,11 +268,11 @@ int main (int argc, char * argv[])
       // instantiating QApplication so that GUI has correct l18n
       std::locale::global (std::locale::classic ());
 
-      app.setApplicationName ("WSJT-X UDP Message Server Daemon");
+      app.setApplicationName ("Decodium UDP Message Server Daemon");
       app.setApplicationVersion ("1.0");
 
       QCommandLineParser parser;
-      parser.setApplicationDescription ("\nWSJT-X UDP Message Server Daemon.");
+      parser.setApplicationDescription ("\nDecodium UDP Message Server Daemon.");
       auto help_option = parser.addHelpOption ();
       auto version_option = parser.addVersionOption ();
 

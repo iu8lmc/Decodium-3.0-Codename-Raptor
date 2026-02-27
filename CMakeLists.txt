@@ -44,7 +44,7 @@ if (POLICY CMP0075)
   cmake_policy (SET CMP0075 NEW) # honour CMAKE_REQUIRED_LIBRARIES in config checks
 endif ()
 
-project (wsjtx
+project (decodium
   VERSION 3.0.0.0
   LANGUAGES C CXX Fortran
   )
@@ -73,7 +73,7 @@ message (STATUS "******************************************************")
 include (set_build_type)
 # RC 0 or omitted is a development build, GA is a General Availability release build
 set_build_type (RC 1)
-set (wsjtx_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}${BUILD_TYPE_REVISION}")
+set (decodium_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}${BUILD_TYPE_REVISION}")
 
 #
 # project information
@@ -83,7 +83,7 @@ set (PROJECT_VENDOR "IU8LMC")
 set (PROJECT_CONTACT "IU8LMC <qrz.com/db/IU8LMC>")
 set (PROJECT_COPYRIGHT "See Help | Copyright info")
 set (PROJECT_HOMEPAGE qrz.com/db/IU8LMC)
-set (PROJECT_MANUAL wsjtx-main)
+set (PROJECT_MANUAL decodium-main)
 set (PROJECT_MANUAL_DIRECTORY_URL https://wsjt.sourceforge.io/wsjtx-doc/)
 set (PROJECT_SAMPLES_URL http://downloads.sourceforge.net/project/wsjt/)
 set (PROJECT_SAMPLES_UPLOAD_DEST frs.sourceforge.net:/home/frs/project/wsjt/)
@@ -103,7 +103,7 @@ endif ()
 # Options & features
 #
 #	Some of these directly effect compilation by being defined in
-#	wsjtx_config.h.in which makes them available to the C/C++
+#	decodium_config.h.in which makes them available to the C/C++
 #	pre-processor.
 #
 include (CMakeDependentOption)
@@ -135,7 +135,7 @@ CMAKE_DEPENDENT_OPTION (WSJT_QDEBUG_IN_RELEASE "Leave Qt debugging statements in
 CMAKE_DEPENDENT_OPTION (WSJT_ENABLE_EXPERIMENTAL_FEATURES "Enable features not fully ready for public releases." ON
   is_debug_build OFF)
 CMAKE_DEPENDENT_OPTION (WSJT_CREATE_WINMAIN
-  "The wsjtx target is normally built as GUI executable with a WinMain entry point on Windows,
+  "The decodium target is normally built as GUI executable with a WinMain entry point on Windows,
 if you want a console application instead then set this option to OFF.
 
 If you just want to see the debug output from the application then the easiest way is to
@@ -267,7 +267,7 @@ set (jt9_FSRCS
   lib/jt9a.f90
   )
 
-set (wsjtx_CXXSRCS
+set (decodium_CXXSRCS
   WSJTXLogging.cpp
   logbook/logbook.cpp
   Network/PSKReporter.cpp
@@ -780,7 +780,7 @@ set (wsprd_CSRCS
   lib/init_random_seed.c
   )
 
-set (wsjtx_UISRCS
+set (decodium_UISRCS
   widgets/mainwindow.ui
   widgets/about.ui
   widgets/astro.ui
@@ -834,7 +834,7 @@ set (all_CXXSRCS
   ${fort_qt_CXXSRCS}
   ${wsjt_qt_CXXSRCS}
   ${wsjt_qtmm_CXXSRCS}
-  ${wsjtx_CXXSRCS}
+  ${decodium_CXXSRCS}
   ${qcp_CXXSRCS}
   )
 
@@ -846,7 +846,7 @@ set (all_C_and_CXXSRCS
   )
 
 set (TOP_LEVEL_RESOURCES
-  icons/Darwin/wsjtx.iconset/icon_128x128.png
+  icons/Darwin/decodium.iconset/icon_128x128.png
   artwork/ft2logo.png
   contrib/gpl-v3-logo.svg
   artwork/splash.png
@@ -886,7 +886,7 @@ set (PALETTE_FILES
 )
 
 if (APPLE)
-  set (WSJTX_ICON_FILE ${CMAKE_PROJECT_NAME}.icns)
+  set (DECODIUM_ICON_FILE ${CMAKE_PROJECT_NAME}.icns)
   set (ICONSRCS
     icons/Darwin/${CMAKE_PROJECT_NAME}.iconset/icon_16x16.png
     icons/Darwin/${CMAKE_PROJECT_NAME}.iconset/icon_16x16@2x.png
@@ -900,16 +900,16 @@ if (APPLE)
     icons/Darwin/${CMAKE_PROJECT_NAME}.iconset/icon_512x512@2x.png
     )
   add_custom_command (
-    OUTPUT ${WSJTX_ICON_FILE}
-    COMMAND iconutil -c icns --output "${CMAKE_BINARY_DIR}/${WSJTX_ICON_FILE}" "${CMAKE_SOURCE_DIR}/icons/Darwin/${CMAKE_PROJECT_NAME}.iconset"
+    OUTPUT ${DECODIUM_ICON_FILE}
+    COMMAND iconutil -c icns --output "${CMAKE_BINARY_DIR}/${DECODIUM_ICON_FILE}" "${CMAKE_SOURCE_DIR}/icons/Darwin/${CMAKE_PROJECT_NAME}.iconset"
     DEPENDS ${ICONSRCS}
     COMMENT "Building Icons"
     )
 else ()
-  set (WSJTX_ICON_FILE icons/windows-icons/wsjtx.ico)
+  set (DECODIUM_ICON_FILE icons/windows-icons/decodium.ico)
 endif (APPLE)
 
-set_source_files_properties (${WSJTX_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+set_source_files_properties (${DECODIUM_ICON_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 
 # suppress intransigent compiler diagnostics
 set_source_files_properties (lib/decoder.f90 PROPERTIES COMPILE_FLAGS "-Wno-unused-dummy-argument")
@@ -920,8 +920,8 @@ set_source_files_properties (lib/filbig.f90 PROPERTIES COMPILE_FLAGS "-Wno-alias
 #  COMPILE_DEFINITIONS $<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG_OUTPUT;QT_NO_WARNING_OUTPUT>
 #  )
 
-set_property (SOURCE ${all_C_and_CXXSRCS} APPEND_STRING PROPERTY COMPILE_FLAGS " -include wsjtx_config.h")
-set_property (SOURCE ${all_C_and_CXXSRCS} APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/wsjtx_config.h)
+set_property (SOURCE ${all_C_and_CXXSRCS} APPEND_STRING PROPERTY COMPILE_FLAGS " -include decodium_config.h")
+set_property (SOURCE ${all_C_and_CXXSRCS} APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/decodium_config.h)
 
 option (ENABLE_OMNIRIG "Enable OmniRig support (requires dumpcpp and OmniRig)" ON)
 if (WIN32 AND ENABLE_OMNIRIG)
@@ -950,7 +950,7 @@ endif ()
 # decide on platform specifc packing and fixing up
 #
 if (APPLE)
-  set (WSJTX_BUNDLE_VERSION ${wsjtx_VERSION})
+  set (DECODIUM_BUNDLE_VERSION ${decodium_VERSION})
 
   # make sure CMAKE_INSTALL_PREFIX ends in /
   string (LENGTH "${CMAKE_INSTALL_PREFIX}" LEN)
@@ -1397,7 +1397,7 @@ add_executable (fmeasure lib/fmeasure.f90)
 generate_version_info (wsprd_VERSION_RESOURCES
   NAME wsprd
   BUNDLE ${PROJECT_BUNDLE_NAME}
-  ICON ${WSJTX_ICON_FILE}
+  ICON ${DECODIUM_ICON_FILE}
   FILE_DESCRIPTION "WSPR mode decoder"
   )
 add_executable (wsprd ${wsprd_CSRCS} lib/indexx.f90 lib/wsprd/osdwspr.f90 ${wsprd_VERSION_RESOURCES})
@@ -1450,7 +1450,7 @@ set (LANGUAGES
   it				# Italian
   )
 foreach (lang_ ${LANGUAGES})
-  file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/translations/wsjtx_${lang_}.ts ts_)
+  file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/translations/decodium_${lang_}.ts ts_)
   list (APPEND TS_FILES ${ts_})
   set (qt_translations_ "${QT_TRANSLATIONS_DIR}/qtbase_${lang_}.qm")
   if (EXISTS "${qt_translations_}")
@@ -1465,7 +1465,7 @@ endforeach ()
 if (UPDATE_TRANSLATIONS)
   message (STATUS "UPDATE_TRANSLATIONS option is set.")
   qt5_create_translation (
-    QM_FILES ${wsjt_qt_UISRCS} ${wsjtx_UISRCS} ${wsjt_qt_CXXSRCS} ${wsjtx_CXXSRCS}
+    QM_FILES ${wsjt_qt_UISRCS} ${decodium_UISRCS} ${wsjt_qt_CXXSRCS} ${decodium_CXXSRCS}
     ${TS_FILES}
     OPTIONS -I${CMAKE_CURRENT_SOURCE_DIR}
     )
@@ -1490,19 +1490,19 @@ function (add_resources resources path)
   endforeach (resource_file_ ${ARGN})
 endfunction (add_resources resources path)
 
-add_resources (wsjtx_RESOURCES "" ${TOP_LEVEL_RESOURCES})
-add_resources (wsjtx_RESOURCES /Palettes ${PALETTE_FILES})
-add_resources (wsjtx_RESOURCES /Translations ${QM_FILES})
+add_resources (decodium_RESOURCES "" ${TOP_LEVEL_RESOURCES})
+add_resources (decodium_RESOURCES /Palettes ${PALETTE_FILES})
+add_resources (decodium_RESOURCES /Translations ${QM_FILES})
 
-configure_file (wsjtx.qrc.in wsjtx.qrc @ONLY)
+configure_file (decodium.qrc.in decodium.qrc @ONLY)
 
 # UI generation
 qt5_wrap_ui (wsjt_qt_GENUISRCS ${wsjt_qt_UISRCS})
-qt5_wrap_ui (wsjtx_GENUISRCS ${wsjtx_UISRCS})
+qt5_wrap_ui (decodium_GENUISRCS ${decodium_UISRCS})
 
 # Resource generation
-qt5_add_resources (wsjtx_RESOURCES_RCC
-  ${CMAKE_BINARY_DIR}/wsjtx.qrc
+qt5_add_resources (decodium_RESOURCES_RCC
+  ${CMAKE_BINARY_DIR}/decodium.qrc
   contrib/QDarkStyleSheet/qdarkstyle/style.qrc
   )
 
@@ -1523,7 +1523,7 @@ target_link_libraries (qcp Qt5::Widgets Qt5::PrintSupport)
 
 # build a library of package Qt functionality
 add_library (wsjt_qt STATIC ${wsjt_qt_CXXSRCS} ${wsjt_qt_GENUISRCS} ${GENAXSRCS})
-# set wsjtx_udp exports to static variants
+# set decodium_udp exports to static variants
 target_compile_definitions (wsjt_qt PUBLIC UDP_STATIC_DEFINE)
 target_link_libraries (wsjt_qt Hamlib::Hamlib Boost::log qcp Qt5::Widgets Qt5::Network Qt5::Sql Qt5::WebSockets)
 if (WIN32)
@@ -1542,7 +1542,7 @@ target_link_libraries (wsjt_qtmm Qt5::Multimedia)
 generate_version_info (jt9_VERSION_RESOURCES
   NAME jt9
   BUNDLE ${PROJECT_BUNDLE_NAME}
-  ICON ${WSJTX_ICON_FILE}
+  ICON ${DECODIUM_ICON_FILE}
   FILE_DESCRIPTION "jt9 - Decodium 3 FT2 slow mode decoder"
   )
 
@@ -1594,103 +1594,103 @@ endif ()
   add_subdirectory (qmap)
 
 # build the main application
-generate_version_info (wsjtx_VERSION_RESOURCES
-  NAME wsjtx
+generate_version_info (decodium_VERSION_RESOURCES
+  NAME decodium
   BUNDLE ${PROJECT_BUNDLE_NAME}
-  ICON ${WSJTX_ICON_FILE}
+  ICON ${DECODIUM_ICON_FILE}
   )
 
-add_executable (wsjtx MACOSX_BUNDLE
-  ${wsjtx_CXXSRCS}
-  ${wsjtx_GENUISRCS}
-  ${WSJTX_ICON_FILE}
-  ${wsjtx_RESOURCES_RCC}
-  ${wsjtx_VERSION_RESOURCES}
+add_executable (decodium MACOSX_BUNDLE
+  ${decodium_CXXSRCS}
+  ${decodium_GENUISRCS}
+  ${DECODIUM_ICON_FILE}
+  ${decodium_RESOURCES_RCC}
+  ${decodium_VERSION_RESOURCES}
   )
 
 if (WSJT_CREATE_WINMAIN)
-  set_target_properties (wsjtx PROPERTIES WIN32_EXECUTABLE ON)
+  set_target_properties (decodium PROPERTIES WIN32_EXECUTABLE ON)
 endif (WSJT_CREATE_WINMAIN)
 
-set_target_properties (wsjtx PROPERTIES
+set_target_properties (decodium PROPERTIES
   MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Darwin/Info.plist.in"
   MACOSX_BUNDLE_INFO_STRING "${PROJECT_DESCRIPTION}"
-  MACOSX_BUNDLE_ICON_FILE "${WSJTX_ICON_FILE}"
+  MACOSX_BUNDLE_ICON_FILE "${DECODIUM_ICON_FILE}"
   MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
   MACOSX_BUNDLE_SHORT_VERSION_STRING "v${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}"
   MACOSX_BUNDLE_LONG_VERSION_STRING "Version ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}${SCS_VERSION_STR}"
   MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_BUNDLE_NAME}"
   MACOSX_BUNDLE_BUNDLE_EXECUTABLE_NAME "${PROJECT_NAME}"
   MACOSX_BUNDLE_COPYRIGHT "${PROJECT_COPYRIGHT}"
-  MACOSX_BUNDLE_GUI_IDENTIFIER "org.k1jt.wsjtx"
+  MACOSX_BUNDLE_GUI_IDENTIFIER "org.iu8lmc.decodium"
   )
 
-target_include_directories (wsjtx PRIVATE ${FFTW3_INCLUDE_DIRS})
+target_include_directories (decodium PRIVATE ${FFTW3_INCLUDE_DIRS})
 if ((NOT ${OPENMP_FOUND}) OR APPLE)
-  target_link_libraries (wsjtx wsjt_fort)
+  target_link_libraries (decodium wsjt_fort)
 else ()
-  target_link_libraries (wsjtx wsjt_fort_omp)
+  target_link_libraries (decodium wsjt_fort_omp)
   if (OpenMP_C_FLAGS)
-    set_target_properties (wsjtx PROPERTIES
+    set_target_properties (decodium PROPERTIES
       COMPILE_FLAGS "${OpenMP_C_FLAGS}"
       LINK_FLAGS "${OpenMP_C_FLAGS}"
       )
   endif ()
-  set_target_properties (wsjtx PROPERTIES
+  set_target_properties (decodium PROPERTIES
     Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/fortran_modules_omp
     )
   if (WIN32)
-    set_target_properties (wsjtx PROPERTIES
+    set_target_properties (decodium PROPERTIES
       LINK_FLAGS -Wl,--stack,0x1000000,--heap,0x20000000
       )
   endif ()
 endif ()
-target_link_libraries (wsjtx Qt5::SerialPort wsjt_cxx wsjt_qt wsjt_qtmm ${FFTW3_LIBRARIES} ${LIBM_LIBRARIES})
+target_link_libraries (decodium Qt5::SerialPort wsjt_cxx wsjt_qt wsjt_qtmm ${FFTW3_LIBRARIES} ${LIBM_LIBRARIES})
 
-# make a library for WSJT-X UDP servers
-# add_library (wsjtx_udp SHARED ${UDP_library_CXXSRCS})
-add_library (wsjtx_udp-static STATIC ${UDP_library_CXXSRCS})
-#target_include_directories (wsjtx_udp
+# make a library for Decodium UDP servers
+# add_library (decodium_udp SHARED ${UDP_library_CXXSRCS})
+add_library (decodium_udp-static STATIC ${UDP_library_CXXSRCS})
+#target_include_directories (decodium_udp
 #  INTERFACE
-#  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/wsjtx>
+#  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/decodium>
 #  )
-target_include_directories (wsjtx_udp-static
+target_include_directories (decodium_udp-static
   INTERFACE
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/wsjtx>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/decodium>
   )
-#set_target_properties (wsjtx_udp PROPERTIES
+#set_target_properties (decodium_udp PROPERTIES
 #  PUBLIC_HEADER "${UDP_library_HEADERS}"
 #  )
-set_target_properties (wsjtx_udp-static PROPERTIES
-  OUTPUT_NAME wsjtx_udp
+set_target_properties (decodium_udp-static PROPERTIES
+  OUTPUT_NAME decodium_udp
   )
-target_compile_definitions (wsjtx_udp-static PUBLIC UDP_STATIC_DEFINE)
-target_link_libraries (wsjtx_udp-static Qt5::Network Qt5::Gui)
-generate_export_header (wsjtx_udp-static BASE_NAME udp)
+target_compile_definitions (decodium_udp-static PUBLIC UDP_STATIC_DEFINE)
+target_link_libraries (decodium_udp-static Qt5::Network Qt5::Gui)
+generate_export_header (decodium_udp-static BASE_NAME udp)
 
 generate_version_info (udp_daemon_VERSION_RESOURCES
   NAME udp_daemon
   BUNDLE ${PROJECT_BUNDLE_NAME}
-  ICON ${WSJTX_ICON_FILE}
-  FILE_DESCRIPTION "Example WSJT-X UDP Message Protocol daemon"
+  ICON ${DECODIUM_ICON_FILE}
+  FILE_DESCRIPTION "Example Decodium UDP Message Protocol daemon"
   )
 add_executable (udp_daemon UDPExamples/UDPDaemon.cpp ${udp_daemon_VERSION_RESOURCES})
-target_link_libraries (udp_daemon wsjtx_udp-static)
+target_link_libraries (udp_daemon decodium_udp-static)
 
-generate_version_info (wsjtx_app_version_VERSION_RESOURCES
-  NAME wsjtx_app_version
+generate_version_info (decodium_app_version_VERSION_RESOURCES
+  NAME decodium_app_version
   BUNDLE ${PROJECT_BUNDLE_NAME}
-  ICON ${WSJTX_ICON_FILE}
-  FILE_DESCRIPTION "Display WSJT-X Application Version on console"
+  ICON ${DECODIUM_ICON_FILE}
+  FILE_DESCRIPTION "Display Decodium Application Version on console"
   )
-add_executable (wsjtx_app_version AppVersion/AppVersion.cpp ${wsjtx_app_version_VERSION_RESOURCES})
-target_link_libraries (wsjtx_app_version wsjt_qt)
+add_executable (decodium_app_version AppVersion/AppVersion.cpp ${decodium_app_version_VERSION_RESOURCES})
+target_link_libraries (decodium_app_version wsjt_qt)
 
 generate_version_info (message_aggregator_VERSION_RESOURCES
   NAME message_aggregator
   BUNDLE ${PROJECT_BUNDLE_NAME}
-  ICON ${WSJTX_ICON_FILE}
-  FILE_DESCRIPTION "Example WSJT-X UDP Message Protocol application"
+  ICON ${DECODIUM_ICON_FILE}
+  FILE_DESCRIPTION "Example Decodium UDP Message Protocol application"
   )
 add_resources (message_aggregator_RESOURCES /qss ${message_aggregator_STYLESHEETS})
 configure_file (UDPExamples/message_aggregator.qrc.in message_aggregator.qrc @ONLY)
@@ -1703,7 +1703,7 @@ add_executable (message_aggregator
   ${message_aggregator_RESOURCES_RCC}
   ${message_aggregator_VERSION_RESOURCES}
   )
-target_link_libraries (message_aggregator wsjt_qt Qt5::Widgets wsjtx_udp-static)
+target_link_libraries (message_aggregator wsjt_qt Qt5::Widgets decodium_udp-static)
 
 if (WSJT_CREATE_WINMAIN)
   set_target_properties (message_aggregator PROPERTIES WIN32_EXECUTABLE ON)
@@ -1712,40 +1712,40 @@ endif (WSJT_CREATE_WINMAIN)
 if (UNIX)
   if (NOT WSJT_SKIP_MANPAGES)
     add_subdirectory (manpages)
-    add_dependencies (wsjtx manpages)
+    add_dependencies (decodium manpages)
   endif (NOT WSJT_SKIP_MANPAGES)
   if (NOT APPLE)
     add_subdirectory (debian)
-    add_dependencies (wsjtx debian)
+    add_dependencies (decodium debian)
   endif (NOT APPLE)
 endif (UNIX)
 
 #
 # installation
 #
-install (TARGETS wsjtx
+install (TARGETS decodium
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime
   BUNDLE DESTINATION . COMPONENT runtime
   )
 
-# install (TARGETS wsjtx_udp EXPORT udp
+# install (TARGETS decodium_udp EXPORT udp
 #   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 #   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 #   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/wsjtx
+#   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/decodium
 #   )
-# install (TARGETS wsjtx_udp-static EXPORT udp-static
+# install (TARGETS decodium_udp-static EXPORT udp-static
 #   DESTINATION ${CMAKE_INSTALL_LIBDIR}
 #   )
 
-# install (EXPORT udp NAMESPACE wsjtx::
-#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/wsjtx
+# install (EXPORT udp NAMESPACE decodium::
+#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/decodium
 #   )
-# install (EXPORT udp-static NAMESPACE wsjtx::
-#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/wsjtx
+# install (EXPORT udp-static NAMESPACE decodium::
+#   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/decodium
 #   )
 
-install (TARGETS udp_daemon message_aggregator wsjtx_app_version
+install (TARGETS udp_daemon message_aggregator decodium_app_version
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime
   BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT runtime
   )
@@ -1767,21 +1767,21 @@ install (PROGRAMS
   ${RIGCTL_EXE}
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   #COMPONENT runtime
-  RENAME rigctl-wsjtx${CMAKE_EXECUTABLE_SUFFIX}
+  RENAME rigctl-decodium${CMAKE_EXECUTABLE_SUFFIX}
   )
 
 install (PROGRAMS
   ${RIGCTLD_EXE}
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   #COMPONENT runtime
-  RENAME rigctld-wsjtx${CMAKE_EXECUTABLE_SUFFIX}
+  RENAME rigctld-decodium${CMAKE_EXECUTABLE_SUFFIX}
   )
 
 install (PROGRAMS
   ${RIGCTLCOM_EXE}
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   #COMPONENT runtime
-  RENAME rigctlcom-wsjtx${CMAKE_EXECUTABLE_SUFFIX}
+  RENAME rigctlcom-decodium${CMAKE_EXECUTABLE_SUFFIX}
   )
 
 install (FILES
@@ -1842,7 +1842,7 @@ endif (WIN32)
 if (APPLE)
     install (FILES
         Darwin/ReadMe.txt
-        Darwin/com.wsjtx.sysctl.plist
+        Darwin/com.decodium.sysctl.plist
         DESTINATION .
         #COMPONENT runtime
     )
@@ -1882,21 +1882,21 @@ add_dependencies (wsprd revisiontag)
 # versioning and configuration
 #
 configure_file (
-  "${CMAKE_CURRENT_SOURCE_DIR}/wsjtx_config.h.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/wsjtx_config.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/decodium_config.h.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/decodium_config.h"
   )
 
 
 if (NOT WIN32 AND NOT APPLE)
-  # install a desktop file so wsjtx appears in the application start
+  # install a desktop file so decodium appears in the application start
   # menu with an icon
   install (
-    FILES wsjtx.desktop message_aggregator.desktop
+    FILES decodium.desktop message_aggregator.desktop
     DESTINATION share/applications
     #COMPONENT runtime
     )
   install (
-    FILES icons/Unix/wsjtx_icon.png
+    FILES icons/Unix/decodium_icon.png
     DESTINATION share/pixmaps
     #COMPONENT runtime
     )
@@ -1904,12 +1904,12 @@ endif (NOT WIN32 AND NOT APPLE)
 
 if (APPLE)
   set (CMAKE_POSTFLIGHT_SCRIPT
-    "${wsjtx_BINARY_DIR}/postflight.sh")
+    "${decodium_BINARY_DIR}/postflight.sh")
   set (CMAKE_POSTUPGRADE_SCRIPT
-    "${wsjtx_BINARY_DIR}/postupgrade.sh")
-  configure_file ("${wsjtx_SOURCE_DIR}/Darwin/postflight.sh.in"
+    "${decodium_BINARY_DIR}/postupgrade.sh")
+  configure_file ("${decodium_SOURCE_DIR}/Darwin/postflight.sh.in"
     "${CMAKE_POSTFLIGHT_SCRIPT}")
-  configure_file ("${wsjtx_SOURCE_DIR}/Darwin/postupgrade.sh.in"
+  configure_file ("${decodium_SOURCE_DIR}/Darwin/postupgrade.sh.in"
     "${CMAKE_POSTUPGRADE_SCRIPT}")
 endif ()
 

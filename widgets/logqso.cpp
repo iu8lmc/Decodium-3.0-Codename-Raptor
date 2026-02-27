@@ -429,8 +429,8 @@ void LogQSO::accept()
     sat_mode = "";
   }
   m_freqRx = ui->freqRx->text ();
-  //Log this QSO to file "wsjtx.log"
-  static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("wsjtx.log")};
+  //Log this QSO to file "decodium.log"
+  static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("decodium.log")};
   if(!f.open(QIODevice::Text | QIODevice::Append)) {
     MessageBox::warning_message (this, tr ("Log file error"),
                                  tr ("Cannot open \"%1\" for append").arg (f.fileName ()),

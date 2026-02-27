@@ -106,7 +106,7 @@ L10nLoader::L10nLoader (QApplication * app, QLocale const& locale, QString const
           if (locale.uiLanguages ().front ().left (2) == language)
             {
               LOG_TRACE (QString {"Trying %1"}.arg (language));
-              if (m_->load_translator ("wsjtx_" + language, translations_dir))
+              if (m_->load_translator ("decodium_" + language, translations_dir))
                 {
                   LOG_INFO (QString {"Loaded WSJT-X base translation file from %1 based on language %2"}
                      .arg (translations_dir)
@@ -118,7 +118,7 @@ L10nLoader::L10nLoader (QApplication * app, QLocale const& locale, QString const
       // now try and load the most specific translations (may be a
       // duplicate but we shouldn't care)
       LOG_TRACE ("Looking for WSJT-X translations based on locale in the resources filesystem");
-      if (m_->load_translator (locale, "wsjtx", "_", translations_dir))
+      if (m_->load_translator (locale, "decodium", "_", translations_dir))
         {
           LOG_INFO ("Loaded WSJT-X translations for current locale from resources");
         }
@@ -137,7 +137,7 @@ L10nLoader::L10nLoader (QApplication * app, QLocale const& locale, QString const
       // try and load the base translation
       auto base_language = language.left (2);
       LOG_TRACE ("Looking for WSJT-X translations based on command line region override in the resources filesystem");
-      if (m_->load_translator ("wsjtx_" + base_language, translations_dir))
+      if (m_->load_translator ("decodium_" + base_language, translations_dir))
         {
           LOG_INFO (QString {"Loaded base translation file from %1 based on language %2"}
              .arg (translations_dir)
@@ -146,7 +146,7 @@ L10nLoader::L10nLoader (QApplication * app, QLocale const& locale, QString const
       // now load the requested translations (may be a duplicate
       // but we shouldn't care)
       LOG_TRACE ("Looking for WSJT-X translations based on command line override country in the resources filesystem");
-      if (m_->load_translator ("wsjtx_" + language, translations_dir))
+      if (m_->load_translator ("decodium_" + language, translations_dir))
         {
           LOG_INFO (QString {"Loaded translation file from %1 based on language %2"}
               .arg (translations_dir)
@@ -170,7 +170,7 @@ L10nLoader::L10nLoader (QApplication * app, QLocale const& locale, QString const
       if (locale.uiLanguages ().front ().left (2) == language)
         {
           LOG_TRACE (QString {"Trying %1"}.arg (language));
-          if (m_->load_translator ("wsjtx_" + language))
+          if (m_->load_translator ("decodium_" + language))
             {
               LOG_INFO (QString {"Loaded base translation file from $cwd based on language %1"}.arg (language));
               break;
@@ -183,7 +183,7 @@ L10nLoader::L10nLoader (QApplication * app, QLocale const& locale, QString const
       // now try  and load  the most specific  translations (may  be a
       // duplicate but we shouldn't care)
       LOG_TRACE ("Looking for WSJT-X translations based on locale in the resources filesystem");
-      if (m_->load_translator (locale, "wsjtx", "_"))
+      if (m_->load_translator (locale, "decodium", "_"))
         {
           LOG_INFO ("loaded translations for current locale from a file");
         }
@@ -202,14 +202,14 @@ L10nLoader::L10nLoader (QApplication * app, QLocale const& locale, QString const
       // try and load the base translation
       auto base_language = language.left (2);
       LOG_TRACE ("Looking for WSJT-X translations based on command line override country in the current directory");
-      if (m_->load_translator ("wsjtx_" + base_language))
+      if (m_->load_translator ("decodium_" + base_language))
         {
           LOG_INFO (QString {"Loaded base translation file from $cwd based on language %1"}.arg (base_language));
         }
       // now load the requested translations (may be a duplicate
       // but we shouldn't care)
       LOG_TRACE ("Looking for WSJT-X translations based on command line region in the current directory");
-      if (m_->load_translator ("wsjtx_" + language))
+      if (m_->load_translator ("decodium_" + language))
         {
           LOG_INFO (QString {"loaded translation file from $cwd based on language %1"}.arg (language));
         }

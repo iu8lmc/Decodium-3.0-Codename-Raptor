@@ -4774,7 +4774,7 @@ QPushButton[state=&quot;ok&quot;] {
     <addaction name="separator"/>
     <addaction name="actionDelete_all_wav_files_in_SaveDir"/>
     <addaction name="actionErase_ALL_TXT"/>
-    <addaction name="actionErase_wsjtx_log_adi"/>
+    <addaction name="actionErase_decodium_log_adi"/>
     <addaction name="actionErase_Tx_Log"/>
     <addaction name="actionErase_Ignore_List"/>
     <addaction name="actionErase_WSPR_hashtable"/>
@@ -5182,14 +5182,14 @@ QPushButton[state=&quot;ok&quot;] {
     <string>Erase ALL.TXT</string>
    </property>
   </action>
-  <action name="actionErase_wsjtx_log_adi">
+  <action name="actionErase_decodium_log_adi">
    <property name="text">
-    <string>Erase wsjtx_log.adi</string>
+    <string>Erase decodium_log.adi</string>
    </property>
   </action>
   <action name="actionErase_Tx_Log">
    <property name="text">
-    <string>Erase wsjtx.log</string>
+    <string>Erase decodium.log</string>
    </property>
   </action>
   <action name="actionErase_Ignore_List">

@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
       std::locale::global (std::locale::classic ());
 
       // Override programs executable basename as application name.
-      app.setApplicationName ("WSJT-X Record Time Signal");
+      app.setApplicationName ("Decodium Record Time Signal");
       app.setApplicationVersion (version ());
 
       QCommandLineParser parser;

@@ -25,15 +25,6 @@ public:
 
   void updateNtpOffset(double offsetMs, int serverCount);
   void updateNtpSyncStatus(bool synced, QString const& statusText);
-  void updateSoundcardDrift(double driftMsPerPeriod, double driftPpm);
-  void updateDecodeTiming(QVector<double> const& dtSamples,
-                          double avgDt,
-                          double dtCorrectionMs,
-                          double decodeLatencyMs,
-                          int sampleCount,
-                          double driftPpm = 0.0,
-                          int ntpDtDivergence = 0,
-                          double emaFactor = 0.3);
   void syncNtpEnabled(bool enabled);
   void syncCustomServer(QString const& server);
 
@@ -77,16 +68,6 @@ private:
   bool synced_ {false};
   QVector<OffsetEntry> history_;
   static constexpr int MAX_HISTORY = 100;
-
-  // Decode timing stats
-  double lastAvgDt_ {0.0};
-  double lastDtCorrection_ {0.0};
-  double lastDecodeLatency_ {0.0};
-
-  // #8: Advanced metrics tracking
-  QVector<double> correctionHistory_;   // last N correction values for trend
-  int stablePeriodsCount_ {0};         // consecutive periods with |avgDt| < 0.1
-  static constexpr int MAX_CORRECTION_HISTORY = 20;
 
   // ChronoGPS process management
   QTimer chronoStatusTimer_;
