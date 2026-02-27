@@ -650,9 +650,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   // hook up the detector signals, slots and disposal
   connect (this, &MainWindow::FFTSize, m_detector, &Detector::setBlockSize);
   connect(m_detector, &Detector::framesWritten, this, &MainWindow::dataSink);
-  connect(m_detector, &Detector::soundcardDriftUpdated, this, &MainWindow::onSoundcardDriftUpdated);
-  // NTP offset is displayed in TimeSyncPanel but NOT injected into Detector
-  // (shifting period boundary corrupts audio window and degrades decoding)
   connect (&m_audioThread, &QThread::finished, m_detector, &QObject::deleteLater);
 
   // setup the waterfall
@@ -1377,7 +1374,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   proc_jt9.start(QDir::toNativeSeparators (m_appDir) + QDir::separator () +
           "jt9", jt9_args, QIODevice::ReadWrite | QIODevice::Unbuffered);
 
-  auto fname {QDir::toNativeSeparators(m_config.writeable_data_dir ().absoluteFilePath ("wsjtx_wisdom.dat"))};
+  auto fname {QDir::toNativeSeparators(m_config.writeable_data_dir ().absoluteFilePath ("decodium_wisdom.dat"))};
   fftwf_import_wisdom_from_filename (fname.toLocal8Bit ());
 
   m_ntx = 6;
@@ -1678,7 +1675,7 @@ MainWindow::~MainWindow()
   if(m_QSYMessageCreatorWidget) m_QSYMessageCreatorWidget.reset ();
   if(m_QSYMessageWidget) m_QSYMessageWidget.reset ();
   if(m_qsymonitorWidget) m_qsymonitorWidget.reset ();
-  auto fname {QDir::toNativeSeparators(m_config.writeable_data_dir ().absoluteFilePath ("wsjtx_wisdom.dat"))};
+  auto fname {QDir::toNativeSeparators(m_config.writeable_data_dir ().absoluteFilePath ("decodium_wisdom.dat"))};
   fftwf_export_wisdom_to_filename (fname.toLocal8Bit ());
   m_audioThread.quit ();
   m_audioThread.wait ();
@@ -2136,9 +2133,6 @@ void MainWindow::readSettings()
   ui->cbRxAll->setChecked (m_settings->value ("RxAll", false).toBool());
 // m_bShMsgs=m_settings->value("ShMsgs",false).toBool();
   m_bSWL=m_settings->value("SWL",false).toBool();
-  // DT feedback enabled — computes EMA/convergence for TimeSyncPanel display only
-  m_dtCorrection_ms = 0.0;
-  m_dtFeedbackEnabled = true;
   m_ntpOffset_ms = m_settings->value("NTPOffset_ms", 0.0).toDouble();
   m_ntpEnabled = m_settings->value("NTPEnabled", false).toBool();
   ntp_checkbox.setChecked(m_ntpEnabled);
@@ -4564,7 +4558,7 @@ void MainWindow::statusChanged()
           ui->DX_Call_Button->click ();
   });
   statusUpdate ();
-  QFile f {m_config.temp_dir ().absoluteFilePath ("wsjtx_status.txt")};
+  QFile f {m_config.temp_dir ().absoluteFilePath ("decodium_status.txt")};
   if(f.open(QFile::WriteOnly | QIODevice::Text)) {
     QTextStream out(&f);
     QString tmpGrid = m_hisGrid;
@@ -4738,13 +4732,6 @@ void MainWindow::createStatusBar()                           //createStatusBar
   ndecodes_label.setMinimumSize (QSize {30, 18});
   ndecodes_label.setFrameStyle (QFrame::Panel | QFrame::Sunken);
   statusBar()->addWidget (&ndecodes_label);
-
-  dt_correction_label.setAlignment(Qt::AlignHCenter);
-  dt_correction_label.setMinimumSize(QSize{90, 18});
-  dt_correction_label.setFrameStyle(QFrame::Panel | QFrame::Sunken);
-  dt_correction_label.setText("DT:OFF");
-  dt_correction_label.setStyleSheet("QLabel{color:#888;background:#333}");
-  statusBar()->addWidget(&dt_correction_label);
 
   ntp_checkbox.setText("NTP");
   ntp_checkbox.setToolTip("Enable/disable internal NTP time synchronization");
@@ -5324,7 +5311,6 @@ void MainWindow::on_actionTime_Sync_triggered()
     m_timeSyncPanel->updateNtpSyncStatus(
       m_ntpClient ? m_ntpClient->isSynced() : false,
       m_ntpEnabled ? "Initializing..." : "NTP disabled");
-    m_timeSyncPanel->updateSoundcardDrift(m_soundcardDriftMsPerPeriod, m_soundcardDriftPpm);
   }
   m_timeSyncPanel->showNormal();
   m_timeSyncPanel->raise();
@@ -6108,7 +6094,6 @@ void MainWindow::decode()                                       //decode()
         memcpy(to, from, qMin(mem_jt9->size(), size));
         mem_jt9->unlock ();
         to_jt9(m_ihsym,1,-1);                //Send m_ihsym to jt9[.exe] and start decoding
-        m_decodeStartMs = QDateTime::currentMSecsSinceEpoch();
         decodeBusy(true);
       }
     }
@@ -6215,9 +6200,6 @@ void MainWindow::decodeDone ()
   }
   to_jt9(m_ihsym,-1,1);                //Tell jt9 we know it has finished
 
-  // DT Feedback Loop: update TimeSyncPanel display (correction disabled via m_dtFeedbackEnabled=false)
-  applyDtFeedback();
-
   m_startAnother=m_loopall;
   if(m_bNoMoreFiles) {
     MessageBox::information_message(this, tr("No more files to open."));
@@ -6241,121 +6223,6 @@ void MainWindow::decodeDone ()
                         and m_ActiveStationsWidget!=NULL) {
     refreshPileupList();
   }
-}
-
-void MainWindow::applyDtFeedback()
-{
-  m_dtLastSampleCount = m_dtSamples.size();
-
-  // #7: FT2 adaptive thresholds — need fewer samples due to shorter period
-  int minSamples = m_dtMinSamples;
-  if (m_mode == "FT2") minSamples = 2;  // FT2: 2 decodes enough (shorter period)
-
-  if (m_dtFeedbackEnabled && m_dtSamples.size() >= minSamples && !m_diskData) {
-    // Use median for robustness against outliers
-    QVector<double> sorted = m_dtSamples;
-    std::sort(sorted.begin(), sorted.end());
-    double medianDt = sorted[sorted.size() / 2];
-
-    // #4: Adaptive EMA — conservative to avoid oscillation with NTP active
-    // FT2 uses gentler factors since 3.75s period means rapid updates
-    if (m_mode == "FT2") {
-      if (m_totalDecodesForDt < 10) {
-        m_dtSmoothFactor = 0.3;    // FT2 warm-up: moderate convergence
-      } else if (qAbs(m_avgDtValue) < 0.1) {
-        m_dtSmoothFactor = 0.1;    // FT2 stable: gentle tracking
-      } else {
-        m_dtSmoothFactor = 0.2;    // FT2 transitional
-      }
-    } else {
-      if (m_totalDecodesForDt < 20) {
-        m_dtSmoothFactor = 0.5;    // warm-up: converge quickly
-      } else if (qAbs(m_avgDtValue) < 0.1) {
-        m_dtSmoothFactor = 0.15;   // stable: maintain precision
-      } else {
-        m_dtSmoothFactor = 0.3;    // transitional: balanced
-      }
-    }
-
-    // EMA smoothing of median DT
-    if (m_totalDecodesForDt == 0) {
-      m_avgDtValue = medianDt;
-    } else {
-      m_avgDtValue = m_dtSmoothFactor * medianDt + (1.0 - m_dtSmoothFactor) * m_avgDtValue;
-    }
-    m_totalDecodesForDt += m_dtSamples.size();
-
-    // Convert averaged DT (seconds) to ms correction — negative DT means we're
-    // starting too early, so we need positive correction
-    // NOTE: Predictive correction (dtRate extrapolation) was removed because it
-    // amplified oscillations when combined with NTP feedback. Simple proportional
-    // correction is more stable with 3.75s FT2 periods.
-    double correctionStep = -m_avgDtValue * 1000.0 * m_dtSmoothFactor;
-
-    // Clamp correction step — tighter for FT2 (short period, small steps safer)
-    double maxStep = (m_mode == "FT2") ? 30.0 : 50.0;
-    correctionStep = qBound(-maxStep, correctionStep, maxStep);
-    m_dtCorrection_ms += correctionStep;
-
-    // Clamp total correction — tighter for FT2 (should never be far off sync)
-    double maxTotal = (m_mode == "FT2") ? 300.0 : 500.0;
-    m_dtCorrection_ms = qBound(-maxTotal, m_dtCorrection_ms, maxTotal);
-
-    // DT correction is computed for TimeSyncPanel display only — NOT applied
-    // to Detector (shifting period boundary degrades decoder performance)
-
-    // #5: NTP vs DT cross-validation — warn if corrections are diverging
-    if (m_ntpEnabled && qAbs(m_ntpOffset_ms) > 1.0) {
-      // If DT correction is >3x the NTP offset magnitude and in opposite direction,
-      // something may be wrong (wrong TR period, clock source issue, etc.)
-      bool diverging = qAbs(m_dtCorrection_ms) > 3.0 * qAbs(m_ntpOffset_ms)
-                        && m_dtCorrection_ms * m_ntpOffset_ms < 0;  // opposite signs
-      if (diverging) {
-        m_ntpDtDivergenceCount++;
-      } else {
-        m_ntpDtDivergenceCount = 0;
-      }
-    } else {
-      m_ntpDtDivergenceCount = 0;
-    }
-  }
-
-  // Calculate decode latency
-  if (m_decodeStartMs > 0) {
-    m_lastDecodeLatencyMs = QDateTime::currentMSecsSinceEpoch() - m_decodeStartMs;
-    m_decodeStartMs = 0;
-  }
-
-  // Forward timing stats to TimeSyncPanel
-  if (m_timeSyncPanel) {
-    m_timeSyncPanel->updateDecodeTiming(
-      m_dtSamples,
-      m_avgDtValue,
-      m_dtCorrection_ms,
-      m_lastDecodeLatencyMs,
-      m_dtLastSampleCount,
-      m_soundcardDriftPpm,
-      m_ntpDtDivergenceCount,
-      m_dtSmoothFactor);
-  }
-
-  // Update status bar DT label with actual DT info
-  if (m_dtLastSampleCount > 0) {
-    QString text = QString("DT:%1%2ms(%3)")
-      .arg(m_dtCorrection_ms > 0 ? "+" : "")
-      .arg(m_dtCorrection_ms, 0, 'f', 1)
-      .arg(m_dtLastSampleCount);
-    dt_correction_label.setText(text);
-    // Color based on convergence quality
-    if (qAbs(m_avgDtValue) < 0.1)
-      dt_correction_label.setStyleSheet("QLabel{color:#000;background:#00ff00}");
-    else if (qAbs(m_avgDtValue) < 0.3)
-      dt_correction_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
-    else
-      dt_correction_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
-  }
-
-  m_dtSamples.clear();
 }
 
 void MainWindow::refreshPileupList()
@@ -6383,7 +6250,7 @@ void MainWindow::refreshPileupList()
 
 void MainWindow::read_log()
 {
-  static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("wsjtx.log")};
+  static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("decodium.log")};
   f.open(QIODevice::ReadOnly);
   if(f.isOpen()) {
     QTextStream in(&f);
@@ -6807,25 +6674,6 @@ void MainWindow::readFromStdout()                             //readFromStdout
            || (decodedtext.snr() < -24 && decodedtext.isLowConfidence()))))       // very weak + uncertain
       )
     {
-    // DT Feedback Loop: collect DT only from verified decodes with good SNR
-    if(m_dtFeedbackEnabled && !m_diskData && (m_mode=="FT2" || m_mode=="FT4" || m_mode=="FT8")) {
-      // Exclude low-confidence AP decodes ("?" marker) — DT less reliable
-      if(!decodedtext.isLowConfidence()) {
-        int snr = decodedtext.snr();
-        // #7: FT2 uses lower SNR threshold (-20) to collect more DT samples
-        // FT2 has 6.67x better DT precision so even weaker signals give usable DT
-        int snrThreshold = (m_mode=="FT2") ? -20 : -18;
-        if(snr >= snrThreshold) {
-          float dt_val = decodedtext.dt();
-          // #7: FT2 tighter outlier rejection (±0.5s) due to higher DT precision
-          float dtLimit = (m_mode=="FT2") ? 0.5f : 2.0f;
-          if(qAbs(dt_val) < dtLimit) {
-            m_dtSamples.append(dt_val);
-          }
-        }
-      }
-    }
-
     if (m_mode!="FT8" and m_mode!="FT2" and m_mode!="FT4" and !m_mode.startsWith ("FST4") and m_mode!="Q65") {
       //Pad 22-char msg to at least 37 chars
       line_read = line_read.left(44) + "              " + line_read.mid(44);
@@ -11714,7 +11562,6 @@ void MainWindow::on_actionFT2_triggered()
   });
   m_mode="FT2";
   m_TRperiod=3.75;
-  m_dtSamples.clear();  // discard stale DT samples from previous mode
   bool bVHF=m_config.enable_VHF_features();
   m_bFast9=false;
   m_bFastMode=false;
@@ -11775,7 +11622,6 @@ void MainWindow::on_actionFT4_triggered()
     ui->cbHoldTxFreq->setChecked (HoldTxFreqStatus);
   });
   m_mode="FT4";
-  m_dtSamples.clear();  // discard stale DT samples from previous mode
   if(m_specOp==SpecOp::HOUND) {
     m_config.setSpecial_None();
     m_specOp=m_config.special_op_id();
@@ -11837,7 +11683,6 @@ void MainWindow::on_actionFT8_triggered()
     ui->cbHoldTxFreq->setChecked (HoldTxFreqStatus);
   });
   m_mode="FT8";
-  m_dtSamples.clear();  // discard stale DT samples from previous mode
   bool bVHF=m_config.enable_VHF_features();
   m_bFast9=false;
   m_bFastMode=false;
@@ -12845,12 +12690,12 @@ void MainWindow::on_actionExport_Cabrillo_log_triggered()
 }
 
 
-void MainWindow::on_actionErase_wsjtx_log_adi_triggered()
+void MainWindow::on_actionErase_decodium_log_adi_triggered()
 {
   int ret = MessageBox::query_message (this, tr ("Confirm Erase"),
-                                       tr ("Are you sure you want to erase file wsjtx_log.adi?"));
+                                       tr ("Are you sure you want to erase file decodium_log.adi?"));
   if(ret==MessageBox::Yes) {
-    QFile f {m_config.writeable_data_dir ().absoluteFilePath ("wsjtx_log.adi")};
+    QFile f {m_config.writeable_data_dir ().absoluteFilePath ("decodium_log.adi")};
     f.remove();
   }
 }
@@ -17145,36 +16990,36 @@ void MainWindow::bandHopping()
 void MainWindow::on_actionDefault_event_logging_triggered()
 {
 #if defined(Q_OS_WIN)
-    QFile::remove (QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("wsjtx_log_config.ini"));
+    QFile::remove (QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("decodium_log_config.ini"));
 #else
-    QFile::remove (QDir {QStandardPaths::writableLocation (QStandardPaths::ConfigLocation)}.absoluteFilePath ("wsjtx_log_config.ini"));
+    QFile::remove (QDir {QStandardPaths::writableLocation (QStandardPaths::ConfigLocation)}.absoluteFilePath ("decodium_log_config.ini"));
 #endif
 }
 
 void MainWindow::on_actionDiagnostic_mode_triggered()
 {
 #if defined(Q_OS_WIN)
-    static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("wsjtx_log_config.ini")};
+    static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("decodium_log_config.ini")};
 #else
-    static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::ConfigLocation)}.absoluteFilePath ("wsjtx_log_config.ini")};
+    static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::ConfigLocation)}.absoluteFilePath ("decodium_log_config.ini")};
 #endif
     if(!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
       QMessageBox mb;
-      mb.setText("Cannot write wsjtx_log_config.ini file");
+      mb.setText("Cannot write decodium_log_config.ini file");
       mb.exec();
       return;
     }
     QString instance = "";
     QString path = QStandardPaths::writableLocation (QStandardPaths::DataLocation);
     QStringList tw;
-    if (path.contains("/WSJT-X")) tw=path.split("/WSJT-X");
+    if (path.contains("/Decodium")) tw=path.split("/Decodium");
     if (tw.size () > 0 && tw[1].remove(" - ") != "") instance = tw[1].remove(" - ") + "/";
     QString EventConfig = (
             "\[Sinks.SYSLOG]\n"
             "Destination=TextFile\n"
             "Asynchronous=true\n"
             "AutoFlush=true\n"
-            "FileName=\"${DesktopLocation}/logs/" + instance + "wsjtx_syslog.log\"\n"
+            "FileName=\"${DesktopLocation}/logs/" + instance + "decodium_syslog.log\"\n"
             "Append=true\n"
             "Format=\"[%Channel%][%TimeStamp(format=\\\"%Y-%m-%d %H:%M:%S.%f\\\")%][%Uptime(format=\\\"%O:%M:%S.%f\\\")%][%Severity%] %Message%\"\n"
             "Filter=\"%Channel% matches \\\"SYSLOG\\\" | %Severity% >= info\"\n"
@@ -17183,7 +17028,7 @@ void MainWindow::on_actionDiagnostic_mode_triggered()
             "Destination=TextFile\n"
             "Asynchronous=true\n"
             "AutoFlush=true\n"
-            "FileName=\"${DesktopLocation}/logs/" + instance + "WSJT-X_RigControl.log\"\n"
+            "FileName=\"${DesktopLocation}/logs/" + instance + "Decodium_RigControl.log\"\n"
             "Append=true\n"
             "Format=\"[%TimeStamp(format=\\\"%Y-%m-%d %H:%M:%S.%f\\\")%][%Uptime(format=\\\"%O:%M:%S.%f\\\")%][%Channel%:%Severity%] %Message%\"\n"
             "Filter=\"%Channel% matches \\\"RIGCTRL\\\" | %Severity% >= info\""
@@ -17200,7 +17045,7 @@ void MainWindow::on_actionDiagnostic_mode_triggered()
             "The diagnostic mode is active after closing and restarting Decodium v3.0 FT2 Raptor,\n"
             "and is then automatically deactivated when the program is next closed.\n"
             "In the diagnostic mode a new \"logs\" folder appears on your screen, and\n"
-            "in it two files are created: \"wsjtx_syslog.log\" and \"WSJT-X_RigControl.log\".\n"
+            "in it two files are created: \"decodium_syslog.log\" and \"Decodium_RigControl.log\".\n"
             "Open these files with a text editor and look for error messages,\n"
             "or send these files to the development team for further analysis.\n"
             "\n"
@@ -17214,13 +17059,13 @@ void MainWindow::on_actionDiagnostic_mode_triggered()
 void MainWindow::on_actionDisable_event_logging_triggered()
 {
 #if defined(Q_OS_WIN)
-    static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("wsjtx_log_config.ini")};
+    static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("decodium_log_config.ini")};
 #else
-    static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::ConfigLocation)}.absoluteFilePath ("wsjtx_log_config.ini")};
+    static QFile f {QDir {QStandardPaths::writableLocation (QStandardPaths::ConfigLocation)}.absoluteFilePath ("decodium_log_config.ini")};
 #endif
     if(!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
       QMessageBox mb;
-      mb.setText("Cannot write wsjtx_log_config.ini file");
+      mb.setText("Cannot write decodium_log_config.ini file");
       mb.exec();
       return;
     }
@@ -17231,7 +17076,7 @@ void MainWindow::on_actionDisable_event_logging_triggered()
     QTextStream out(&f);
     out << EventConfig;
     f.close();
-    QFile::remove (QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("wsjtx_syslog.log"));
+    QFile::remove (QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("decodium_syslog.log"));
 }
 
 void MainWindow::on_actionUse_Dark_Style_triggered (bool checked)
@@ -18294,7 +18139,7 @@ void MainWindow::on_pb24G_clicked()
 
 void MainWindow::read_txLog()
 {
-    static QFile logfile {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("wsjtx.log")};
+    static QFile logfile {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("decodium.log")};
     QTextStream logstream(&logfile);
     if(logfile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         while (!logstream.atEnd()) {
@@ -18310,7 +18155,7 @@ void MainWindow::on_actionErase_Tx_Log_triggered()
   int ret = MessageBox::query_message (this, tr ("Confirm Erase"),
           tr ("Are you sure you want to erase the Tx Log?"));
   if(ret==MessageBox::Yes) {
-    static QFile logFile {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("wsjtx.log")};
+    static QFile logFile {QDir {QStandardPaths::writableLocation (QStandardPaths::DataLocation)}.absoluteFilePath ("decodium.log")};
     logFile.remove();
     txLog = "";
   }
@@ -18668,7 +18513,7 @@ void MainWindow::downloadQslComplete(bool result)
   //create merged QSL/QSO file
   QString line;
     
-  //wsjtx_log.adi
+  //decodium_log.adi
   QString ofFilePathName = m_config.writeable_data_dir().absolutePath() + "/" + FULL_LOG_TMP_FNAME;
   if (QFile::exists(ofFilePathName)) QFile::remove(ofFilePathName);
   QFile outFile(ofFilePathName);
@@ -19155,30 +19000,4 @@ void MainWindow::onNtpSyncStatusChanged(bool synced, QString const& statusText)
   if (m_timeSyncPanel) m_timeSyncPanel->updateNtpSyncStatus(synced, statusText);
 }
 
-void MainWindow::onSoundcardDriftUpdated(double driftMsPerPeriod, double driftPpm)
-{
-  m_soundcardDriftPpm = driftPpm;
-  m_soundcardDriftMsPerPeriod = driftMsPerPeriod;
-
-  // Update the DT label with soundcard drift info
-  QString text = QString("SC:%1%2ppm")
-    .arg(driftPpm > 0 ? "+" : "")
-    .arg(driftPpm, 0, 'f', 1);
-  dt_correction_label.setText(text);
-  dt_correction_label.setToolTip(
-    QString("Soundcard drift: %1 ppm (%2%3 ms/period)")
-    .arg(driftPpm, 0, 'f', 2)
-    .arg(driftMsPerPeriod > 0 ? "+" : "")
-    .arg(driftMsPerPeriod, 0, 'f', 2));
-
-  // Color: green if drift low, yellow if medium, red if high
-  if(qAbs(driftPpm) < 10.0)
-    dt_correction_label.setStyleSheet("QLabel{color:#000;background:#00ff00}");
-  else if(qAbs(driftPpm) < 50.0)
-    dt_correction_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
-  else
-    dt_correction_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
-
-  if (m_timeSyncPanel) m_timeSyncPanel->updateSoundcardDrift(driftMsPerPeriod, driftPpm);
-}
 

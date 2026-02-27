@@ -127,12 +127,12 @@ namespace
       (
        keywords::auto_flush = false
 #if BOOST_VERSION / 100 >= 1070
-       , keywords::file_name = app_data.absoluteFilePath ("wsjtx_syslog.log").toStdWString ()
+       , keywords::file_name = app_data.absoluteFilePath ("decodium_syslog.log").toStdWString ()
        , keywords::target_file_name =
 #else
        , keywords::file_name =
 #endif
-       app_data.absoluteFilePath ("logs/wsjtx_syslog_%Y-%m.log").toStdWString ()
+       app_data.absoluteFilePath ("logs/decodium_syslog_%Y-%m.log").toStdWString ()
        , keywords::time_based_rotation = sinks::file::rotation_at_time_point (gregorian::greg_day (1), 0, 0, 0)
        , keywords::open_mode = std::ios_base::out | std::ios_base::app
 #if BOOST_VERSION / 100 >= 1063
@@ -187,7 +187,7 @@ WSJTXLogging::WSJTXLogging ()
      );
  
   // Check for a user-defined logging configuration settings file.
-  QFile log_config {QStandardPaths::locate (QStandardPaths::ConfigLocation, "wsjtx_log_config.ini")};
+  QFile log_config {QStandardPaths::locate (QStandardPaths::ConfigLocation, "decodium_log_config.ini")};
   if (log_config.exists () && log_config.open (QFile::ReadOnly) && log_config.isReadable ())
     {
       QTextStream ts {&log_config};

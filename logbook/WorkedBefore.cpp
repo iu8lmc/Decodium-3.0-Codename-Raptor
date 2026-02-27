@@ -224,7 +224,7 @@ typedef multi_index_container<
 
 namespace
 {
-  auto const logFileName = "wsjtx_log.adi";
+  auto const logFileName = "decodium_log.adi";
 
   // Exception class suitable for using with QtConcurrent across
   // thread boundaries

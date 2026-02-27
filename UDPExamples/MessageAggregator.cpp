@@ -56,7 +56,7 @@ int main (int argc, char * argv[])
       // instantiating QApplication so that GUI has correct l18n
       std::locale::global (std::locale::classic ());
 
-      app.setApplicationName ("WSJT-X Reference UDP Message Aggregator Server");
+      app.setApplicationName ("Decodium Reference UDP Message Aggregator Server");
       app.setApplicationVersion ("1.0");
 
       QObject::connect (&app, SIGNAL (lastWindowClosed ()), &app, SLOT (quit ()));

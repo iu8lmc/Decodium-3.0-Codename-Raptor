@@ -77,8 +77,8 @@
 #define INCR_LOG_FNAME "lotw.adi"           //avt 9/23/25
 #define INCR_LOG_TMP_FNAME "lotw.adi.tmp"   //avt 9/23/25
 #define TEMP_LOG_FNAME "lotwreport.adi"     //avt 9/23/25
-#define FULL_LOG_FNAME "wsjtx_log.adi"      //avt 9/23/25
-#define FULL_LOG_TMP_FNAME "wsjtx_log.adi.tmp"  //avt 9/23/25
+#define FULL_LOG_FNAME "decodium_log.adi"      //avt 9/23/25
+#define FULL_LOG_TMP_FNAME "decodium_log.adi.tmp"  //avt 9/23/25
 //#define DEBUG_LOG_FNAME "debug.txt"
 #define TEMP_LOG_QSL_FNAME "lotwreport_qsl.adi"  //avt 9/23/25
 
@@ -364,7 +364,7 @@ private slots:
   void bumpFqso(int n);
   void on_actionErase_ALL_TXT_triggered();
   void on_reset_cabrillo_log_action_triggered ();
-  void on_actionErase_wsjtx_log_adi_triggered();
+  void on_actionErase_decodium_log_adi_triggered();
   void on_actionErase_WSPR_hashtable_triggered();
   void on_actionErase_list_of_Q65_callers_triggered();
   void on_actionExport_Cabrillo_log_triggered();
@@ -493,7 +493,6 @@ private slots:
   void downloadQslComplete(bool result);  //avt 10/2/25
   void onNtpOffsetUpdated(double offsetMs);
   void onNtpSyncStatusChanged(bool synced, QString const& statusText);
-  void onSoundcardDriftUpdated(double driftMsPerPeriod, double driftPpm);
 
 private:
   Q_SIGNAL void initializeAudioOutputStream (QAudioDeviceInfo,
@@ -849,7 +848,6 @@ private:
   QLabel auto_tx_label;
   QLabel band_hopping_label;
   QLabel ndecodes_label;
-  QLabel dt_correction_label;
   QProgressBar progressBar;
   QLabel watchdog_label;
 
@@ -1038,27 +1036,6 @@ private:
   bool m_externalCtrl;         //avt  10/1/25
   bool m_autoButtonState;     //avt 10/2/25
 
-  //---- DT Feedback Loop ----
-  QVector<double> m_dtSamples;        // DT values collected in current period
-  double m_dtCorrection_ms {0.0};     // accumulated time correction (milliseconds)
-  double m_dtSmoothFactor {0.3};      // EMA smoothing factor (0-1)
-  int m_dtMinSamples {3};             // minimum decodes before applying correction
-  bool m_dtFeedbackEnabled {true};    // enabled — applies NTP+DT correction to Detector
-  int m_dtLastSampleCount {0};        // sample count for status display
-
-  // Decode timing statistics
-  qint64 m_decodeStartMs {0};         // timestamp when decode was triggered
-  double m_lastDecodeLatencyMs {0.0}; // last decode cycle latency
-  double m_avgDtValue {0.0};          // EMA of DT values across periods
-  int m_totalDecodesForDt {0};        // total decodes used for DT calculation
-
-  // #5: NTP vs DT cross-validation
-  int m_ntpDtDivergenceCount {0};     // consecutive periods where NTP and DT diverge
-
-  // Soundcard clock drift detection
-  double m_soundcardDriftPpm {0.0};
-  double m_soundcardDriftMsPerPeriod {0.0};
-
   // NTP Time Synchronization
   NtpClient *m_ntpClient {nullptr};
   double m_ntpOffset_ms {0.0};
@@ -1129,7 +1106,6 @@ private:
   void rm_tb4(QString houndCall);
   void read_wav_file (QString const& fname);
   void decodeDone ();
-  void applyDtFeedback ();
   bool subProcessFailed (QProcess *, int exit_code, QProcess::ExitStatus);
   void subProcessError (QProcess *, QProcess::ProcessError);
   void statusUpdate () const;

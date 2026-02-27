@@ -72,26 +72,6 @@ qint64 Detector::writeData (char const * data, qint64 maxSize)
   size_t framesAccepted (qMin (static_cast<size_t> (maxSize /
                                                     bytesPerFrame ()), framesAcceptable));
 
-  // Soundcard clock drift measurement
-  m_totalInputFrames += framesAccepted;
-  qint64 ms0_raw = QDateTime::currentMSecsSinceEpoch();
-  if (m_driftStartMs == 0) {
-    m_driftStartMs = ms0_raw;
-    m_driftLastEmitMs = ms0_raw;
-    m_totalInputFrames = framesAccepted;  // reset to just this batch
-  } else {
-    qint64 elapsedMs = ms0_raw - m_driftStartMs;
-    if (elapsedMs >= 10000 && (ms0_raw - m_driftLastEmitMs) >= DRIFT_EMIT_INTERVAL_MS) {
-      double elapsedSec = elapsedMs / 1000.0;
-      double nominalInputRate = static_cast<double>(m_frameRate * m_downSampleFactor);
-      double actualRate = static_cast<double>(m_totalInputFrames) / elapsedSec;
-      m_measuredDriftPpm = (actualRate / nominalInputRate - 1.0) * 1e6;
-      double driftMsPerPeriod = m_measuredDriftPpm * m_period / 1000.0;
-      m_driftLastEmitMs = ms0_raw;
-      Q_EMIT soundcardDriftUpdated(driftMsPerPeriod, m_measuredDriftPpm);
-    }
-  }
-
   if (framesAccepted < static_cast<size_t> (maxSize / bytesPerFrame ())) {
     qDebug () << "dropped " << maxSize / bytesPerFrame () - framesAccepted
                 << " frames of data on the floor!"

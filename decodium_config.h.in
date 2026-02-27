@@ -1,5 +1,5 @@
-#ifndef WSJTX_CONFIG_H__
-#define WSJTX_CONFIG_H__
+#ifndef DECODIUM_CONFIG_H__
+#define DECODIUM_CONFIG_H__
 
 #ifdef __cplusplus
 extern "C"  {

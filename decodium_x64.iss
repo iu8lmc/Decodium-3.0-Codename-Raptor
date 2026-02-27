@@ -1,7 +1,7 @@
 #define MyAppName "Decodium 3.0 FT2 Raptor x64"
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
-#define MyAppExeName "wsjtx.exe"
+#define MyAppExeName "decodium.exe"
 #define MyBuildTag "2602261706"
 #define DistDir "dist_64bit"
 
@@ -16,13 +16,13 @@ DefaultDirName={autopf}\Decodium_3.0_FT2_x64
 DefaultGroupName=Decodium 3.0 FT2
 OutputDir=.
 OutputBaseFilename=Decodium_3.0_{#MyBuildTag}_FT2_x64_Setup
-SetupIconFile=icons\windows-icons\wsjtx.ico
+SetupIconFile=icons\windows-icons\decodium.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-UninstallDisplayIcon={app}\wsjtx.exe
+UninstallDisplayIcon={app}\decodium.exe
 PrivilegesRequired=lowest
 ; SignTool and SignedUninstaller require IDE config; exes are already signed
 
@@ -35,13 +35,13 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; Main executables
-Source: "{#DistDir}\wsjtx.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#DistDir}\decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\jt9.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\message_aggregator.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\wsprd.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#DistDir}\rigctl-wsjtx.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#DistDir}\rigctld-wsjtx.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#DistDir}\rigctlcom-wsjtx.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#DistDir}\rigctl-decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#DistDir}\rigctld-decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#DistDir}\rigctlcom-decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\udp_daemon.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\ChronoGPS.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\chronogps_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
