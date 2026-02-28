@@ -928,19 +928,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->actionQ65->setActionGroup(modeGroup);
   ui->actionFreqCal->setActionGroup(modeGroup);
 
-  // Decodium FT2-only: hide all non-FT2 mode actions
-  ui->actionFST4->setVisible(false);
-  ui->actionFST4W->setVisible(false);
-  ui->actionFT4->setVisible(false);
-  ui->actionFT8->setVisible(false);
-  ui->actionJT9->setVisible(false);
-  ui->actionJT65->setVisible(false);
-  ui->actionJT4->setVisible(false);
-  ui->actionWSPR->setVisible(false);
-  ui->actionEcho->setVisible(false);
-  ui->actionMSK144->setVisible(false);
-  ui->actionQ65->setVisible(false);
-  ui->actionFreqCal->setVisible(false);
 
   QActionGroup* saveGroup = new QActionGroup(this);
   ui->actionNone->setActionGroup(saveGroup);
@@ -8062,6 +8049,14 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
         message.deCallAndGrid (newCaller, grid);
         if (!newCaller.isEmpty () && newCaller != m_hisCall
             && newCaller != Radio::base_callsign (ui->dxCallEntry->text ())) {
+          // No B4 filter: skip stations already worked on this band
+          if (ui->cbNoBefore->isChecked()) {
+            bool callB4=false, cB4=false, gB4=false, contB4=false, cqzB4=false, ituzB4=false;
+            auto looked_up = m_logBook.countries()->lookup(newCaller);
+            m_logBook.match(newCaller, m_mode, grid, looked_up,
+                            callB4, cB4, gB4, contB4, cqzB4, ituzB4, m_currentBand);
+            if (callB4) return;
+          }
           enqueueCaller (newCaller, message.frequencyOffset ());
           return;
         }
@@ -9555,6 +9550,28 @@ void MainWindow::doubleClickOnCall(Qt::KeyboardModifiers modifiers)
   } else {
     //avt 10/2/25is correct time period
     if (!is_externalCtrlMode()) {    //avt 10/2/25
+      // No B4 filter: skip stations already worked on this band
+      if (ui->cbNoBefore->isChecked()) {
+        QString dxCall, dxGrid;
+        message.deCallAndGrid(dxCall, dxGrid);
+        if (!dxCall.isEmpty()) {
+          bool callB4=false, cB4=false, gB4=false, contB4=false, cqzB4=false, ituzB4=false;
+          auto looked_up = m_logBook.countries()->lookup(dxCall);
+          m_logBook.match(dxCall, m_mode, dxGrid, looked_up,
+                          callB4, cB4, gB4, contB4, cqzB4, ituzB4, m_currentBand);
+          if (callB4) return;
+        }
+      }
+      // Auto CQ: double-click enqueues instead of interrupting current QSO
+      if (m_autoCQ && m_QSOProgress > CALLING && m_QSOProgress < SIGNOFF) {
+        QString dxCall;
+        QString dxGrid;
+        message.deCallAndGrid(dxCall, dxGrid);
+        if (!dxCall.isEmpty() && dxCall != m_hisCall) {
+          enqueueCaller(dxCall, message.frequencyOffset());
+          return;
+        }
+      }
       m_muted = true;  // Don't play alert sounds again
       m_bDoubleClicked = true;
       m_hisCall0 = m_hisCall;
