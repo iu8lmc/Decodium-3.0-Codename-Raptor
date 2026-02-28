@@ -781,6 +781,9 @@ private:
   bool    m_bDoubleClicked;
   bool    m_bCallingCQ;
   bool    m_autoCQ;
+  QQueue<QString> m_callerQueue;
+  void enqueueCaller (QString const& call, int freq);
+  void processNextInQueue ();
   bool    m_bAutoReply;
   QString m_lastloggedcall; //ft8md
   bool    m_bCheckedContest;

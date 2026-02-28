@@ -147,6 +147,7 @@
 #include <QAction>
 #include <QFileDialog>
 #include <QDir>
+#include <QFileInfo>
 #include <QTemporaryFile>
 #include <QFormLayout>
 #include <QString>
@@ -2098,7 +2099,16 @@ Configuration::impl::impl (Configuration * self, QNetworkAccessManager * network
   // doesn't and we need it
   // avt 2/10/26 prevent crash, wait until very large logbook read
   QTimer::singleShot (30000, [=] {lotw_users_.load (ui_->LotW_CSV_URL_line_edit->text (), fetch_if_needed);});
-  
+
+  // Auto-update cty.dat if older than 30 days or missing
+  {
+    QDir dataPath {QStandardPaths::writableLocation (QStandardPaths::DataLocation)};
+    QFileInfo ctyInfo (dataPath.absoluteFilePath ("cty.dat"));
+    if (!ctyInfo.exists () || ctyInfo.lastModified ().daysTo (QDateTime::currentDateTime ()) > 30) {
+      QTimer::singleShot (5000, this, [this] { on_CTY_download_button_clicked (true); });
+    }
+  }
+
   transceiver_thread_ = new QThread {this};
   transceiver_thread_->start ();
 }

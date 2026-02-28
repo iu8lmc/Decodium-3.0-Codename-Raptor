@@ -711,6 +711,23 @@ void CPlotter::DrawOverlay()                   //DrawOverlay()
     painter0.drawLine(x2,yTxTop,x2,yTxTop+yh);
   }
 
+  // Red bracket on waterfall overlay for TX slot
+  if(m_mode=="FT2" || m_mode=="FT8" || m_mode=="FT4") {
+    QPen penTxBracket(Qt::red, 2, Qt::SolidLine);
+    overPainter.setPen(penTxBracket);
+    int bx1 = XfromFreq(m_txFreq);
+    int bx2 = XfromFreq(m_txFreq + bw);
+    int by = 1, bh = 8;
+    // [ bracket
+    overPainter.drawLine(bx1, by, bx1+4, by);
+    overPainter.drawLine(bx1, by, bx1, by+bh);
+    overPainter.drawLine(bx1, by+bh, bx1+4, by+bh);
+    // ] bracket
+    overPainter.drawLine(bx2-4, by, bx2, by);
+    overPainter.drawLine(bx2, by, bx2, by+bh);
+    overPainter.drawLine(bx2-4, by+bh, bx2, by+bh);
+  }
+
   // === Multi-slot markers (orange dashed goal posts + bars) ===
   if(m_Nslots > 1 && (m_mode=="FT8" || m_mode=="FT2")) {
     QPen penSlot(QColor(255,165,0), 2, Qt::DashLine);   // orange dashed
