@@ -147,13 +147,14 @@ namespace
 }
 
 void DisplayText::insertText(QString const& text, QColor bg, QColor fg
-                             , QString const& call1, QString const& call2, QTextCursor::MoveOperation location)
+                             , QString const& call1, QString const& call2, QTextCursor::MoveOperation location, bool strikeout)
 {
   auto cursor = textCursor ();
   cursor.movePosition (location);
   auto block_format = cursor.blockFormat ();
   auto format = cursor.blockCharFormat ();
   format.setFont (char_font_);
+  format.setFontStrikeOut (strikeout);
   block_format.clearBackground ();
   if (bg.isValid ())
     {
@@ -315,6 +316,7 @@ QString DisplayText::appendWorkedB4 (QString message, QString call, QString cons
   }
 
   if(callB4onBand) m_points=0;
+  m_strikeout = callB4onBand;
 
   message = message.trimmed ();
 
@@ -489,6 +491,7 @@ void DisplayText::displayDecodedText(DecodedText const& decodedText, QString con
                                      bool haveFSpread, float fSpread, bool bDisplayPoints,
                                      int points, QString distance, bool alertsMuted)
 {
+  m_strikeout = false;
   m_points=points;
   m_bDisplayPoints=bDisplayPoints;
   m_bPrincipalPrefix=ppfx;
@@ -731,7 +734,7 @@ void DisplayText::displayDecodedText(DecodedText const& decodedText, QString con
     }
   }
 
-  insertText (message.trimmed (), bg, fg, decodedText.call (), dxCall);
+  insertText (message.trimmed (), bg, fg, decodedText.call (), dxCall, QTextCursor::End, m_strikeout);
 }
 
 void DisplayText::displayTransmittedText(QString text, QString modeTx, qint32 txFreq,

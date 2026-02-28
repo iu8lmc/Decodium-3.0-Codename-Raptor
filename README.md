@@ -3,7 +3,7 @@
 Optimized weak-signal FT2 client with enhanced sensitivity, extended frequency range, and real-time NTP/DT feedback.
 Based on WSJT-X 3.0.0 RC1 — focused exclusively on FT2 mode.
 
-**Build:** Vers.2602260045 | **Codename:** Raptor | **Author:** IU8LMC | **License:** GPL v3
+**Build:** Vers.2602281659 | **Codename:** Raptor | **Author:** IU8LMC | **License:** GPL v3
 
 ---
 
@@ -99,6 +99,19 @@ Both installers are digitally signed (SHA256 + DigiCert RFC3161 timestamp).
 - Customizable color highlighting (CQ, MyCall, DX entity, 73/RR73, Pounce)
 - Diagnostic mode for rig control troubleshooting
 - About dialog with ft2logo, codename, version, decoder parameters
+- **B4 Strikethrough** — le stazioni già lavorate sulla banda corrente vengono mostrate con testo barrato nella Band Activity, oltre al colore di sfondo
+- **TX Bracket sulla Waterfall** — parentesi quadre rosse `[ ]` nell'overlay della waterfall alla posizione dello slot TX (FT2/FT8/FT4)
+
+### Auto CQ Caller Queue
+- Coda FIFO automatica per chiamanti in modalità Auto CQ (max 20 stazioni)
+- Quando si è in QSO e arrivano risposte da altre stazioni, vengono accodate
+- Al termine del QSO corrente, il prossimo chiamante in coda viene processato automaticamente
+- Nominativo, frequenza RX e messaggi standard generati in automatico
+- La coda si svuota alla disattivazione di Auto CQ
+
+### Auto-update CTY.DAT
+- All'avvio, se `cty.dat` non esiste o è più vecchio di 30 giorni, viene scaricato automaticamente in background
+- Download da country-files.com con riscansione automatica del logbook
 
 ---
 
@@ -150,6 +163,10 @@ build_installers.bat
 | DT Feedback Loop | NTP + drift | Not implemented |
 | Decoder Watchdog | Yes | No |
 | OmniRig Auto-Launch | Yes | Manual |
+| B4 Strikethrough | Yes | No |
+| TX Bracket Waterfall | Yes | No |
+| Auto CQ Caller Queue | Yes (FIFO, max 20) | Fox/Hound only |
+| Auto-update CTY.DAT | Yes (30-day check) | Manual only |
 
 ---
 

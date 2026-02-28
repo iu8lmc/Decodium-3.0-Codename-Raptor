@@ -119,8 +119,8 @@ contains
          nappasses(0)=3
          nappasses(1)=3
          nappasses(2)=3
-         nappasses(3)=3
-         nappasses(4)=3
+         nappasses(3)=4
+         nappasses(4)=4
          nappasses(5)=4
 
 ! iaptype
@@ -135,8 +135,8 @@ contains
          naptypes(0,1:4)=(/1,2,0,0/) ! Tx6 selected (CQ)
          naptypes(1,1:4)=(/2,3,0,0/) ! Tx1
          naptypes(2,1:4)=(/2,3,0,0/) ! Tx2
-         naptypes(3,1:4)=(/3,6,0,0/) ! Tx3
-         naptypes(4,1:4)=(/3,6,0,0/) ! Tx4
+         naptypes(3,1:4)=(/3,4,5,6/) ! Tx3 — aggiunto RRR(4),73(5) come FT8
+         naptypes(4,1:4)=(/3,4,5,6/) ! Tx4 — aggiunto RRR(4),73(5) come FT8
          naptypes(5,1:4)=(/3,1,2,0/) ! Tx5
 
          mycall0=''
@@ -193,6 +193,8 @@ contains
 
       max_iterations=40
       syncmin=0.90
+      if(ndepth.ge.2) syncmin=0.85
+      if(ndepth.ge.3) syncmin=0.80
       dosubtract=.true.
       doosd=.true.
       nsp=3
@@ -276,7 +278,9 @@ contains
                   call timer('sync2d  ',1)
                enddo
                if(iseg.eq.1) smax1=smax
-               if(smax.lt.0.9) cycle
+               smaxthresh=0.9
+               if(ndepth.ge.3) smaxthresh=0.75
+               if(smax.lt.smaxthresh) cycle
                if(iseg.gt.1 .and. smax.lt.smax1) cycle
                f1=f0+real(idfbest)
                if( f1.le.10.0 .or. f1.ge.4990.0 ) cycle
@@ -304,7 +308,9 @@ contains
                ns3=count(hbits(133:140).eq.(/1,1,1,0,0,1,0,0/))
                ns4=count(hbits(199:206).eq.(/1,0,1,1,0,0,0,1/))
                nsync_qual=ns1+ns2+ns3+ns4
-               if(nsync_qual.lt. 15) cycle
+               nsync_qual_min=15
+               if(ndepth.ge.3) nsync_qual_min=12
+               if(nsync_qual.lt.nsync_qual_min) cycle
 
                scalefac=2.83
                llra(  1: 58)=bitmetrics(  9: 66, 1)
@@ -429,9 +435,8 @@ contains
 
                   ndeep=3
                   maxosd=3
-                  if(abs(nfqso-f1).le.napwid) then
-                     ndeep=3
-                     maxosd=3
+                  if(abs(nfqso-f1).le.napwid .and. ndepth.ge.3) then
+                     maxosd=4
                   endif
                   if(.not.doosd) maxosd = -1
                   call timer('dec174_91 ',0)

@@ -6794,7 +6794,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
       // the primary source of false positives with relaxed pre-LDPC thresholds
       and (!(m_mode=="FT2" &&
            (message0.contains("? a")                                              // AP low-confidence decodes
-           || (decodedtext.snr() < -24 && decodedtext.isLowConfidence()))))       // very weak + uncertain
+           || (decodedtext.snr() < -21 && decodedtext.isLowConfidence()))))       // very weak + uncertain
       )
     {
     // Collect DT samples for TimeSyncPanel display
@@ -8052,6 +8052,21 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
   bool is_OK=false;
   if(m_mode=="MSK144" && msg_no_hash.indexOf(ui->dxCallEntry->text()+" R ")>0) is_OK=true;
   if (message_words.size () > 3 && (message.isStandardMessage() || (is_73 or is_OK))) {
+    // Auto CQ caller queue: intercept messages directed to us from OTHER stations
+    // while we're already in an active QSO — queue them for later processing
+    if (m_autoCQ && m_auto && m_QSOProgress > CALLING && m_QSOProgress < SIGNOFF) {
+      if (message_words.at (2).contains (m_baseCall)
+          || message_words.at (2).contains (m_config.my_callsign ())) {
+        QString newCaller;
+        QString grid;
+        message.deCallAndGrid (newCaller, grid);
+        if (!newCaller.isEmpty () && newCaller != m_hisCall
+            && newCaller != Radio::base_callsign (ui->dxCallEntry->text ())) {
+          enqueueCaller (newCaller, message.frequencyOffset ());
+          return;
+        }
+      }
+    }
     auto df = message.frequencyOffset ();
                             //avt 10/18/23 ignore possible non-std 73 for someone else on same rx freq
     auto within_tolerance = !is_externalCtrlMode() && (qAbs (ui->RxFreqSpinBox->value () - df) <= int (start_tolerance)
@@ -10564,9 +10579,38 @@ void MainWindow::TxAgain()
   auto_tx_mode(true);
 }
 
+void MainWindow::enqueueCaller (QString const& call, int freq)
+{
+  QString entry = call + " " + QString::number (freq);
+  for (auto const& e : m_callerQueue)
+    if (e.startsWith (call + " ")) return;   // no duplicates
+  if (m_callerQueue.size () < 20) m_callerQueue.enqueue (entry);
+}
+
+void MainWindow::processNextInQueue ()
+{
+  if (m_callerQueue.isEmpty ()) return;
+  QString entry = m_callerQueue.dequeue ();
+  auto parts = entry.split (' ');
+  if (parts.size () < 2) return;
+  ui->dxCallEntry->setText (parts.at (0));
+  ui->RxFreqSpinBox->setValue (parts.at (1).toInt ());
+  genStdMsgs (parts.at (0));
+  m_ntx = ui->tx1->isEnabled () ? 1 : 2;
+  if (ui->txrb1->isEnabled ()) ui->txrb1->setChecked (true);
+  else ui->txrb2->setChecked (true);
+  m_QSOProgress = ui->tx1->isEnabled () ? REPLYING : REPORT;
+  if (!m_auto) auto_tx_mode (true);
+}
+
 void MainWindow::clearDX ()
 {
   set_dateTimeQSO (-1);
+  // Process next caller in queue before returning to CQ
+  if (m_autoCQ && !m_callerQueue.isEmpty ()) {
+    processNextInQueue ();
+    return;
+  }
   if (m_QSOProgress != CALLING && !m_autoCQ) {
     auto_tx_mode (false);
   }
@@ -16511,6 +16555,7 @@ void MainWindow::on_autoCQButton_clicked(bool checked)
       }
     } else {
       m_bCallingCQ = false;
+      m_callerQueue.clear ();
     }
     check_button_color();
 }

@@ -19,7 +19,7 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
     "<p align=\"center\"><img src=\":/ft2logo.png\" width=\"180\" height=\"180\" /></p>"
     "<h2 align=\"center\">Decodium v3.0 FT2</h2>"
     "<h3 align=\"center\">Codename: <i>Raptor</i></h3>"
-    "<p align=\"center\" style=\"font-size:14px;\"><b>Vers.2602261018</b></p>"
+    "<p align=\"center\" style=\"font-size:14px;\"><b>Raptor v3.0.2602281659</b></p>"
     "<hr>"
     "<p align=\"center\"><b>Mod by IU8LMC</b> - <a href=\"https://www.qrz.com/db/IU8LMC\">qrz.com/db/IU8LMC</a></p>"
     "<p>Decodium v3.0 FT2 <i>\"Raptor\"</i> is an optimized weak-signal digital "
