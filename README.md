@@ -99,19 +99,19 @@ Both installers are digitally signed (SHA256 + DigiCert RFC3161 timestamp).
 - Customizable color highlighting (CQ, MyCall, DX entity, 73/RR73, Pounce)
 - Diagnostic mode for rig control troubleshooting
 - About dialog with ft2logo, codename, version, decoder parameters
-- **B4 Strikethrough** — le stazioni già lavorate sulla banda corrente vengono mostrate con testo barrato nella Band Activity, oltre al colore di sfondo
-- **TX Bracket sulla Waterfall** — parentesi quadre rosse `[ ]` nell'overlay della waterfall alla posizione dello slot TX (FT2/FT8/FT4)
+- **B4 Strikethrough** — stations already worked on band shown with strikethrough text in Band Activity, in addition to background color
+- **TX Bracket on Waterfall** — red `[ ]` brackets drawn on waterfall overlay at TX slot position (FT2/FT8/FT4)
 
 ### Auto CQ Caller Queue
-- Coda FIFO automatica per chiamanti in modalità Auto CQ (max 20 stazioni)
-- Quando si è in QSO e arrivano risposte da altre stazioni, vengono accodate
-- Al termine del QSO corrente, il prossimo chiamante in coda viene processato automaticamente
-- Nominativo, frequenza RX e messaggi standard generati in automatico
-- La coda si svuota alla disattivazione di Auto CQ
+- Automatic FIFO queue for callers in Auto CQ mode (max 20 stations)
+- When in QSO and responses arrive from other stations, they are queued
+- On current QSO completion, the next caller in queue is automatically processed
+- Callsign, RX frequency and standard messages generated automatically
+- Queue is cleared when Auto CQ is deactivated
 
 ### Auto-update CTY.DAT
-- All'avvio, se `cty.dat` non esiste o è più vecchio di 30 giorni, viene scaricato automaticamente in background
-- Download da country-files.com con riscansione automatica del logbook
+- At startup, if `cty.dat` is missing or older than 30 days, it is automatically downloaded in background
+- Download from country-files.com with automatic logbook rescan
 
 ---
 
