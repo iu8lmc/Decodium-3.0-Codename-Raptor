@@ -4,7 +4,7 @@ set PFX=C:\Users\IU8LMC\decodium_codesign.pfx
 set PASS=Decodium2601!
 set SRC=C:\Users\IU8LMC\Downloads\WSJTX_3.0_Source
 
-%SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 "%SRC%\Decodium_3.0_2602261018_FT2_x64_Setup.exe"
-%SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 "%SRC%\Decodium_3.0_2602261018_FT2_x86_Setup.exe"
+%SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 "%SRC%\Decodium_3.0_2602281900_FT2_x64_Setup.exe"
+%SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 "%SRC%\Decodium_3.0_2602281900_FT2_x86_Setup.exe"
 
 echo === Done signing installers ===
