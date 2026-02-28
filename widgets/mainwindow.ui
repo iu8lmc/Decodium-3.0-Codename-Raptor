@@ -977,6 +977,16 @@
           </widget>
          </item>
          <item>
+          <widget class="QCheckBox" name="cbNoBefore">
+           <property name="toolTip">
+            <string>Skip stations already worked on this band (No QSO B4)</string>
+           </property>
+           <property name="text">
+            <string>No B4</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="stopTxButton">
            <property name="minimumSize">
             <size>
