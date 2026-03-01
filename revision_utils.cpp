@@ -80,6 +80,6 @@ QString version (bool include_patch)
 
 QString program_title (QString const& revision)
 {
-  QString id {"Decodium v3.0 FT2   Raptor v3.0.2603010503"};
+  QString id {"Decodium v3.0 FT2   Raptor v3.0.2603010555"};
   return id + " " + revision;
 }
