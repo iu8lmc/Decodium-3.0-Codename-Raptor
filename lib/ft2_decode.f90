@@ -1,5 +1,12 @@
 module ft2_decode
 
+! Multi-period averaging buffers (module-level, persist across calls)
+   integer, parameter :: NN_AVG=103     !NN from ft2_params: NS(16)+ND(87)
+   real, save :: bm_avg(2*NN_AVG,3)    !Accumulated bitmetrics (EMA)
+   integer, save :: navg_ft2 = 0       !Number of periods accumulated
+   real, save :: f_avg = 0.0           !Frequency of averaged signal
+   real, save :: dt_avg = 0.0          !DT of averaged signal
+
    type :: ft2_decoder
       procedure(ft2_decode_callback), pointer :: callback
    contains
@@ -63,6 +70,14 @@ contains
       integer naptypes(0:5,4)   ! nQSOProgress, decoding pass
       integer mcq(29),mcqru(29),mcqfd(29),mcqtest(29),mcqww(29)
       integer mrrr(19),m73(19),mrr73(19)
+      integer ndepth0                      !Depth bits only (0-7)
+
+! Multi-period averaging tracking (per-period, not saved)
+      real best_bm(2*NN,3)                 !Best bitmetrics near nfqso this period
+      real best_f1_avg                     !Freq of best candidate this period
+      real best_sync_avg                   !Best sync near nfqso this period
+      integer best_ibest_avg               !DT of best candidate this period
+      logical got_candidate                !Found good candidate near nfqso?
 
       logical nohiscall,unpk77_success
       logical first, dobigfft
@@ -186,26 +201,33 @@ contains
       fa=nfa
       fb=nfb
       dd=iwave
+      ndepth0=iand(ndepth,7)             !Extract depth bits (1,2,3)
 
-! ndepth=3: 3 passes, bp+osd
-! ndepth=2: 3 passes, bp only
-! ndepth=1: 1 pass, no subtraction
+! ndepth0=3: 3 passes, bp+osd
+! ndepth0=2: 3 passes, bp only
+! ndepth0=1: 1 pass, no subtraction
 
       max_iterations=40
       syncmin=0.90
-      if(ndepth.ge.2) syncmin=0.85
-      if(ndepth.ge.3) syncmin=0.80
+      if(ndepth0.ge.2) syncmin=0.85
+      if(ndepth0.ge.3) syncmin=0.80
       dosubtract=.true.
       doosd=.true.
       nsp=3
-      if(ndepth.eq.2) then
+      if(ndepth0.eq.2) then
          doosd=.false.
       endif
-      if(ndepth.eq.1) then
+      if(ndepth0.eq.1) then
          nsp=1
          dosubtract=.false.
          doosd=.false.
       endif
+
+! Initialize multi-period averaging tracking for this period
+      best_sync_avg=-99.0
+      best_f1_avg=0.0
+      best_ibest_avg=0
+      got_candidate=.false.
 
       do isp = 1,nsp
          if(isp.eq.2) then
@@ -279,7 +301,7 @@ contains
                enddo
                if(iseg.eq.1) smax1=smax
                smaxthresh=0.9
-               if(ndepth.ge.3) smaxthresh=0.75
+               if(ndepth0.ge.3) smaxthresh=0.75
                if(smax.lt.smaxthresh) cycle
                if(iseg.gt.1 .and. smax.lt.smax1) cycle
                f1=f0+real(idfbest)
@@ -301,6 +323,18 @@ contains
                call get_ft2_bitmetrics(cd,bitmetrics,badsync)
                call timer('bitmet  ',1)
                if(badsync) cycle
+
+! Track best candidate near nfqso for multi-period averaging
+               if(iand(ndepth,16).eq.16 .and.                    &
+                  abs(f1-nfqso).lt.100.0 .and.                   &
+                  smax.gt.best_sync_avg) then
+                  best_bm=bitmetrics
+                  best_sync_avg=smax
+                  best_f1_avg=f1
+                  best_ibest_avg=ibest
+                  got_candidate=.true.
+               endif
+
                hbits=0
                where(bitmetrics(:,1).ge.0) hbits=1
                ns1=count(hbits(  1:  8).eq.(/0,0,0,1,1,0,1,1/))
@@ -309,7 +343,7 @@ contains
                ns4=count(hbits(199:206).eq.(/1,0,1,1,0,0,0,1/))
                nsync_qual=ns1+ns2+ns3+ns4
                nsync_qual_min=15
-               if(ndepth.ge.3) nsync_qual_min=12
+               if(ndepth0.ge.3) nsync_qual_min=12
                if(nsync_qual.lt.nsync_qual_min) cycle
 
                scalefac=2.83
@@ -342,7 +376,7 @@ contains
                apmag=maxval(abs(llra))*1.1
                npasses=5+nappasses(nQSOProgress)
                if(lapcqonly) npasses=6
-               if(ndepth.eq.1) npasses=5
+               if(ndepth0.eq.1) npasses=5
                if(ncontest.eq.6) npasses=5  ! Fox: 5 metric passes, no AP
 ! ncontest=7 (Hound): full AP passes enabled
                do ipass=1,npasses
@@ -435,7 +469,7 @@ contains
 
                   ndeep=3
                   maxosd=3
-                  if(abs(nfqso-f1).le.napwid .and. ndepth.ge.3) then
+                  if(abs(nfqso-f1).le.napwid .and. ndepth0.ge.3) then
                      maxosd=4
                   endif
                   if(.not.doosd) maxosd = -1
@@ -482,7 +516,193 @@ contains
             enddo                         !3 DT segments
          enddo                            !Candidate list
       enddo                               !Subtraction loop
+
+! ----------------------------------------------------------------
+! Multi-period averaging: accumulate and attempt averaged decode
+! ----------------------------------------------------------------
+      if(iand(ndepth,16).eq.16 .and. got_candidate) then
+         if(navg_ft2.eq.0 .or. abs(best_f1_avg-f_avg).gt.10.0) then
+! First period or frequency changed: reset accumulator
+            bm_avg=best_bm
+            navg_ft2=1
+            f_avg=best_f1_avg
+            dt_avg=real(best_ibest_avg)/1333.33
+         else
+! Accumulate using EMA (Exponential Moving Average)
+            navg_ft2=navg_ft2+1
+            ntc=min(navg_ft2,4)
+            u=1.0/real(ntc)
+            bm_avg=u*best_bm + (1.0-u)*bm_avg
+            f_avg=u*best_f1_avg + (1.0-u)*f_avg
+            dt_avg=u*real(best_ibest_avg)/1333.33 + (1.0-u)*dt_avg
+         endif
+
+! Write averaging status to avemsg.txt (unit 14)
+         write(14,1200) navg_ft2,nint(f_avg),dt_avg
+1200     format('FT2 avg:  navg=',i3,'  f=',i5,' Hz  dt=',f6.2,' s')
+
+! Try averaged decode if single-period failed and navg >= 2
+         if(ndecodes.eq.0 .and. navg_ft2.ge.2) then
+            scalefac=2.83
+            llra(  1: 58)=bm_avg(  9: 66, 1)
+            llra( 59:116)=bm_avg( 75:132, 1)
+            llra(117:174)=bm_avg(141:198, 1)
+            llra=scalefac*llra
+            llrb(  1: 58)=bm_avg(  9: 66, 2)
+            llrb( 59:116)=bm_avg( 75:132, 2)
+            llrb(117:174)=bm_avg(141:198, 2)
+            llrb=scalefac*llrb
+            llrc(  1: 58)=bm_avg(  9: 66, 3)
+            llrc( 59:116)=bm_avg( 75:132, 3)
+            llrc(117:174)=bm_avg(141:198, 3)
+            llrc=scalefac*llrc
+
+! Multi-metrica: llrd = best-of (max |valore|), llre = media
+            do i=1,2*ND
+               if(abs(llra(i)).ge.abs(llrb(i)) .and.             &
+                  abs(llra(i)).ge.abs(llrc(i))) then
+                  llrd(i)=llra(i)
+               elseif(abs(llrb(i)).ge.abs(llrc(i))) then
+                  llrd(i)=llrb(i)
+               else
+                  llrd(i)=llrc(i)
+               endif
+               llre(i)=(llra(i)+llrb(i)+llrc(i))/3.0
+            enddo
+
+            apmag=maxval(abs(llra))*1.1
+            npasses=5+nappasses(nQSOProgress)
+            if(lapcqonly) npasses=6
+            if(ndepth0.eq.1) npasses=5
+            if(ncontest.eq.6) npasses=5
+
+            do ipass=1,npasses
+               if(ipass.eq.1) llr=llra
+               if(ipass.eq.2) llr=llrb
+               if(ipass.eq.3) llr=llrc
+               if(ipass.eq.4) llr=llrd
+               if(ipass.eq.5) llr=llre
+               if(ipass.le.5) then
+                  apmask=0
+                  iaptype=0
+               endif
+
+               if(ipass .gt. 5) then
+                  llrd=llrc
+                  iaptype=naptypes(nQSOProgress,ipass-5)
+                  if(lapcqonly) iaptype=1
+                  napwid=75
+                  if(ncontest.le.5 .and. iaptype.ge.3 .and.      &
+                     (abs(f_avg-nfqso).gt.napwid) ) cycle
+                  if(iaptype.ge.2 .and. apbits(1).gt.1) cycle
+                  if(iaptype.ge.3 .and. apbits(30).gt.1) cycle
+
+                  if(iaptype.eq.1) then
+                     apmask=0
+                     apmask(1:29)=1
+                     if( ncontest.eq.0 ) llrd(1:29)=apmag*mcq(1:29)
+                     if( ncontest.eq.1 ) llrd(1:29)=apmag*mcqtest(1:29)
+                     if( ncontest.eq.2 ) llrd(1:29)=apmag*mcqtest(1:29)
+                     if( ncontest.eq.3 ) llrd(1:29)=apmag*mcqfd(1:29)
+                     if( ncontest.eq.4 ) llrd(1:29)=apmag*mcqru(1:29)
+                     if( ncontest.eq.5 ) llrd(1:29)=apmag*mcqww(1:29)
+                  endif
+
+                  if(iaptype.eq.2) then
+                     apmask=0
+                     if(ncontest.eq.0.or.ncontest.eq.1.or.ncontest.eq.5) then
+                        apmask(1:29)=1
+                        llrd(1:29)=apmag*apbits(1:29)
+                     else if(ncontest.eq.2) then
+                        apmask(1:28)=1
+                        llrd(1:28)=apmag*apbits(1:28)
+                     else if(ncontest.eq.3) then
+                        apmask(1:28)=1
+                        llrd(1:28)=apmag*apbits(1:28)
+                     else if(ncontest.eq.4) then
+                        apmask(2:29)=1
+                        llrd(2:29)=apmag*apmy_ru(1:28)
+                     endif
+                  endif
+
+                  if(iaptype.eq.3) then
+                     apmask=0
+                     if(ncontest.eq.0.or.ncontest.eq.1.or.         &
+                        ncontest.eq.2.or.ncontest.eq.5) then
+                        apmask(1:58)=1
+                        llrd(1:58)=apmag*apbits(1:58)
+                     else if(ncontest.eq.3) then
+                        apmask(1:56)=1
+                        llrd(1:28)=apmag*apbits(1:28)
+                        llrd(29:56)=apmag*aphis_fd(1:28)
+                     else if(ncontest.eq.4) then
+                        apmask(2:57)=1
+                        llrd(2:29)=apmag*apmy_ru(1:28)
+                        llrd(30:57)=apmag*apbits(30:57)
+                     endif
+                  endif
+
+                  if(iaptype.eq.4 .or. iaptype.eq.5 .or.         &
+                     iaptype.eq.6) then
+                     apmask=0
+                     if(ncontest.le.5) then
+                        apmask(1:77)=1
+                        if(iaptype.eq.6) llrd(1:77)=apmag*apbits(1:77)
+                     endif
+                  endif
+
+                  llr=llrd
+               endif
+               message77=0
+               dmin=0.0
+
+               ndeep=3
+               maxosd=3
+               if(abs(nfqso-f_avg).le.75.0 .and. ndepth0.ge.3) then
+                  maxosd=4
+               endif
+               if(.not.doosd) maxosd = -1
+               Keff=91
+               call decode174_91(llr,Keff,maxosd,ndeep,apmask,   &
+                                 message91,cw,ntype,nharderror,dmin)
+               message77=message91(1:77)
+
+               if(sum(message77).eq.0) cycle
+               if( nharderror.ge.0 ) then
+                  message77=mod(message77+rvec,2)
+                  write(c77,'(77i1)') message77(1:77)
+                  call unpack77(c77,1,message,unpk77_success)
+                  if(.not.unpk77_success) exit
+                  ndecodes=ndecodes+1
+                  decodes(ndecodes)=message
+                  xsnr=-21.0
+                  xdt=dt_avg - 0.5
+                  qual=1.0-(nharderror+dmin)/60.0
+! Report averaged decode with "a" flag via callback
+                  call this%callback(best_sync_avg,nint(xsnr),    &
+                       xdt,f_avg,message,iaptype,qual)
+! Write decoded message to avemsg.txt
+                  write(14,1210) navg_ft2,nint(f_avg),xdt,        &
+                       trim(message)
+1210              format('FT2 avg:  navg=',i3,'  f=',i5,          &
+                       '  dt=',f6.2,'  ',a)
+                  navg_ft2=0              !Reset after successful decode
+                  bm_avg=0.0
+                  exit
+               endif
+            enddo                         !ipass (averaged decode)
+         endif
+      endif
+
       return
    end subroutine decode
+
+! Clear multi-period averaging buffers (called on mode/band change)
+   subroutine ft2_clravg()
+      navg_ft2=0
+      bm_avg=0.0
+      f_avg=0.0
+      dt_avg=0.0
+   end subroutine ft2_clravg
 
 end module ft2_decode

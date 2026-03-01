@@ -4583,7 +4583,7 @@ void MainWindow::statusChanged()
   if (m_specOp==SpecOp::FOX) {
     if (m_config.superFox()) ui->comboBoxCQ->setCurrentIndex(0);    // No directional calls supported yet for SuperFox mode
   }
-  if (m_config.enable_VHF_features() && (m_mode=="JT4" or m_mode=="Q65" or m_mode=="JT65")) {
+  if (m_config.enable_VHF_features() && (m_mode=="JT4" or m_mode=="Q65" or m_mode=="JT65" or m_mode=="FT2")) {
     ui->actionInclude_averaging->setVisible(true);
     ui->actionAuto_Clear_Avg->setVisible(true);
   } else {
@@ -4595,7 +4595,7 @@ void MainWindow::statusChanged()
   } else {
     ui->actionDisable_clicks_on_waterfall->setVisible(false);
   }
-  if (m_mode=="JT4" or m_mode=="Q65" or m_mode=="JT65") {
+  if (m_mode=="JT4" or m_mode=="Q65" or m_mode=="JT65" or m_mode=="FT2") {
     if (ui->actionInclude_averaging->isVisible() && ui->actionInclude_averaging->isChecked()) {
       ui->lh_decodes_title_label->setText(tr ("Single-Period Decodes"));
       ui->rh_decodes_title_label->setText(tr ("Average Decodes"));
@@ -8002,7 +8002,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
         } else {
           if (stdMsg && okToPost) pskPost(decodedtext);
         }
-        if((m_mode=="JT4" or m_mode=="JT65" or m_mode=="Q65") and
+        if((m_mode=="JT4" or m_mode=="JT65" or m_mode=="Q65" or m_mode=="FT2") and
            m_msgAvgWidget!=NULL) {
           if(m_msgAvgWidget->isVisible()) {
             QFile f(m_config.temp_dir ().absoluteFilePath ("avemsg.txt"));
@@ -11794,7 +11794,7 @@ void MainWindow::on_actionFT2_triggered()
   ui->lh_decodes_title_label->setText(tr ("Band Activity"));
   ui->lh_decodes_headings_label->setText( "  UTC   dB   DT Freq    " + tr ("Message"));
 //                         01234567890123456789012345678901234567
-  displayWidgets(nWidgets("11101000010011100001000000011000100000"));
+  displayWidgets(nWidgets("11101000010011100001000000111000100000"));
   ui->txrb2->setEnabled(true);
   ui->txrb4->setEnabled(true);
   ui->txrb5->setEnabled(true);
@@ -13955,18 +13955,18 @@ void MainWindow::on_sbFtol_valueChanged(int value)
 
 void::MainWindow::VHF_features_enabled(bool b)
 {
-  if(m_mode!="JT4" and m_mode!="JT65" and m_mode!="Q65") b=false;
-  if(b and m_mode!="Q65" and (ui->actionInclude_averaging->isChecked() or
+  if(m_mode!="JT4" and m_mode!="JT65" and m_mode!="Q65" and m_mode!="FT2") b=false;
+  if(b and m_mode!="Q65" and m_mode!="FT2" and (ui->actionInclude_averaging->isChecked() or
              ui->actionInclude_correlation->isChecked())) {
     ui->actionDeepestDecode->setChecked (true);
   }
   ui->actionInclude_averaging->setVisible (b);
-  ui->actionInclude_correlation->setVisible (b && m_mode!="Q65");
-  ui->actionMessage_averaging->setEnabled(b && (m_mode=="JT4" or m_mode=="JT65"));
+  ui->actionInclude_correlation->setVisible (b && m_mode!="Q65" && m_mode!="FT2");
+  ui->actionMessage_averaging->setEnabled(b && (m_mode=="JT4" or m_mode=="JT65" or m_mode=="FT2"));
   ui->actionEnable_AP_JT65->setVisible (b && m_mode=="JT65");
 
   if(!b && m_msgAvgWidget and (SpecOp::FOX != m_specOp) and !m_config.autoLog()) {
-    if(m_msgAvgWidget->isVisible() and m_mode!="JT4" and m_mode!="JT9" and m_mode!="JT65") {
+    if(m_msgAvgWidget->isVisible() and m_mode!="JT4" and m_mode!="JT9" and m_mode!="JT65" and m_mode!="FT2") {
       m_msgAvgWidget->close();
     }
   }
