@@ -9562,13 +9562,17 @@ void MainWindow::doubleClickOnCall(Qt::KeyboardModifiers modifiers)
           if (callB4) return;
         }
       }
-      // Auto CQ: double-click enqueues instead of interrupting current QSO
-      if (m_autoCQ && m_QSOProgress > CALLING && m_QSOProgress < SIGNOFF) {
+      // Auto CQ: double-click always enqueues when Auto CQ is active
+      if (m_autoCQ) {
         QString dxCall;
         QString dxGrid;
         message.deCallAndGrid(dxCall, dxGrid);
         if (!dxCall.isEmpty() && dxCall != m_hisCall) {
           enqueueCaller(dxCall, message.frequencyOffset());
+          // Se in stato CALLING, avvia subito il primo QSO dalla coda
+          if (m_QSOProgress == CALLING && m_callerQueue.size() == 1) {
+            processNextInQueue();
+          }
           return;
         }
       }
@@ -10602,6 +10606,7 @@ void MainWindow::enqueueCaller (QString const& call, int freq)
   for (auto const& e : m_callerQueue)
     if (e.startsWith (call + " ")) return;   // no duplicates
   if (m_callerQueue.size () < 20) m_callerQueue.enqueue (entry);
+  refreshCallerQueueDisplay();
 }
 
 void MainWindow::processNextInQueue ()
@@ -10618,6 +10623,32 @@ void MainWindow::processNextInQueue ()
   else ui->txrb2->setChecked (true);
   m_QSOProgress = ui->tx1->isEnabled () ? REPLYING : REPORT;
   if (!m_auto) auto_tx_mode (true);
+  refreshCallerQueueDisplay();
+}
+
+void MainWindow::refreshCallerQueueDisplay ()
+{
+  if (!m_autoCQ) return;
+
+  ui->rh_decodes_title_label->setText(
+    tr("Caller Queue (%1)").arg(m_callerQueue.size()));
+
+  ui->decodedTextBrowser2->erase();
+  int n = 0;
+  for (auto const& entry : m_callerQueue) {
+    auto parts = entry.split(' ');
+    if (parts.size() < 2) continue;
+    QString call = parts.at(0);
+    QString freq = parts.at(1);
+    n++;
+    QString line = QString("  #%1  %2  %3 Hz")
+        .arg(n, 2).arg(call, -12).arg(freq, 5);
+    ui->decodedTextBrowser2->insertText(line, QColor("#2a5a2a"), QColor("#ffffff"));
+  }
+  if (m_callerQueue.isEmpty()) {
+    ui->decodedTextBrowser2->insertText(
+      "  (empty - double-click to add stations)", QColor{}, QColor("#888888"));
+  }
 }
 
 void MainWindow::clearDX ()
@@ -10628,6 +10659,7 @@ void MainWindow::clearDX ()
     processNextInQueue ();
     return;
   }
+  refreshCallerQueueDisplay();
   if (m_QSOProgress != CALLING && !m_autoCQ) {
     auto_tx_mode (false);
   }
@@ -16570,9 +16602,13 @@ void MainWindow::on_autoCQButton_clicked(bool checked)
         ui->autoButton->setChecked(true);
         on_autoButton_clicked(true);
       }
+      refreshCallerQueueDisplay();
     } else {
       m_bCallingCQ = false;
       m_callerQueue.clear ();
+      // Ripristina pannello destro
+      ui->rh_decodes_title_label->setText(tr("Rx Frequency"));
+      ui->decodedTextBrowser2->erase();
     }
     check_button_color();
 }

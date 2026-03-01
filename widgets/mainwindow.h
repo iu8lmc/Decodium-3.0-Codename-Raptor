@@ -784,6 +784,7 @@ private:
   QQueue<QString> m_callerQueue;
   void enqueueCaller (QString const& call, int freq);
   void processNextInQueue ();
+  void refreshCallerQueueDisplay ();
   bool    m_bAutoReply;
   QString m_lastloggedcall; //ft8md
   bool    m_bCheckedContest;
