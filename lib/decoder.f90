@@ -1197,6 +1197,11 @@ subroutine multimode_decoder(ss,id2,params,nfsample)
   endif    ! end of code for FT8 mode
 
   if(params%nmode.eq.2) then
+     if(params%nclearave) then
+        call ft2_clravg()
+        params%nclearave=.false.
+     endif
+     open(14,file=trim(temp_dir)//'/avemsg.txt',status='unknown')
      if(ncontest.eq.6) then            !Fox mode for FT2
         inquire(file=trim(temp_dir)//'/houndcallers.txt',exist=ex)
         if(.not.ex) then
