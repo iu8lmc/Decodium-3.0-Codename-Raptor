@@ -3,14 +3,14 @@
 Optimized weak-signal FT2 client with enhanced sensitivity, extended frequency range, and real-time NTP/DT feedback.
 Based on WSJT-X 3.0.0 RC1 — focused exclusively on FT2 mode.
 
-**Build:** Vers.2602281659 | **Codename:** Raptor | **Author:** IU8LMC | **License:** GPL v3
+**Build:** Vers.2603010555 | **Codename:** Raptor | **Author:** IU8LMC | **License:** GPL v3
 
 ---
 
 ## Downloads
 
-- [**x64 Installer**](https://github.com/iu8lmc/decodium3-build/releases/latest) (recommended)
-- [**x86 Installer**](https://github.com/iu8lmc/decodium3-build/releases/latest) (32-bit systems)
+- [**x64 Installer**](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) (recommended)
+- [**x86 Installer**](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) (32-bit systems)
 
 Both installers are digitally signed (SHA256 + DigiCert RFC3161 timestamp).
 
@@ -18,10 +18,16 @@ Both installers are digitally signed (SHA256 + DigiCert RFC3161 timestamp).
 
 ## Features
 
-### FT2-Exclusive Mode
-- All non-FT2 modes disabled (FT8, FT4, JT65, JT9, JT4, WSPR, Echo, MSK144, Q65, FST4, FST4W, FreqCal)
-- FT2 forced at startup regardless of saved settings
-- Clean, simplified interface for FT2 operations
+### Multi-Mode Support
+- FT2 as primary mode, forced at startup
+- All standard modes available via Mode menu (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, WSPR, FST4, FST4W, Echo, FreqCal)
+- Mode-specific quick buttons for FT8, FT4, FT2
+
+### FT2 Multi-Period Averaging (+4dB)
+- EMA soft averaging of bitmetrics over 2-4 consecutive periods
+- When single-period decode fails, averaged decode is attempted automatically
+- Expected gain: **+3-5 dB** on weak signals with stable DT
+- Averaging state cleared on frequency change or band switch
 
 ### Decoder Sensitivity Boost
 
@@ -104,10 +110,17 @@ Both installers are digitally signed (SHA256 + DigiCert RFC3161 timestamp).
 
 ### Auto CQ Caller Queue
 - Automatic FIFO queue for callers in Auto CQ mode (max 20 stations)
-- When in QSO and responses arrive from other stations, they are queued
+- **Live queue display** in right panel with "Caller Queue (N)" title and numbered station list
+- Double-click enqueues stations in **any** Auto CQ state (CALLING, in QSO, SIGNOFF)
+- First click during CQ auto-processes immediately; subsequent clicks queue for later
+- When in QSO and responses arrive from other stations, they are auto-queued
 - On current QSO completion, the next caller in queue is automatically processed
 - Callsign, RX frequency and standard messages generated automatically
-- Queue is cleared when Auto CQ is deactivated
+- Panel restores to "Rx Frequency" when Auto CQ is deactivated
+
+### No B4 Filter
+- Checkbox to filter out stations already worked on current band
+- Applies to both double-click selection and auto caller queue interception
 
 ### Auto-update CTY.DAT
 - At startup, if `cty.dat` is missing or older than 30 days, it is automatically downloaded in background
@@ -150,7 +163,7 @@ build_installers.bat
 
 | Feature | Decodium Raptor | Stock WSJT-X |
 |---------|----------------|--------------|
-| Primary Mode | FT2 exclusive | Multi-mode |
+| Primary Mode | FT2 default, multi-mode | Multi-mode |
 | syncmin | 0.82 | Standard |
 | OSD Depth | 4 | Mode-dependent |
 | MAXCAND | 300 | Lower |
@@ -165,8 +178,79 @@ build_installers.bat
 | OmniRig Auto-Launch | Yes | Manual |
 | B4 Strikethrough | Yes | No |
 | TX Bracket Waterfall | Yes | No |
-| Auto CQ Caller Queue | Yes (FIFO, max 20) | Fox/Hound only |
+| Auto CQ Caller Queue | Yes (FIFO, max 20, live display) | Fox/Hound only |
+| No B4 Filter | Yes | No |
+| FT2 Multi-Period Avg | Yes (+4dB EMA) | No |
 | Auto-update CTY.DAT | Yes (30-day check) | Manual only |
+
+---
+
+## Changelog
+
+### Build 2603010555 (2026-03-01) — Latest
+- Add Auto CQ Caller Queue live display in right panel with numbered station list
+- Fix double-click enqueue: now works during CALLING state (was blocked by `> CALLING` condition)
+- Auto-process first queued station immediately when in CALLING state
+- Panel restores to "Rx Frequency" when Auto CQ is deactivated
+- Update About dialog and program title to build 2603010555
+
+### Build 2603010503 (2026-03-01)
+- FT2 multi-period soft averaging (EMA): +3-5 dB gain over 2-4 periods
+- Module-level bitmetrics accumulation buffer in ft2_decode.f90
+- Averaged decode attempt when single-period fails (navg >= 2)
+- Add SignPath Foundation code signing workflow (GitHub Actions)
+
+### Build 2602281900 (2026-02-28)
+- Double-click on callsign during active Auto CQ QSO enqueues instead of interrupting
+- New "No B4" checkbox filters out stations already worked on current band
+- Restore all mode actions (FT8, FT4, JT65, JT9, Q65, MSK144, etc.) in Mode menu
+- Translate README feature descriptions to English
+
+### Build 2602281659 (2026-02-28)
+- B4 Strikethrough: stations already worked on band shown with strikethrough text
+- Auto CQ Caller Queue: FIFO queue (max 20) for callers during active QSO
+- TX Bracket Waterfall: red `[ ]` brackets drawn at TX slot position
+- Auto CTY.DAT: auto-download cty.dat at startup if missing or older than 30 days
+
+### Build 2602270848 (2026-02-27)
+- Restore DT display (Decode Timing panel), keep soundcard drift removed
+- Bump build tag for x64/x86 installers
+
+### Build 2602270204 (2026-02-27)
+- Remove DT feedback loop (display-only, never applied to Detector)
+- Rename wsjtx → decodium across entire project (CMake, config, log, UI, desktop, icons)
+
+### Build 2602261706 (2026-02-26)
+- Add ChronoGPS to installer and menu with dedicated icon
+- Integrate ChronoGPS panel into TimeSyncPanel as two-column layout (720x580)
+- Auto-launch ChronoGPS at startup (persisted setting)
+
+### Build 2602261018 (2026-02-26)
+- Re-enable DT feedback for TimeSyncPanel convergence display
+- Disable DT feedback correction (display only, no Detector injection)
+- Tune FT2 decoder: syncmin 0.90, ndeep/maxosd=3, SNR floor -21 dB
+- Replace wsjtx.ico with decodium.ico for proper branding
+
+### Build 2602260045 (2026-02-26)
+- Revert aggressive decoder params causing high decode latency
+- Restore Detector to exact working build (stock behavior)
+- Remove all timing corrections from Detector (NTP/DT/drift = display only)
+- Fix DT feedback oscillation: remove predictive correction, reduce EMA factors
+- Relax NTP RTT filter (50→100ms) and refresh interval (30→60s)
+- FT2-exclusive mode with Raptor branding, ft2logo, Raptor.pal palette
+- Build scripts: sign_and_pack, sign_installers, build_installers
+
+### Build 2402261000 (2024-02-26) — Initial Release
+- Rebrand WSJT-X to Decodium v3.0 FT2 (IU8LMC)
+- Add FT2 digital mode with new Fortran decoder sources
+- Add NTP precision client (25+ servers, RTT filtering, IQR outlier removal, EMA)
+- Soundcard clock drift detection (PPM + ms/period)
+- Audio output underrun recovery, optimized buffer settings
+- OmniRig auto-launch with COM server wait loop
+- Multi-slot waterfall markers (FT2=200Hz spacing)
+- Time Synchronization panel (Logger32-style)
+- Custom NTP server field, decoder watchdog timer, PSKReporter fix
+- Windows manifest, Inno Setup scripts, CI workflows (Linux, macOS, Windows)
 
 ---
 
