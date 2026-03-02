@@ -2725,6 +2725,9 @@ void MainWindow::dataSink(qint64 frames)
     m_dateTime = now.toString ("yyyy-MMM-dd hh:mm");
     if(m_mode!="WSPR") {
       if (m_mode=="FT8" && m_multithreadFT8 && m_ihsym>47) last=now;  // ft8md
+      if (!m_diskData) {
+        m_dateTimeSeqStart = qt_truncate_date_time_to (now, m_TRperiod * 1.e3);
+      }
       decode(); //Start decoder
     }
 
@@ -5846,7 +5849,7 @@ void MainWindow::decode()                                       //decode()
     dec_data.params.nutc=dec_data.params.nutc/100;
   }
   if(dec_data.params.nagain==0 && dec_data.params.newdat==1 && (!m_diskData)) {
-    m_dateTimeSeqStart = qt_truncate_date_time_to (QDateTime::currentDateTimeUtc (), m_TRperiod * 1.e3);
+    // m_dateTimeSeqStart already set by dataSink() before calling decode()
     auto t = m_dateTimeSeqStart.time ();
     dec_data.params.nutc = t.hour () * 100 + t.minute ();
     if (m_TRperiod < 60.)
