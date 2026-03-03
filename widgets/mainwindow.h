@@ -155,6 +155,7 @@ public slots:
   void doubleClickOnCall2(Qt::KeyboardModifiers);
   void doubleClickOnFoxQueue(Qt::KeyboardModifiers);
   void doubleClickOnFoxInProgress(Qt::KeyboardModifiers modifiers);
+  void doubleClickOnCallerQueue(Qt::KeyboardModifiers);
   void readFromStdout();
   void p1ReadFromStdout();
   void setXIT(int n, Frequency base = 0u);

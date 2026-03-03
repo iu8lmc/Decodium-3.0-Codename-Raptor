@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FT2 — The Fastest Digital Mode | IU8LMC</title>
+  <meta name="description" content="FT2: the fastest digital mode ever created for amateur radio. 3.8-second cycles, 4x faster than FT8. Developed by IU8LMC — ARI Caserta.">
+  <meta name="keywords" content="FT2, FT8, FT4, digital mode, amateur radio, ham radio, WSJT-X, IU8LMC, ARI Caserta, DECODIUM">
+  <meta property="og:title" content="FT2 — The Fastest Digital Mode">
+  <meta property="og:description" content="3.8-second cycles. QSO in 11 seconds. 4x faster than FT8. World first on February 16, 2026.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ft2.it">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* News Section Styles */
+    .news-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-width: 800px;
+    }
+
+    .news-item {
+      display: flex;
+      gap: 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+
+    .news-item:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+      transform: translateX(5px);
+    }
+
+    .news-date {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 70px;
+      padding: 1rem;
+      background: var(--bg-card2);
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .news-date .day {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--cyan);
+      line-height: 1;
+    }
+
+    .news-date .month {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .news-date .year {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .news-content {
+      flex: 1;
+    }
+
+    .news-content h3 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .news-content p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 0.8rem;
+    }
+
+    @media (max-width: 600px) {
+      .news-item {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .news-date {
+        flex-direction: row;
+        gap: 0.5rem;
+        width: fit-content;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav class="navbar">
+  <a href="#home" class="nav-logo">
+    <div>
+      <div class="logo-text">FT2</div>
+      <div class="logo-sub">DECODIUM 3.0 · IU8LMC</div>
+    </div>
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="#home" data-i18n="nav_home">Home</a></li>
+    <li><a href="#news" data-i18n="nav_news">News</a></li>
+    <li><a href="#about" data-i18n="nav_about">What is FT2</a></li>
+    <li><a href="#download" data-i18n="nav_download">Download</a></li>
+    <li><a href="#gallery" data-i18n="nav_gallery">Gallery</a></li>
+    <li><a href="#team" data-i18n="nav_team">Team</a></li>
+    <li><a href="#contact" data-i18n="nav_contact">Contact</a></li>
+    <li><a href="forum/" data-i18n="nav_forum">Forum</a></li>
+    <li>
+      <div class="lang-switch">
+        <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" data-lang="it" onclick="setLang('it')">IT</button>
+      </div>
+    </li>
+  </ul>
+
+  <button class="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- HERO -->
+<section id="home" class="hero">
+  <div class="hero-badge">
+    <span class="badge badge-gold">WORLD FIRST</span>
+    <span class="badge badge-green">VERIFIED QSOs</span>
+    <span class="badge badge-red">TESTED ON-AIR</span>
+  </div>
+
+  <h1>FT2</h1>
+  <p class="hero-subtitle" data-i18n="hero_sub">The fastest digital mode ever created</p>
+  <p class="hero-desc" data-i18n="hero_desc">First contact in the world completed on February 16, 2026. 3.8-second cycles — Complete QSO in 11 seconds. 4x faster than FT8.</p>
+
+  <div class="hero-stats">
+    <div class="stat-item">
+      <span class="stat-value">3.8s</span>
+      <span class="stat-label" data-i18n="stat_cycle">T/R CYCLE</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">11s</span>
+      <span class="stat-label" data-i18n="stat_qso">FULL QSO</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">~240</span>
+      <span class="stat-label" data-i18n="stat_rate">QSO/HOUR</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">4x</span>
+      <span class="stat-label" data-i18n="stat_loss">vs FT8</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 2.5rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+    <a href="#download" class="btn btn-cyan" data-i18n="hero_btn_download">Download Beta</a>
+    <a href="https://t.me/+Y8y7i_qu15A3NDI0" target="_blank" class="btn btn-green" style="background: #0088cc;">
+      ✈️ Join Telegram
+    </a>
+    <a href="#about" class="btn btn-outline" data-i18n="hero_btn_learn">Learn More</a>
+  </div>
+</section>
+
+<!-- FT2 NEWS -->
+<section id="news" class="section">
+  <h2 class="section-title fade-in" data-i18n="news_title">FT2 NEWS</h2>
+  <div class="section-line fade-in"></div>
+
+  <div class="news-container fade-in" id="newsContainer">
+    <!-- News loaded dynamically from API -->
+    <div class="news-item" style="flex-direction: column;">
+      <img src="img/ft2_adif_announcement.jpg" alt="ADIF Certification for FT2" style="width: 100%; border-radius: 8px; margin-bottom: 1rem;">
+      <div style="display: flex; gap: 1.5rem;">
+        <div class="news-date">
+          <span class="day">25</span>
+          <span class="month">FEB</span>
+          <span class="year">2026</span>
+        </div>
+        <div class="news-content">
+          <h3>ADIF Certification Confirmed for FT2!</h3>
+          <p>The ADIF Development Group has officially accepted FT2 for inclusion in the ADIF Specification. Within two weeks, FT2 will be formally certified as a recognized digital mode, paving the way for full integration into ARRL Logbook of The World (LoTW).</p>
+          <span class="badge badge-gold">OFFICIAL ANNOUNCEMENT</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="news-item">
+      <div class="news-date">
+        <span class="day">19</span>
+        <span class="month">FEB</span>
+        <span class="year">2026</span>
+      </div>
+      <div class="news-content">
+        <h3>Decodium 3.0 Released!</h3>
+        <p>Nuova versione con supporto completo FT2, miglioramenti decoder e interfaccia rinnovata. Download disponibile!</p>
+        <span class="badge badge-green">NEW RELEASE</span>
+      </div>
+    </div>
+
+    <div class="news-item">
+      <div class="news-date">
+        <span class="day">16</span>
+        <span class="month">FEB</span>
+        <span class="year">2026</span>
+      </div>
+      <div class="news-content">
+        <h3>First FT2 QSO in History!</h3>
+        <p>IU8LMC e IZ8VYF completano il primo QSO FT2 al mondo su 40m. SNR -12dB, tempo totale 11 secondi.</p>
+        <span class="badge badge-gold">WORLD FIRST</span>
+      </div>
+    </div>
+
+    <div class="news-item">
+      <div class="news-date">
+        <span class="day">15</span>
+        <span class="month">FEB</span>
+        <span class="year">2026</span>
+      </div>
+      <div class="news-content">
+        <h3>FT2 Protocol Announced</h3>
+        <p>Annunciato il nuovo protocollo FT2: cicli da 3.8 secondi, 4x piu veloce di FT8, stesso codec LDPC.</p>
+        <span class="badge badge-cyan">ANNOUNCEMENT</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="section">
+  <h2 class="section-title fade-in" data-i18n="about_title">WHAT IS FT2</h2>
+  <div class="section-line fade-in"></div>
+
+  <p class="fade-in" style="color: var(--text-secondary); max-width: 800px; margin-bottom: 2rem; font-size: 1.05rem; line-height: 1.8;" data-i18n="about_intro">
+    FT2 is a revolutionary digital mode for amateur radio, developed by IU8LMC with the support of ARI Caserta. It uses the same codec as FT8 and FT4 (77-bit payload, LDPC 174/91, GFSK modulation) but compresses the transmission cycle to just 3.8 seconds.
+  </p>
+
+  <div class="card-grid">
+    <div class="card fade-in">
+      <h3 data-i18n="about_card1_title">⚡ EXTREME SPEED</h3>
+      <p data-i18n="about_card1_desc">Complete QSO in 7-11 seconds. Theoretical rate of ~240 QSO/hour, ideal for contests and DXpeditions.</p>
+    </div>
+    <div class="card fade-in">
+      <h3 data-i18n="about_card2_title">🔗 SAME CODEC</h3>
+      <p data-i18n="about_card2_desc">77-bit payload, LDPC(174,91), 8-GFSK modulation. The protocol core is identical to FT8/FT4.</p>
+    </div>
+    <div class="card fade-in">
+      <h3 data-i18n="about_card3_title">📡 TESTED ON-AIR</h3>
+      <p data-i18n="about_card3_desc">Verified on February 16, 2026 on 40m and 80m with decoding down to -12 dB SNR.</p>
+    </div>
+  </div>
+
+  <!-- SPECS TABLE -->
+  <h3 class="section-title fade-in" style="margin-top: 3rem; font-size: 1.3rem;" data-i18n="specs_title">TECHNICAL SPECIFICATIONS</h3>
+  <div class="section-line fade-in"></div>
+
+  <div class="card fade-in" style="overflow-x: auto;">
+    <table class="specs-table">
+      <thead>
+        <tr>
+          <th data-i18n="specs_param">Parameter</th>
+          <th>FT8</th>
+          <th>FT4</th>
+          <th>FT2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>T/R Cycle</td><td>15 s</td><td>7.5 s</td><td class="ft2-val">3.8 s</td></tr>
+        <tr><td>TX Duration</td><td>12.64 s</td><td>4.48 s</td><td class="ft2-val">~3.55 s</td></tr>
+        <tr><td>Modulation</td><td>8-GFSK</td><td>4-GFSK</td><td class="ft2-val">8-GFSK</td></tr>
+        <tr><td>Tones</td><td>8</td><td>4</td><td class="ft2-val">8</td></tr>
+        <tr><td>Baud Rate</td><td>6.25 Bd</td><td>20.83 Bd</td><td class="ft2-val">20.83 Bd</td></tr>
+        <tr><td>Bandwidth</td><td>50 Hz</td><td>83 Hz</td><td class="ft2-val">~150 Hz</td></tr>
+        <tr><td>Sensitivity</td><td>-21 dB</td><td>-17.5 dB</td><td class="ft2-val">~-10.8 dB</td></tr>
+        <tr><td>Payload</td><td>77 bit</td><td>77 bit</td><td class="ft2-val">77 bit</td></tr>
+        <tr><td>FEC</td><td>LDPC(174,91)</td><td>LDPC(174,91)</td><td class="ft2-val">LDPC(174,91)</td></tr>
+        <tr><td>Full QSO</td><td>~60 s</td><td>~30 s</td><td class="ft2-val">~11 s</td></tr>
+        <tr><td>QSO Rate</td><td>~60/h</td><td>~120/h</td><td class="ft2-val">~240/h</td></tr>
+        <tr><td>Clock Accuracy</td><td>±200 ms</td><td>±100 ms</td><td class="ft2-val">±50 ms</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Sensitivity Chart -->
+  <div class="card fade-in" style="margin-top: 1.5rem; text-align: center;">
+    <img src="img/sensitivity_chart.png" alt="Time vs Bandwidth vs Sensitivity" style="max-width: 100%; border-radius: 8px;">
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section id="download" class="section">
+  <h2 class="section-title fade-in" data-i18n="dl_title">DOWNLOAD</h2>
+  <div class="section-line fade-in"></div>
+
+  <div style="display: grid; gap: 1rem; max-width: 700px;">
+
+    <a href="downloads/Decodium_3.0_2602261018_FT2_x64_Setup.exe" class="download-card fade-in">
+      <div class="download-icon soft">📦</div>
+      <div class="download-info">
+        <h3 data-i18n="dl_soft_title">Decodium 3.0 FT2</h3>
+     <p>Beta software for Vers.2602261018 32-bit systems</p>
+        <div class="file-meta">ZIP • Windows 64 bit</div>
+      </div>
+    </a>
+
+    <a href="downloads/Decodium_3.0_2602261018_FT2_x86_Setup.exe" class="download-card fade-in">
+      <div class="download-icon soft">📦</div>
+      <div class="download-info">
+        <h3>Decodium 3.0 FT2 (32 bit)</h3>
+        <p>Beta software for Vers.2602261018 32-bit systems</p>
+        <div class="file-meta">ZIP • Windows 32 bit</div>
+      </div>
+    </a>
+
+    <a href="https://github.com/iu8lmc/WSJTX-3.0-build/releases" target="_blank" class="download-card fade-in">
+      <div class="download-icon soft">🐧</div>
+      <div class="download-info">
+        <h3>Decodium 3.0 FT2 (Linux)</h3>
+        <p>Beta software for Linux x86_64</p>
+        <div class="file-meta">TAR.GZ • Linux x64 • GitHub</div>
+      </div>
+    </a>
+    
+        <a href="https://github.com/elisir80/decodium3-build-macos" target="_blank" class="download-card fade-in">
+      <div class="download-icon soft">🐧</div>
+      <div class="download-info">
+        <h3>Decodium 3.0 FT2 (Mac Edition)</h3>
+        <p>Beta software for Mac</p>
+        <div class="file-meta">Apple Mac By 9H1SR </div>
+      </div>
+    </a>
+
+    <a href="downloads/FT2_Technical_Document_IT.pdf" class="download-card fade-in">
+      <div class="download-icon pdf">📄</div>
+      <div class="download-info">
+        <h3 data-i18n="dl_doc_it_title">Technical Documentation (IT)</h3>
+        <p data-i18n="dl_doc_it_desc">Full specs, charts, analysis — Italian</p>
+        <div class="file-meta">PDF • 4 pages</div>
+      </div>
+    </a>
+
+    <a href="downloads/FT2_Technical_Document_EN.pdf" class="download-card fade-in">
+      <div class="download-icon doc">📄</div>
+      <div class="download-info">
+        <h3 data-i18n="dl_doc_en_title">Technical Documentation (EN)</h3>
+        <p data-i18n="dl_doc_en_desc">Full specifications, charts, analysis — English</p>
+        <div class="file-meta">PDF • 4 pages</div>
+      </div>
+    </a>
+
+    <a href="downloads/FT2_Operator_Badges.pdf" class="download-card fade-in">
+      <div class="download-icon badge-icon">🏅</div>
+      <div class="download-info">
+        <h3 data-i18n="dl_badges_title">FT2 Operator Badges</h3>
+        <p data-i18n="dl_badges_desc">Printable badges for beta testers and operators</p>
+        <div class="file-meta">PDF • 2 pages</div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="gallery" class="section">
+  <h2 class="section-title fade-in" data-i18n="gallery_title">QSO GALLERY</h2>
+  <div class="section-line fade-in"></div>
+  <p class="fade-in" style="color: var(--text-secondary); margin-bottom: 2rem;" data-i18n="gallery_desc">Screenshots from the first FT2 QSOs in history — February 16, 2026</p>
+
+  <div class="card-grid">
+    <div class="qso-card fade-in">
+      <div class="qso-callsign">IZ8VYF</div>
+      <div style="color: var(--text-secondary); margin: 6px 0;">Campania — PIONEER #1</div>
+      <div class="qso-meta">
+        <span>📻 40m — 7.077 MHz</span>
+        <span>📊 SNR: -12 dB</span>
+        <span>⏱ DT: 0.6s</span>
+      </div>
+      <span class="badge badge-green" style="margin-top: 10px;">QSO COMPLETED</span>
+    </div>
+
+    <div class="qso-card fade-in">
+      <div class="qso-callsign">IZ8XXE</div>
+      <div style="color: var(--text-secondary); margin: 6px 0;">Campania — PIONEER #2</div>
+      <div class="qso-meta">
+        <span>📻 80m — 3.582 MHz</span>
+        <span>📊 SNR: +11 dB</span>
+        <span>⏱ QSO: 7 sec</span>
+      </div>
+      <span class="badge badge-green" style="margin-top: 10px;">QSO IN 7 SECONDS</span>
+    </div>
+
+    <div class="qso-card fade-in">
+      <div class="qso-callsign">IC8TEM</div>
+      <div style="color: var(--text-secondary); margin: 6px 0;">Capri — PIONEER #3</div>
+      <div class="qso-meta">
+        <span>📻 80m — 3.582 MHz</span>
+        <span>📊 SNR: +12 dB</span>
+        <span>⏱ QSO: 11 sec</span>
+      </div>
+      <span class="badge badge-green" style="margin-top: 10px;">QSO IN 11 SECONDS</span>
+    </div>
+  </div>
+
+  <!-- Screenshot gallery placeholder -->
+  <div class="gallery-grid" style="margin-top: 2rem;">
+    <div class="gallery-item fade-in">
+      <img src="img/sensitivity_chart.png" alt="Sensitivity Chart">
+      <div class="gallery-caption">Time vs Bandwidth vs Sensitivity (FT8, FT4, FT2)</div>
+    </div>
+    <!-- Add more screenshots here by placing images in img/ folder -->
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team" class="section">
+  <h2 class="section-title fade-in" data-i18n="team_title">TEAM</h2>
+  <div class="section-line fade-in"></div>
+
+  <div class="card-grid">
+    <div class="team-card fade-in">
+      <div class="team-callsign">IU8LMC</div>
+      <div class="team-role">Developer & Creator</div>
+      <div class="team-desc">Concept, development, and on-air testing. Creator of DECODIUM 3.0.</div>
+      <div style="margin-top: 8px;"><span class="badge badge-cyan">SAN PRISCO, CE</span></div>
+    </div>
+
+    <div class="team-card fade-in">
+      <div class="team-callsign">IZ8VYF</div>
+      <div class="team-role">Pioneer #1</div>
+      <div class="team-desc">First FT2 QSO in history. 40m band, SNR -12 dB.</div>
+      <div style="margin-top: 8px;"><span class="badge badge-green">WORLD FIRST</span></div>
+    </div>
+
+    <div class="team-card fade-in">
+      <div class="team-callsign">IZ8XXE</div>
+      <div class="team-role">Expert Advisor #2</div>
+      <div class="team-desc">Fastest QSO: 7 seconds on 80m band.</div>
+      <div style="margin-top: 8px;"><span class="badge badge-green">7 SEC QSO</span></div>
+    </div>
+
+    <div class="team-card fade-in">
+      <div class="team-callsign">IC8TEM</div>
+      <div class="team-role">Pioneer #3</div>
+      <div class="team-desc">QSO from Capri island on 80m band.</div>
+      <div style="margin-top: 8px;"><span class="badge badge-green">CAPRI</span></div>
+    </div>
+  </div>
+
+  <!-- Credits -->
+  <div class="card fade-in" style="margin-top: 2rem;">
+    <h3 style="color: var(--cyan); margin-bottom: 1rem;">Credits</h3>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-secondary); line-height: 2;">
+      <div><span style="color: var(--text-muted);">Base software:</span> Decodium 3 (open source, GPL)</div>
+      <div><span style="color: var(--text-muted);">Original protocol:</span> Joe Taylor K1JT, Steve Franke K9AN</div>
+      <div><span style="color: var(--text-muted);">AI tools:</span> Claude (Anthropic) — development assistance</div>
+      <div><span style="color: var(--text-muted);">Team:</span> ARI Caserta</div>
+      <div><span style="color: var(--text-muted);">Decoder:</span> DECODIUM 3.0 by IU8LMC IZ8XXE</div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box fade-in">
+    <h2 data-i18n="cta_title">JOIN THE BETA TEST</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; max-width: 500px; margin-left: auto; margin-right: auto;" data-i18n="cta_desc">
+      We are looking for beta testers to experiment with FT2 on-air. Join our WhatsApp group!
+    </p>
+    <a href="https://t.me/+Y8y7i_qu15A3NDI0" target="_blank" class="btn btn-green" data-i18n="cta_btn">
+      Join Telegram Group
+    </a>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="section">
+  <h2 class="section-title fade-in" data-i18n="contact_title">CONTACT</h2>
+  <div class="section-line fade-in"></div>
+
+  <div class="card fade-in" style="max-width: 600px;">
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;" data-i18n="contact_desc">For information, collaboration, or technical support:</p>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 2.5;">
+      <div>📻 <span style="color: var(--cyan);">IU8LMC</span> — Martino</div>
+      <div>🏢 ARI Caserta — Santa Maria Capua Vetere, CE, Italy</div>
+      <div>✈️ <a href="https://t.me/+Y8y7i_qu15A3NDI0" target="_blank" style="color: var(--cyan); text-decoration: none;">Telegram Beta Group</a></div>
+      <div>🌐 <a href="https://ft2.it" style="color: var(--cyan); text-decoration: none;">ft2.it</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- SPONSOR -->
+<section id="sponsor" class="section">
+  <h2 class="section-title fade-in" data-i18n="sponsor_title">SPONSOR</h2>
+  <div class="section-line fade-in"></div>
+
+  <div style="display: flex; justify-content: center;">
+    <div class="card fade-in" style="text-align: center; padding: 2rem;">
+      <a href="https://www.mdxc.org" target="_blank">
+        <img src="https://www.arimestre.it/wp-content/uploads/2019/01/mdxc.png" alt="MDXC Sponsor" style="max-width: 250px; height: auto;">
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <p data-i18n="footer_text">73 de IU8LMC — ARI Caserta — DECODIUM 3.0 — San Prisco, CE, Italy</p>
+  <p data-i18n="footer_copy">© 2026 FT2 Digital Mode. Developed by IU8LMC with the support of ARI Caserta.</p>
+  <p style="margin-top: 8px;">
+    <a href="#home">ft2.it</a> ·
+    <span style="color: var(--text-muted);">#FT2 #HamRadio #IU8LMC #DECODIUM #MadeInItaly</span>
+  </p>
+</footer>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" class="lightbox">
+  <img src="" alt="Full size">
+</div>
+
+<script src="js/main.js"></script>
+<script>
+// News are now static in HTML - no dynamic loading needed
+// To add news, edit the HTML directly or use the admin panel and re-enable this function
+/*
+async function loadNews() {
+  try {
+    const response = await fetch('forum/api/news.php');
+    const result = await response.json();
+
+    if (result.success && result.data.length > 0) {
+      const container = document.getElementById('newsContainer');
+      container.innerHTML = result.data.map(news => `
+        <div class="news-item">
+          <div class="news-date">
+            <span class="day">${news.day}</span>
+            <span class="month">${news.month}</span>
+            <span class="year">${news.year}</span>
+          </div>
+          <div class="news-content">
+            <h3>${news.title}</h3>
+            <p>${news.content}</p>
+            ${news.badge_text ? `<span class="badge badge-${news.badge_type}">${news.badge_text}</span>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch (error) {
+    console.log('Using static news');
+  }
+}
+*/
+// Static news - no auto-load needed
+</script>
+</body>
+</html>
