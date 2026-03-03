@@ -1024,6 +1024,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   connect (ui->decodedTextBrowser2, &DisplayText::selectCallsign, this, &MainWindow::doubleClickOnCall);
   connect (ui->houndQueueTextBrowser, &DisplayText::selectCallsign, this, &MainWindow::doubleClickOnFoxQueue);
   connect (ui->foxTxListTextBrowser, &DisplayText::selectCallsign, this, &MainWindow::doubleClickOnFoxInProgress);
+  connect (ui->callerQueueTextBrowser, &DisplayText::selectCallsign, this, &MainWindow::doubleClickOnCallerQueue);
   connect (ui->decodedTextBrowser, &DisplayText::erased, this, &MainWindow::band_activity_cleared);
   connect (ui->decodedTextBrowser2, &DisplayText::erased, this, &MainWindow::rx_frequency_activity_cleared);
   connect (ui->decodedTextBrowser->horizontalScrollBar(),SIGNAL(sliderMoved(int)),SLOT(ScrollBarPosition(int)));
@@ -2399,6 +2400,10 @@ void MainWindow::setDecodedTextFont (QFont const& font)
   ui->foxTxListTextBrowser->setContentFont(font);
   ui->foxTxListTextBrowser->displayHoundToBeCalled(" ");
   ui->foxTxListTextBrowser->setText("");
+
+  ui->callerQueueTextBrowser->setContentFont(font);
+  ui->callerQueueTextBrowser->setText("");
+  ui->tab2StackedWidget->setCurrentIndex(0);  // default Fox
 
   auto style_sheet = "QLabel {" + font_as_stylesheet (font) + '}';
   ui->lh_decodes_headings_label->setStyleSheet (ui->lh_decodes_headings_label->styleSheet () + style_sheet);
@@ -4586,7 +4591,7 @@ void MainWindow::statusChanged()
   if (m_specOp==SpecOp::FOX) {
     if (m_config.superFox()) ui->comboBoxCQ->setCurrentIndex(0);    // No directional calls supported yet for SuperFox mode
   }
-  if (m_config.enable_VHF_features() && (m_mode=="JT4" or m_mode=="Q65" or m_mode=="JT65" or m_mode=="FT2")) {
+  if (m_config.enable_VHF_features() && (m_mode=="JT4" or m_mode=="Q65" or m_mode=="JT65")) {
     ui->actionInclude_averaging->setVisible(true);
     ui->actionAuto_Clear_Avg->setVisible(true);
   } else {
@@ -4598,7 +4603,7 @@ void MainWindow::statusChanged()
   } else {
     ui->actionDisable_clicks_on_waterfall->setVisible(false);
   }
-  if (m_mode=="JT4" or m_mode=="Q65" or m_mode=="JT65" or m_mode=="FT2") {
+  if (m_mode=="JT4" or m_mode=="Q65" or m_mode=="JT65") {
     if (ui->actionInclude_averaging->isVisible() && ui->actionInclude_averaging->isChecked()) {
       ui->lh_decodes_title_label->setText(tr ("Single-Period Decodes"));
       ui->rh_decodes_title_label->setText(tr ("Average Decodes"));
@@ -8005,7 +8010,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
         } else {
           if (stdMsg && okToPost) pskPost(decodedtext);
         }
-        if((m_mode=="JT4" or m_mode=="JT65" or m_mode=="Q65" or m_mode=="FT2") and
+        if((m_mode=="JT4" or m_mode=="JT65" or m_mode=="Q65") and
            m_msgAvgWidget!=NULL) {
           if(m_msgAvgWidget->isVisible()) {
             QFile f(m_config.temp_dir ().absoluteFilePath ("avemsg.txt"));
@@ -9565,17 +9570,13 @@ void MainWindow::doubleClickOnCall(Qt::KeyboardModifiers modifiers)
           if (callB4) return;
         }
       }
-      // Auto CQ: double-click always enqueues when Auto CQ is active
-      if (m_autoCQ) {
+      // Auto CQ: double-click enqueues instead of interrupting current QSO
+      if (m_autoCQ && m_QSOProgress > CALLING && m_QSOProgress < SIGNOFF) {
         QString dxCall;
         QString dxGrid;
         message.deCallAndGrid(dxCall, dxGrid);
         if (!dxCall.isEmpty() && dxCall != m_hisCall) {
           enqueueCaller(dxCall, message.frequencyOffset());
-          // Se in stato CALLING, avvia subito il primo QSO dalla coda
-          if (m_QSOProgress == CALLING && m_callerQueue.size() == 1) {
-            processNextInQueue();
-          }
           return;
         }
       }
@@ -10632,24 +10633,21 @@ void MainWindow::processNextInQueue ()
 void MainWindow::refreshCallerQueueDisplay ()
 {
   if (!m_autoCQ) return;
-
-  ui->rh_decodes_title_label->setText(
+  ui->callerQueueTitleLabel->setText(
     tr("Caller Queue (%1)").arg(m_callerQueue.size()));
-
-  ui->decodedTextBrowser2->erase();
+  ui->callerQueueTextBrowser->erase();
   int n = 0;
   for (auto const& entry : m_callerQueue) {
     auto parts = entry.split(' ');
     if (parts.size() < 2) continue;
-    QString call = parts.at(0);
-    QString freq = parts.at(1);
     n++;
     QString line = QString("  #%1  %2  %3 Hz")
-        .arg(n, 2).arg(call, -12).arg(freq, 5);
-    ui->decodedTextBrowser2->insertText(line, QColor("#2a5a2a"), QColor("#ffffff"));
+        .arg(n, 2).arg(parts.at(0), -12).arg(parts.at(1), 5);
+    ui->callerQueueTextBrowser->insertText(
+        line, QColor("#2a5a2a"), QColor("#ffffff"));
   }
   if (m_callerQueue.isEmpty()) {
-    ui->decodedTextBrowser2->insertText(
+    ui->callerQueueTextBrowser->insertText(
       "  (empty - double-click to add stations)", QColor{}, QColor("#888888"));
   }
 }
@@ -10662,7 +10660,6 @@ void MainWindow::clearDX ()
     processNextInQueue ();
     return;
   }
-  refreshCallerQueueDisplay();
   if (m_QSOProgress != CALLING && !m_autoCQ) {
     auto_tx_mode (false);
   }
@@ -11829,7 +11826,7 @@ void MainWindow::on_actionFT2_triggered()
   ui->lh_decodes_title_label->setText(tr ("Band Activity"));
   ui->lh_decodes_headings_label->setText( "  UTC   dB   DT Freq    " + tr ("Message"));
 //                         01234567890123456789012345678901234567
-  displayWidgets(nWidgets("11101000010011100001000000111000100000"));
+  displayWidgets(nWidgets("11101000010011100001000000011000100000"));
   ui->txrb2->setEnabled(true);
   ui->txrb4->setEnabled(true);
   ui->txrb5->setEnabled(true);
@@ -13990,18 +13987,18 @@ void MainWindow::on_sbFtol_valueChanged(int value)
 
 void::MainWindow::VHF_features_enabled(bool b)
 {
-  if(m_mode!="JT4" and m_mode!="JT65" and m_mode!="Q65" and m_mode!="FT2") b=false;
-  if(b and m_mode!="Q65" and m_mode!="FT2" and (ui->actionInclude_averaging->isChecked() or
+  if(m_mode!="JT4" and m_mode!="JT65" and m_mode!="Q65") b=false;
+  if(b and m_mode!="Q65" and (ui->actionInclude_averaging->isChecked() or
              ui->actionInclude_correlation->isChecked())) {
     ui->actionDeepestDecode->setChecked (true);
   }
   ui->actionInclude_averaging->setVisible (b);
-  ui->actionInclude_correlation->setVisible (b && m_mode!="Q65" && m_mode!="FT2");
-  ui->actionMessage_averaging->setEnabled(b && (m_mode=="JT4" or m_mode=="JT65" or m_mode=="FT2"));
+  ui->actionInclude_correlation->setVisible (b && m_mode!="Q65");
+  ui->actionMessage_averaging->setEnabled(b && (m_mode=="JT4" or m_mode=="JT65"));
   ui->actionEnable_AP_JT65->setVisible (b && m_mode=="JT65");
 
   if(!b && m_msgAvgWidget and (SpecOp::FOX != m_specOp) and !m_config.autoLog()) {
-    if(m_msgAvgWidget->isVisible() and m_mode!="JT4" and m_mode!="JT9" and m_mode!="JT65" and m_mode!="FT2") {
+    if(m_msgAvgWidget->isVisible() and m_mode!="JT4" and m_mode!="JT9" and m_mode!="JT65") {
       m_msgAvgWidget->close();
     }
   }
@@ -16065,6 +16062,38 @@ void MainWindow::doubleClickOnFoxInProgress(Qt::KeyboardModifiers modifiers)
     }
 }
 
+void MainWindow::doubleClickOnCallerQueue(Qt::KeyboardModifiers modifiers)
+{
+  if (modifiers == 9999) return;
+  QTextCursor cursor = ui->callerQueueTextBrowser->textCursor();
+  cursor.setPosition(cursor.selectionStart());
+  QString line = cursor.block().text().trimmed();
+  QRegularExpression re(R"(#\s*\d+\s+(\S+))");
+  auto match = re.match(line);
+  if (!match.hasMatch()) return;
+  QString call = match.captured(1);
+
+  // Trova e rimuovi l'entry per questo call
+  QString foundEntry;
+  QQueue<QString> remaining;
+  while (!m_callerQueue.isEmpty()) {
+    QString entry = m_callerQueue.dequeue();
+    if (entry.startsWith(call + " ") && foundEntry.isEmpty())
+      foundEntry = entry;
+    else
+      remaining.enqueue(entry);
+  }
+  if (modifiers == Qt::AltModifier && !foundEntry.isEmpty()) {
+    // Alt+DC: sposta in cima
+    m_callerQueue.enqueue(foundEntry);
+    while (!remaining.isEmpty()) m_callerQueue.enqueue(remaining.dequeue());
+  } else {
+    // DC normale: rimuovi dalla coda
+    m_callerQueue.swap(remaining);
+  }
+  refreshCallerQueueDisplay();
+}
+
 void MainWindow::foxQueueTopCallCommand()
 {
   m_decodedText2 = true;
@@ -16605,13 +16634,20 @@ void MainWindow::on_autoCQButton_clicked(bool checked)
         ui->autoButton->setChecked(true);
         on_autoButton_clicked(true);
       }
+      // Mostra caller queue in Tab 2 e seleziona il tab
+      if (SpecOp::FOX != m_specOp) {
+        ui->tab2StackedWidget->setCurrentIndex(1);
+        ui->tabWidget->setCurrentIndex(1);
+      }
       refreshCallerQueueDisplay();
     } else {
       m_bCallingCQ = false;
-      m_callerQueue.clear ();
-      // Ripristina pannello destro
-      ui->rh_decodes_title_label->setText(tr("Rx Frequency"));
-      ui->decodedTextBrowser2->erase();
+      m_callerQueue.clear();
+      // Ripristina Tab 2 a Fox/Hound e torna a Tab 1
+      ui->tab2StackedWidget->setCurrentIndex(0);
+      ui->tabWidget->setCurrentIndex(0);
+      ui->callerQueueTextBrowser->erase();
+      ui->callerQueueTitleLabel->setText(tr("Caller Queue (0)"));
     }
     check_button_color();
 }

@@ -3,7 +3,7 @@
 Optimized weak-signal FT2 client with enhanced sensitivity, extended frequency range, and real-time NTP/DT feedback.
 Based on WSJT-X 3.0.0 RC1 — focused exclusively on FT2 mode.
 
-**Build:** Vers.2603010555 | **Codename:** Raptor | **Author:** IU8LMC | **License:** GPL v3
+**Build:** Vers.2603031040 | **Codename:** Raptor | **Author:** IU8LMC | **License:** GPL v3
 
 ---
 
@@ -187,7 +187,16 @@ build_installers.bat
 
 ## Changelog
 
-### Build 2603010555 (2026-03-01) — Latest
+### Build 2603031040 (2026-03-03) — Latest
+- Caller Queue moved to dedicated Tab 2 (QStackedWidget), right panel stays "Rx Frequency"
+- Merge PR #9: fix FT2 wrong-period nutc from late decode (dataSink timing)
+- Remove FT2 from VHF averaging features (not applicable)
+- Enqueue only during active QSO (m_QSOProgress > CALLING)
+- Add donation link (Buy Me a Coffee) to About dialog
+- List all built-in JTAlert-equivalent features in About dialog
+- Update version to build 2603031040
+
+### Build 2603010555 (2026-03-01)
 - Add Auto CQ Caller Queue live display in right panel with numbered station list
 - Fix double-click enqueue: now works during CALLING state (was blocked by `> CALLING` condition)
 - Auto-process first queued station immediately when in CALLING state

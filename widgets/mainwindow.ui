@@ -2609,6 +2609,10 @@ Double-click to reset to the standard 73 message</string>
                    <attribute name="title">
                     <string>2</string>
                    </attribute>
+                   <layout class="QVBoxLayout" name="tab3VBoxLayout">
+                    <item>
+                     <widget class="QStackedWidget" name="tab2StackedWidget">
+                      <widget class="QWidget" name="foxHoundPage">
                    <layout class="QGridLayout" name="gridLayout_11" columnstretch="1">
                     <property name="leftMargin">
                      <number>4</number>
@@ -2993,6 +2997,52 @@ Double-click to reset to the standard 73 message</string>
                        </widget>
                       </item>
                      </layout>
+                    </item>
+                   </layout>
+                      </widget>
+                      <widget class="QWidget" name="callerQueuePage">
+                       <layout class="QVBoxLayout" name="callerQueueLayout">
+                        <item>
+                         <widget class="QLabel" name="callerQueueTitleLabel">
+                          <property name="text">
+                           <string>Caller Queue (0)</string>
+                          </property>
+                          <property name="alignment">
+                           <set>Qt::AlignCenter</set>
+                          </property>
+                          <property name="font">
+                           <font>
+                            <bold>true</bold>
+                           </font>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="DisplayText" name="callerQueueTextBrowser">
+                          <property name="sizePolicy">
+                           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                           </sizepolicy>
+                          </property>
+                         </widget>
+                        </item>
+                        <item>
+                         <widget class="QLabel" name="callerQueueHintLabel">
+                          <property name="text">
+                           <string>Double-click: remove | Alt+DC: move to top</string>
+                          </property>
+                          <property name="font">
+                           <font>
+                            <italic>true</italic>
+                            <pointsize>8</pointsize>
+                           </font>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </widget>
+                     </widget>
                     </item>
                    </layout>
                   </widget>

@@ -17,7 +17,7 @@ Write-Output "PFX exported to decodium_codesign_new.pfx"
 
 # Sign the installer
 $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
-$installer = "C:\Users\IU8LMC\Downloads\WSJTX_3.0_Source\Decodium_3.0_2602281659_FT2_x64_Setup.exe"
+$installer = "C:\Users\IU8LMC\Downloads\WSJTX_3.0_Source\Decodium_3.0_2602281900_FT2_x64_Setup.exe"
 
 & $signtool sign /f "C:\Users\IU8LMC\decodium_codesign_new.pfx" /p "Decodium2026!" /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 $installer
 
