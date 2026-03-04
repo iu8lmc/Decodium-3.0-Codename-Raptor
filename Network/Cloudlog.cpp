@@ -89,7 +89,7 @@ public:
     }
 
     QNetworkRequest request {apiUrl+"/index.php/api/auth/"+apiKey};
-    request.setRawHeader ("User-Agent", "Decodium3SE-KP5 Cloudlog API");
+    request.setRawHeader ("User-Agent", "Decodium v3.0 FT2 Raptor Cloudlog API");
     request.setOriginatingObject (this);
     reply_ = network_manager_->get (request);
     connect (reply_.data (), &QNetworkReply::finished, this, &Cloudlog::impl::reply_apitest);
