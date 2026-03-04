@@ -8396,9 +8396,28 @@ void MainWindow::guiUpdate()
     if(m_ntx == 5) txMsg=ui->tx5->currentText();
     if(m_ntx == 6) txMsg=ui->tx6->text();
     int msgLength=txMsg.trimmed().length();
-    if(msgLength==0 and !m_tune) on_stopTxButton_clicked();
+    // In DXped mode il contenuto TX viene da dxpedTxSequencer(), non dai campi tx1...tx6
+    // quindi non usare msgLength per lo stop automatico
+    if(msgLength==0 and !m_tune and !m_bDXpedMode) on_stopTxButton_clicked();
 
-    if(g_iptt==0 and ((m_bTxTime and (fTR < 0.75) and (msgLength>0)) or m_tune)) {
+    // DXped mode: non alzare il PTT se la coda caller è vuota e gli slot sono vuoti
+    bool dxpedSilent = m_bDXpedMode && m_callerQueue.isEmpty()
+        && m_dxpedSlots[0].call.isEmpty() && m_dxpedSlots[1].call.isEmpty();
+    // CQ mode: coda vuota ma tx5 disponibile → trasmetti CQ singolo (come MSHV)
+    bool dxpedCQmode = dxpedSilent && !ui->tx5->currentText().trimmed().isEmpty();
+    if(dxpedSilent && !dxpedCQmode && g_iptt==1) stopTx(); // abbassa PTT solo se silenzio totale
+    if(dxpedSilent && !dxpedCQmode) m_restart = false;     // blocca restart solo se nessun CQ
+
+    // In DXped: PTT pronto se c'è caller O se tx5 ha il CQ
+    bool txReady = m_bDXpedMode ? (!dxpedSilent || dxpedCQmode) : (msgLength > 0);
+
+    // DXped CQ mode: forza m_ntx=5 affinché il blocco waveform legga il messaggio CQ da tx5
+    if(m_bDXpedMode && dxpedCQmode && m_ntx != 5) {
+      m_ntx = 5;
+      ui->txrb5->setChecked(true);
+    }
+
+    if(g_iptt==0 and ((m_bTxTime and (fTR < 0.75) and txReady) or m_tune)) {
       //### Allow late starts
       icw[0]=m_ncw;
       g_iptt = 1;
@@ -8540,8 +8559,25 @@ void MainWindow::guiUpdate()
         }
 
         if(m_mode=="FT8") {
-          if(m_bDXpedMode) { dxpedTxSequencer(); return; }
-          if(SpecOp::FOX==m_specOp and ui->tabWidget->currentIndex()==1) {
+          if(m_bDXpedMode && dxpedCQmode) {
+            // Coda vuota: CQ singolo standard da tx5 (come MSHV)
+            int i3=0;
+            int n3=0;
+            char ft8msgbits[77];
+            genft8_(message, &i3, &n3, msgsent, const_cast<char *>(ft8msgbits),
+                    const_cast<int *>(itone), (FCL)37, (FCL)37);
+            int nsym=79;
+            int nsps=4*1920;
+            float fsample=48000.0;
+            float bt=2.0;
+            float f0=ui->TxFreqSpinBox->value() - m_XIT;
+            int icmplx=0;
+            int nwave=nsym*nsps;
+            gen_ft8wave_(const_cast<int *>(itone),&nsym,&nsps,&bt,&fsample,&f0,foxcom_.wave,
+                         foxcom_.wave,&icmplx,&nwave);
+          } else if(m_bDXpedMode) {
+            if(!dxpedTxSequencer()) m_btxok=false;
+          } else if(SpecOp::FOX==m_specOp and ui->tabWidget->currentIndex()==1) {
             foxTxSequencer();
           } else {
             int i3=0;
@@ -8592,8 +8628,23 @@ void MainWindow::guiUpdate()
           }
         }
         if(m_mode=="FT2") {
-          if(m_bDXpedMode) { dxpedTxSequencer(); return; }
-          if(SpecOp::FOX==m_specOp and ui->tabWidget->currentIndex()==1) {
+          if(m_bDXpedMode && dxpedCQmode) {
+            // Coda vuota: CQ singolo standard da tx5 (come MSHV)
+            int ichk=0;
+            char ft2msgbits[77];
+            genft2_(message, &ichk, msgsent, const_cast<char *>(ft2msgbits),
+                    const_cast<int *>(itone), (FCL)37, (FCL)37);
+            int nsym=103;
+            int nsps=4*288;
+            float fsample=48000.0;
+            float f0=ui->TxFreqSpinBox->value() - m_XIT;
+            int nwave=(nsym+2)*nsps;
+            int icmplx=0;
+            gen_ft2wave_(const_cast<int *>(itone),&nsym,&nsps,&fsample,&f0,foxcom_.wave,
+                         foxcom_.wave,&icmplx,&nwave);
+          } else if(m_bDXpedMode) {
+            if(!dxpedTxSequencer()) m_btxok=false;
+          } else if(SpecOp::FOX==m_specOp and ui->tabWidget->currentIndex()==1) {
             foxTxSequencer();
           } else {
             int ichk=0;
@@ -10737,6 +10788,16 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
     ui->cbAutoSeq->setChecked(true);
     dxpedLoadSlot(0);
     dxpedLoadSlot(1);
+    // Fox usa sempre il primo semiciclo (periodo fisso, come MSHV)
+    if(!m_txFirst) {
+      m_txFirst = true;
+      ui->txFirstCheckBox->setChecked(true);
+    }
+    // Coda vuota all'avvio: prepara CQ da tx5
+    if(m_callerQueue.isEmpty() && m_dxpedSlots[0].call.isEmpty() && m_dxpedSlots[1].call.isEmpty()) {
+      m_ntx = 5;
+      ui->txrb5->setChecked(true);
+    }
     if (!m_auto) auto_tx_mode(true);
     refreshCallerQueueDisplay();
   } else {
@@ -10767,7 +10828,7 @@ void MainWindow::dxpedLoadSlot(int slot)
   refreshCallerQueueDisplay();
 }
 
-void MainWindow::dxpedTxSequencer()
+int MainWindow::dxpedTxSequencer()
 {
   int nActiveSlots = 0;
   QString myBase = Radio::base_callsign(m_config.my_callsign());
@@ -10815,6 +10876,7 @@ void MainWindow::dxpedTxSequencer()
       foxgen_(&bSuperFox, fname.constData(), (FCL)fname.size());
     }
   }
+  return nActiveSlots;
 }
 
 void MainWindow::dxpedRxProcess(QString const& call)

@@ -48,7 +48,7 @@ project (decodium
   VERSION 3.0.0.0
   LANGUAGES C CXX Fortran
   )
-set (PROJECT_DESCRIPTION "Decodium v3.0 SE KP5/NP3VI: Digital Modes for Weak Signal Communications in Amateur Radio")
+set (PROJECT_DESCRIPTION "Decodium v3.0 Raptor 2603041600 : Digital Modes for Weak Signal Communications in Amateur Radio")
 set (CMAKE_PROJECT_DESCRIPTION ${PROJECT_DESCRIPTION})
 set (CMAKE_AUTOUIC ON)
 
@@ -78,7 +78,7 @@ set (decodium_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJE
 #
 # project information
 #
-set (PROJECT_BUNDLE_NAME "Decodium v3.0 SE DXpedition KP5/NP3VI")
+set (PROJECT_BUNDLE_NAME "Decodium v3.0 Raptor 2603041600")
 set (PROJECT_VENDOR "IU8LMC")
 set (PROJECT_CONTACT "IU8LMC <qrz.com/db/IU8LMC>")
 set (PROJECT_COPYRIGHT "See Help | Copyright info")
