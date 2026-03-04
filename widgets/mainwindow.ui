@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Decodium v3.0 SE KP5</string>
+   <string>Decodium v3.0 FT2 Raptor 2603041600</string>
   </property>
   <property name="toolTip">
    <string/>
@@ -5131,7 +5131,7 @@ QPushButton[state=&quot;ok&quot;] {
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About Decodium v3.0 SE KP5</string>
+    <string>About Decodium v3.0 FT2 Raptor 2603041600</string>
    </property>
    <property name="menuRole">
     <enum>QAction::AboutRole</enum>
@@ -5728,23 +5728,23 @@ QPushButton[state=&quot;ok&quot;] {
   </action>
   <action name="actionQuick_Start_Guide_to_WSJT_X_2_7_and_QMAP">
    <property name="text">
-    <string>Quick-Start Guide to Decodium v3.0 SE KP5 and QMAP</string>
+    <string>Quick-Start Guide to Decodium v3.0 FT2 Raptor 2603041600 and QMAP</string>
    </property>
   </action>
   <action name="actionWSJT_X_improved_Home_Page">
    <property name="text">
-    <string>Decodium v3.0 SE KP5 Home Page</string>
+    <string>Decodium v3.0 FT2 Raptor 2603041600 Home Page</string>
    </property>
    <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go to the Decodium v3.0 SE KP5 home page.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go to the Decodium v3.0 FT2 Raptor 2603041600 home page.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionThe_additional_features_of_wsjt_x_improved">
    <property name="text">
-    <string>The additional features of Decodium v3.0 SE KP5</string>
+    <string>The additional features of Decodium v3.0 FT2 Raptor 2603041600</string>
    </property>
    <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overview on the additional features of Decodium v3.0 SE KP5.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overview on the additional features of Decodium v3.0 FT2 Raptor 2603041600.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionRecommended_Audio_Settings">
