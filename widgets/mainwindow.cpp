@@ -558,7 +558,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_optimizingProgress {"Optimizing decoder FFTs for your CPU.\n"
       "Please be patient,\n"
       "this may take a few minutes", QString {}, 0, 1, this},
-  m_messageClient {new MessageClient {QApplication::applicationName (),
+  m_messageClient {new MessageClient {QString {"WSJT-X"},
         version (), revision (),
         m_config.udp_server_name (), m_config.udp_server_port (),
         m_config.udp_interface_names (), m_config.udp_TTL (),
@@ -6203,6 +6203,17 @@ void MainWindow::decodeDone ()
     houndCallers();
     if(ui->cbWorkDupes->isChecked()) QTimer::singleShot (5000, [=] {band_activity_cleared();});
   }
+
+  // Auto CQ MSHV-style timeout: dopo MAX_MISSED_PERIODS RX senza risposta → salta al prossimo
+  if (m_autoCQ && m_QSOProgress > CALLING && !m_diskData) {
+    if (!m_receivedReplyThisPeriod) {
+      m_autoCQPeriodsMissed++;
+      if (m_autoCQPeriodsMissed >= MAX_MISSED_PERIODS)
+        QTimer::singleShot (0, this, [this] { clearDX (); });
+    }
+    m_receivedReplyThisPeriod = false;
+  }
+
   to_jt9(m_ihsym,-1,1);                //Tell jt9 we know it has finished
 
   // DT Feedback Loop: update TimeSyncPanel display (correction disabled via m_dtFeedbackEnabled=false)
@@ -8065,7 +8076,7 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
                             callB4, cB4, gB4, contB4, cqzB4, ituzB4, m_currentBand);
             if (callB4) return;
           }
-          enqueueCaller (newCaller, message.frequencyOffset ());
+          enqueueCaller (newCaller, message.frequencyOffset (), message.snr());
           return;
         }
       }
@@ -8132,6 +8143,14 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
                            || message_words.at (2).contains (m_baseCall))))) {
       if(SpecOp::FOX != m_specOp){
         //debugToFile(QString{"             processMessage:%1"}.arg(message.string().trimmed()));   //avt 1/4/24
+        if (m_autoCQ && m_QSOProgress > CALLING)
+          m_receivedReplyThisPeriod = true;  // risposta valida ricevuta questo periodo
+        if (m_bDXpedMode) {
+          QString dxpedCall;
+          QString dxpedGrid;
+          message.deCallAndGrid(dxpedCall, dxpedGrid);
+          if (!dxpedCall.isEmpty()) dxpedRxProcess(dxpedCall);
+        }
         processMessage (message);
       }
     }
@@ -8521,6 +8540,7 @@ void MainWindow::guiUpdate()
         }
 
         if(m_mode=="FT8") {
+          if(m_bDXpedMode) { dxpedTxSequencer(); return; }
           if(SpecOp::FOX==m_specOp and ui->tabWidget->currentIndex()==1) {
             foxTxSequencer();
           } else {
@@ -8572,6 +8592,7 @@ void MainWindow::guiUpdate()
           }
         }
         if(m_mode=="FT2") {
+          if(m_bDXpedMode) { dxpedTxSequencer(); return; }
           if(SpecOp::FOX==m_specOp and ui->tabWidget->currentIndex()==1) {
             foxTxSequencer();
           } else {
@@ -9576,7 +9597,7 @@ void MainWindow::doubleClickOnCall(Qt::KeyboardModifiers modifiers)
         QString dxGrid;
         message.deCallAndGrid(dxCall, dxGrid);
         if (!dxCall.isEmpty() && dxCall != m_hisCall) {
-          enqueueCaller(dxCall, message.frequencyOffset());
+          enqueueCaller(dxCall, message.frequencyOffset(), message.snr());
           return;
         }
       }
@@ -10604,9 +10625,9 @@ void MainWindow::TxAgain()
   auto_tx_mode(true);
 }
 
-void MainWindow::enqueueCaller (QString const& call, int freq)
+void MainWindow::enqueueCaller (QString const& call, int freq, int snr)
 {
-  QString entry = call + " " + QString::number (freq);
+  QString entry = call + " " + QString::number (freq) + " " + QString::number (snr);
   for (auto const& e : m_callerQueue)
     if (e.startsWith (call + " ")) return;   // no duplicates
   if (m_callerQueue.size () < 20) m_callerQueue.enqueue (entry);
@@ -10622,17 +10643,17 @@ void MainWindow::processNextInQueue ()
   ui->dxCallEntry->setText (parts.at (0));
   ui->RxFreqSpinBox->setValue (parts.at (1).toInt ());
   genStdMsgs (parts.at (0));
-  m_ntx = ui->tx1->isEnabled () ? 1 : 2;
-  if (ui->txrb1->isEnabled ()) ui->txrb1->setChecked (true);
-  else ui->txrb2->setChecked (true);
-  m_QSOProgress = ui->tx1->isEnabled () ? REPLYING : REPORT;
+  m_autoCQPeriodsMissed = 0;
+  m_receivedReplyThisPeriod = false;
+  setTxMsg (2);            // MSHV-style: inizia sempre da Tx2 (report diretto)
+  m_QSOProgress = REPORT;
   if (!m_auto) auto_tx_mode (true);
   refreshCallerQueueDisplay();
 }
 
 void MainWindow::refreshCallerQueueDisplay ()
 {
-  if (!m_autoCQ) return;
+  if (!m_autoCQ && !m_bDXpedMode) return;
   ui->callerQueueTitleLabel->setText(
     tr("Caller Queue (%1)").arg(m_callerQueue.size()));
   ui->callerQueueTextBrowser->erase();
@@ -10641,8 +10662,10 @@ void MainWindow::refreshCallerQueueDisplay ()
     auto parts = entry.split(' ');
     if (parts.size() < 2) continue;
     n++;
-    QString line = QString("  #%1  %2  %3 Hz")
-        .arg(n, 2).arg(parts.at(0), -12).arg(parts.at(1), 5);
+    int snr = parts.size() >= 3 ? parts.at(2).toInt() : -99;
+    QString snrStr = (snr > -99) ? QString("%1%2 dB").arg(snr >= 0 ? "+" : "").arg(snr, 3) : "  ?  ";
+    QString line = QString("  #%1  %2  %3 Hz  %4")
+        .arg(n, 2).arg(parts.at(0), -12).arg(parts.at(1), 5).arg(snrStr);
     ui->callerQueueTextBrowser->insertText(
         line, QColor("#2a5a2a"), QColor("#ffffff"));
   }
@@ -10655,10 +10678,17 @@ void MainWindow::refreshCallerQueueDisplay ()
 void MainWindow::clearDX ()
 {
   set_dateTimeQSO (-1);
+  m_autoCQPeriodsMissed = 0;
+  m_receivedReplyThisPeriod = false;
   // Process next caller in queue before returning to CQ
   if (m_autoCQ && !m_callerQueue.isEmpty ()) {
     processNextInQueue ();
     return;
+  }
+  // Auto CQ con coda vuota: torna a CQ (Tx6)
+  if (m_autoCQ && m_callerQueue.isEmpty ()) {
+    setTxMsg (6);
+    m_QSOProgress = CALLING;
   }
   if (m_QSOProgress != CALLING && !m_autoCQ) {
     auto_tx_mode (false);
@@ -10692,6 +10722,116 @@ void MainWindow::clearDX ()
     ui->txrb6->setChecked(true);
   }
   m_QSOProgress = CALLING;
+}
+
+// ─── DX-pedition 2-slot ───────────────────────────────────────────────────
+
+void MainWindow::on_dxpedButton_clicked(bool checked)
+{
+  m_bDXpedMode = checked;
+  if (checked) {
+    m_dxpedSlots[0] = DXpedSlot{"", 0, 0, 0, -99};
+    m_dxpedSlots[1] = DXpedSlot{"", 0, 0, 0, -99};
+    m_autoCQ = true;
+    m_bCallingCQ = true;
+    ui->cbAutoSeq->setChecked(true);
+    dxpedLoadSlot(0);
+    dxpedLoadSlot(1);
+    if (!m_auto) auto_tx_mode(true);
+    refreshCallerQueueDisplay();
+  } else {
+    m_bDXpedMode = false;
+    m_dxpedSlots[0] = DXpedSlot{"", 0, 0, 0, -99};
+    m_dxpedSlots[1] = DXpedSlot{"", 0, 0, 0, -99};
+    auto_tx_mode(false);
+  }
+}
+
+void MainWindow::dxpedLoadSlot(int slot)
+{
+  if (m_callerQueue.isEmpty()) {
+    m_dxpedSlots[slot] = DXpedSlot{"", 0, 0, 0, -99};
+    refreshCallerQueueDisplay();
+    return;
+  }
+  QString entry = m_callerQueue.dequeue();
+  auto parts = entry.split(' ');
+  int rsnr = parts.size() > 2 ? parts.at(2).toInt() : -10;
+  m_dxpedSlots[slot] = DXpedSlot{
+    parts.at(0),
+    parts.size() > 1 ? parts.at(1).toInt() : 0,
+    2,   // inizia da Tx2
+    0,
+    rsnr
+  };
+  refreshCallerQueueDisplay();
+}
+
+void MainWindow::dxpedTxSequencer()
+{
+  int nActiveSlots = 0;
+  QString myBase = Radio::base_callsign(m_config.my_callsign());
+
+  for (int i = 0; i < 2; i++) {
+    DXpedSlot &sl = m_dxpedSlots[i];
+
+    if (sl.call.isEmpty() || sl.missedPeriods >= 4) {
+      if (sl.missedPeriods >= 4)
+        writeFoxQSO(QString(" Skip: %1 (no reply)").arg(sl.call));
+      dxpedLoadSlot(i);
+      if (sl.call.isEmpty()) continue;
+    }
+
+    QString hisBase = Radio::base_callsign(sl.call);
+    int rsnr = qBound(-20, sl.snr, 40);
+    QString rpt = (rsnr >= 0 ? "+" : "") + QString("%1").arg(rsnr, 2, 10, QChar{'0'});
+    QString msg;
+    switch (sl.txStep) {
+      case 2: msg = QString("%1 %2 %3").arg(hisBase, myBase, rpt);   break;
+      case 3: msg = QString("%1 %2 RR73").arg(hisBase, myBase);      break;
+      case 5: msg = QString("%1 %2 73").arg(hisBase, myBase);        break;
+      default: continue;
+    }
+
+    foxGenWaveform(nActiveSlots, msg);
+    nActiveSlots++;
+    sl.missedPeriods++;
+  }
+
+  if (nActiveSlots > 0) {
+    foxcom_.nslots = nActiveSlots;
+    foxcom_.nfreq  = ui->TxFreqSpinBox->value();
+    if (m_config.split_mode()) foxcom_.nfreq -= m_XIT;
+    QString myCall = m_config.my_callsign() + "         ";
+    ::memcpy(foxcom_.mycall, myCall.toLatin1(), sizeof foxcom_.mycall);
+    bool bSuperFox = false;
+    foxcom_.bMoreCQs = false;
+    foxcom_.bSendMsg = false;
+    if (m_mode == "FT2") {
+      foxgenft2_();
+    } else {
+      auto fname = QDir::toNativeSeparators(
+        m_config.writeable_data_dir().absoluteFilePath("sfox_1.dat")).toLocal8Bit();
+      foxgen_(&bSuperFox, fname.constData(), (FCL)fname.size());
+    }
+  }
+}
+
+void MainWindow::dxpedRxProcess(QString const& call)
+{
+  for (int i = 0; i < 2; i++) {
+    DXpedSlot &sl = m_dxpedSlots[i];
+    if (sl.call.isEmpty()) continue;
+    if (Radio::base_callsign(sl.call) == Radio::base_callsign(call)) {
+      sl.missedPeriods = 0;
+      switch (sl.txStep) {
+        case 2: sl.txStep = 3; break;   // ricevuto R+rpt → manda RR73
+        case 3: sl.txStep = 5; break;   // ricevuto RR73  → manda 73
+        case 5: dxpedLoadSlot(i); break; // ricevuto 73   → log + prossimo caller
+      }
+      return;
+    }
+  }
 }
 
 void MainWindow::lookup()

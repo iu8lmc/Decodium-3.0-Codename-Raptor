@@ -964,6 +964,34 @@
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="dxpedButton">
+           <property name="focusPolicy">
+            <enum>Qt::StrongFocus</enum>
+           </property>
+           <property name="toolTip">
+            <string>DX-pedition: 2 slot TX simultanei, ciclo Tx2→Tx3→Tx5 automatico</string>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">QPushButton:checked {
+	color: white;
+	background-color: #8800cc;
+	border-style: outset;
+	border-width: 1px;
+	border-radius: 5px;
+	border-color: black;
+	min-width: 5em;
+	padding: 3px;
+}</string>
+           </property>
+           <property name="text">
+            <string>DX-ped</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QCheckBox" name="cbAutoTogglePeriod">
            <property name="toolTip">
             <string>Auto CQ: toggle Tx Even/1st after repeated CQ without response</string>
