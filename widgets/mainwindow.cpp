@@ -10863,11 +10863,16 @@ int MainWindow::dxpedTxSequencer()
   for (int i = 0; i < 2; i++) {
     DXpedSlot &sl = m_dxpedSlots[i];
 
-    if (sl.call.isEmpty() || sl.missedPeriods >= 2) {
-      if (sl.missedPeriods >= 2)
+    // Non skippare mai un caller che ha già risposto (txStep=3 = attende RR73)
+    // Threshold 4: dà al caller 4 TX periods per rispondere (8 sec FT2, 60 sec FT8)
+    bool canSkip = (sl.txStep != 3);
+    bool justLoaded = false;
+    if ((sl.call.isEmpty() || sl.missedPeriods >= 4) && canSkip) {
+      if (sl.missedPeriods >= 4)
         writeFoxQSO(QString(" Skip: %1 (no reply)").arg(sl.call));
       dxpedLoadSlot(i);
       if (sl.call.isEmpty()) continue;
+      justLoaded = true;   // non incrementare missedPeriods in questo TX period
     }
 
     QString hisBase = Radio::base_callsign(sl.call);
@@ -10892,8 +10897,8 @@ int MainWindow::dxpedTxSequencer()
     if (bLogOnTx) {
       dxpedLogQSO(i);    // ADIF log al momento della trasmissione RR73
       dxpedLoadSlot(i);  // carica subito il prossimo caller
-    } else {
-      sl.missedPeriods++;
+    } else if (!justLoaded) {
+      sl.missedPeriods++;  // non contare il primo TX del caller appena caricato
     }
   }
 
