@@ -8497,6 +8497,12 @@ void MainWindow::guiUpdate()
   // Calculate Tx tones when needed
   if((g_iptt==1 && m_iptt0==0) || m_restart) {
 //----------------------------------------------------------------------
+    // Re-compute dxpedCQmode (originally declared in outer block, not visible here)
+    bool dxpedCQmode = m_bDXpedMode
+        && m_callerQueue.isEmpty()
+        && m_dxpedSlots[0].call.isEmpty()
+        && m_dxpedSlots[1].call.isEmpty()
+        && !ui->tx5->currentText().trimmed().isEmpty();
     QByteArray ba;
     QByteArray ba0;
 

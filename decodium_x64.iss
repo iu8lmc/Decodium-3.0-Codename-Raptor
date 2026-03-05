@@ -1,8 +1,8 @@
-#define MyAppName "Decodium 3.0 FT2 Raptor x64"
+﻿#define MyAppName "Decodium 3.0 FT2 Raptor x64"
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
-#define MyBuildTag "2603041600"
+#define MyBuildTag "2603050304"
 #define DistDir "dist_64bit"
 
 [Setup]

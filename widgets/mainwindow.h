@@ -793,20 +793,26 @@ private:
 
   // DX-pedition 2-slot
   struct DXpedSlot {
-    QString call;
-    int     freq          {0};
-    int     txStep        {0};  // 2=Tx2, 3=Tx3, 5=Tx5, 0=slot libero
-    int     missedPeriods {0};
-    int     snr           {-99};
+    QString   call;
+    int       freq          {0};
+    int       txStep        {0};  // 2=Tx2, 3=Tx3, 5=Tx5, 0=slot libero
+    int       missedPeriods {0};
+    int       snr           {-99};
+    QString   rptSent;
+    QString   rptRcvd;
+    QDateTime dateTimeOn;
     DXpedSlot() = default;
     DXpedSlot(QString c, int f, int t, int m, int s)
       : call{c}, freq{f}, txStep{t}, missedPeriods{m}, snr{s} {}
   };
-  bool      m_bDXpedMode   {false};
+  bool      m_bDXpedMode      {false};
+  int       m_dxpedCQcounter  {0};   // piggyback CQ ogni N periodi TX
   DXpedSlot m_dxpedSlots[2];
   void dxpedLoadSlot   (int slot);
-  void dxpedTxSequencer();
-  void dxpedRxProcess  (QString const& call);
+  int  dxpedTxSequencer();
+  void dxpedRxProcess  (QString const& call, QString const& rptRcvd = QString());
+  void dxpedAutoSequence (DecodedText const& msg);
+  void dxpedLogQSO       (int slot);
 
   bool    m_bAutoReply;
   QString m_lastloggedcall; //ft8md

@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 setlocal enabledelayedexpansion
 
 set SIGNTOOL="C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
@@ -6,7 +6,7 @@ set ISCC="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 set PFX=C:\Users\IU8LMC\decodium_codesign.pfx
 set PASS=Dec2026sign
 set SRC=C:\Users\IU8LMC\Downloads\WSJTX_3.0_Source
-set BUILD=2603041600
+set BUILD=2603050304
 
 echo ============================================
 echo  Decodium v3.0 Raptor %BUILD% - Build Installers
