@@ -3639,6 +3639,7 @@ void MainWindow::fastSink(qint64 frames)
     });                                                  // UR delete for versions without alerts
 
     m_bDecoded=true;
+    if (m_bDXpedMode) dxpedAutoSequence (decodedtext);
     auto_sequence (decodedtext, ui->sbFtol->value (), std::numeric_limits<unsigned>::max ());
     m_decoderBusy = true;   //avt 6/7/22
     statusUpdate();   //avt 6/7/22
@@ -8051,6 +8052,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
 //
 void MainWindow::auto_sequence (DecodedText const& message, unsigned start_tolerance, unsigned stop_tolerance)
 {
+  if (m_bDXpedMode) return;   // DXped usa dxpedAutoSequence()
   auto const& message_words = message.messageWords ();
   auto is_73 = message_words.filter (QRegularExpression {"^(73|RR73)$"}).size();
   auto msg_no_hash = message.clean_string();
@@ -8343,7 +8345,7 @@ void MainWindow::guiUpdate()
       }
     }
 
-    if((m_mode=="FT8" or m_mode=="FT2") and SpecOp::FOX==m_specOp) {
+    if((m_mode=="FT8" or m_mode=="FT2") and SpecOp::FOX==m_specOp and !m_bDXpedMode) {
 // Don't allow Fox mode in any of the default FT8/FT2 sub-bands.
       QVector<qint32> ft8Freq = {1840000,3573000,7074000,10136000,14074000,18100000,21074000,24915000,28074000,50313000,70154000};
       for(int i=0; i<ft8Freq.length()-1; i++) {
@@ -10681,7 +10683,15 @@ void MainWindow::enqueueCaller (QString const& call, int freq, int snr)
   QString entry = call + " " + QString::number (freq) + " " + QString::number (snr);
   for (auto const& e : m_callerQueue)
     if (e.startsWith (call + " ")) return;   // no duplicates
-  if (m_callerQueue.size () < 20) m_callerQueue.enqueue (entry);
+  if (m_callerQueue.size () >= 20) return;
+  // Inserimento ordinato per SNR decrescente: caller più forti serviti prima
+  int insertPos = m_callerQueue.size ();
+  for (int j = 0; j < m_callerQueue.size (); j++) {
+    auto parts = m_callerQueue.at (j).split (' ');
+    int existingSnr = parts.size () >= 3 ? parts.at (2).toInt () : -99;
+    if (snr > existingSnr) { insertPos = j; break; }
+  }
+  m_callerQueue.insert (insertPos, entry);
   refreshCallerQueueDisplay();
 }
 
@@ -10797,9 +10807,25 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
     if(m_callerQueue.isEmpty() && m_dxpedSlots[0].call.isEmpty() && m_dxpedSlots[1].call.isEmpty()) {
       m_ntx = 5;
       ui->txrb5->setChecked(true);
+      // Se tx5 è vuoto, auto-popola dal messaggio CQ (tx6)
+      if(ui->tx5->currentText().trimmed().isEmpty()) {
+        genCQMsg();  // assicura tx6 aggiornato
+        QString cq = ui->tx6->text().trimmed();
+        if(!cq.isEmpty()) ui->tx5->setCurrentText(cq);
+      }
+      // Fallback: se tx5 è ancora vuoto, costruisci CQ manuale per garantire la TX
+      if(ui->tx5->currentText().trimmed().isEmpty() && !m_config.my_callsign().isEmpty()) {
+        QString grid = m_config.my_grid().left(4);
+        QString cqFallback = "CQ " + m_config.my_callsign() + (grid.isEmpty() ? "" : " " + grid);
+        ui->tx5->setCurrentText(cqFallback);
+      }
     }
     if (!m_auto) auto_tx_mode(true);
+    // Se auto_tx_mode è stato bloccato dal logbook-loading check, forza m_auto=true per DXped
+    if (!m_auto) { m_auto = true; ui->autoButton->setChecked(true); }
     refreshCallerQueueDisplay();
+    // Porta al tab CallerQueue/DXped (index 1) per mostrare la coda subito
+    ui->tabWidget->setCurrentIndex(1);
   } else {
     m_bDXpedMode = false;
     m_dxpedSlots[0] = DXpedSlot{"", 0, 0, 0, -99};
@@ -10825,6 +10851,7 @@ void MainWindow::dxpedLoadSlot(int slot)
     0,
     rsnr
   };
+  m_dxpedSlots[slot].dateTimeOn = QDateTime::currentDateTimeUtc();
   refreshCallerQueueDisplay();
 }
 
@@ -10836,8 +10863,8 @@ int MainWindow::dxpedTxSequencer()
   for (int i = 0; i < 2; i++) {
     DXpedSlot &sl = m_dxpedSlots[i];
 
-    if (sl.call.isEmpty() || sl.missedPeriods >= 4) {
-      if (sl.missedPeriods >= 4)
+    if (sl.call.isEmpty() || sl.missedPeriods >= 2) {
+      if (sl.missedPeriods >= 2)
         writeFoxQSO(QString(" Skip: %1 (no reply)").arg(sl.call));
       dxpedLoadSlot(i);
       if (sl.call.isEmpty()) continue;
@@ -10847,16 +10874,39 @@ int MainWindow::dxpedTxSequencer()
     int rsnr = qBound(-20, sl.snr, 40);
     QString rpt = (rsnr >= 0 ? "+" : "") + QString("%1").arg(rsnr, 2, 10, QChar{'0'});
     QString msg;
+    bool bLogOnTx = false;   // true → logga+carica next caller dopo RR73
     switch (sl.txStep) {
-      case 2: msg = QString("%1 %2 %3").arg(hisBase, myBase, rpt);   break;
-      case 3: msg = QString("%1 %2 RR73").arg(hisBase, myBase);      break;
-      case 5: msg = QString("%1 %2 73").arg(hisBase, myBase);        break;
+      case 2:
+        msg = QString("%1 %2 %3").arg(hisBase, myBase, rpt);
+        if (sl.rptSent.isEmpty()) sl.rptSent = rpt;
+        break;
+      case 3:
+        msg = QString("%1 %2 RR73").arg(hisBase, myBase);
+        bLogOnTx = true;   // QSO completo quando Fox trasmette RR73 (come MSHV)
+        break;
       default: continue;
     }
 
     foxGenWaveform(nActiveSlots, msg);
     nActiveSlots++;
-    sl.missedPeriods++;
+    if (bLogOnTx) {
+      dxpedLogQSO(i);    // ADIF log al momento della trasmissione RR73
+      dxpedLoadSlot(i);  // carica subito il prossimo caller
+    } else {
+      sl.missedPeriods++;
+    }
+  }
+
+  // Piggyback CQ: ogni 4 periodi TX, se coda vuota e tx5 ha CQ, aggiunge 3° segnale
+  QString cqPiggy = ui->tx5->currentText().trimmed();
+  if (nActiveSlots > 0 && m_callerQueue.isEmpty() && !cqPiggy.isEmpty()) {
+    if (++m_dxpedCQcounter >= 4) {
+      m_dxpedCQcounter = 0;
+      foxGenWaveform(nActiveSlots, cqPiggy);
+      nActiveSlots++;
+    }
+  } else {
+    m_dxpedCQcounter = 0;
   }
 
   if (nActiveSlots > 0) {
@@ -10879,7 +10929,7 @@ int MainWindow::dxpedTxSequencer()
   return nActiveSlots;
 }
 
-void MainWindow::dxpedRxProcess(QString const& call)
+void MainWindow::dxpedRxProcess(QString const& call, QString const& rptRcvd)
 {
   for (int i = 0; i < 2; i++) {
     DXpedSlot &sl = m_dxpedSlots[i];
@@ -10887,13 +10937,92 @@ void MainWindow::dxpedRxProcess(QString const& call)
     if (Radio::base_callsign(sl.call) == Radio::base_callsign(call)) {
       sl.missedPeriods = 0;
       switch (sl.txStep) {
-        case 2: sl.txStep = 3; break;   // ricevuto R+rpt → manda RR73
-        case 3: sl.txStep = 5; break;   // ricevuto RR73  → manda 73
-        case 5: dxpedLoadSlot(i); break; // ricevuto 73   → log + prossimo caller
+        case 2:
+          if (!rptRcvd.isEmpty()) sl.rptRcvd = rptRcvd;
+          sl.txStep = 3;   // ricevuto R+rpt → manda RR73
+          break;
+        case 3: break;   // già in attesa di inviare RR73; isFinalAck filtrato in dxpedAutoSequence
+        case 5:
+          dxpedLogQSO(i);      // ADIF log prima di scaricare lo slot
+          dxpedLoadSlot(i);    // ricevuto 73 → prossimo caller (fallback 3-period)
+          break;
       }
       return;
     }
   }
+}
+
+void MainWindow::dxpedAutoSequence (DecodedText const& msg)
+{
+  if (!m_auto || !msg.isStandardMessage ()) return;
+
+  auto const& words = msg.messageWords ();
+  if (words.size () < 4) return;
+
+  // tokens_re capturedTexts():
+  //   [1]=dual  [2]=word1(destinatario)  [3]=word2(mittente)  [4]=word3(report)
+  QString const& word1 = words.at (2);   // a chi è indirizzato
+  QString const& word2 = words.at (3);   // chi invia
+
+  // Processa solo messaggi indirizzati a noi
+  QString myBase = Radio::base_callsign (m_config.my_callsign ());
+  if (word1 != myBase && word1 != m_config.my_callsign ()) return;
+
+  QString callerCall = word2;
+  if (callerCall.isEmpty () || callerCall == "DE" || callerCall == "CQ") return;
+
+  // Estrai il report/conferma (es. "R-05", "RR73", "73")
+  QString rptRcvd = words.size () > 4 ? words.at (4) : QString ();
+  bool isFinalAck = (rptRcvd == "73" || rptRcvd == "RR73");
+
+  // Cerca il caller negli slot attivi
+  for (int i = 0; i < 2; i++) {
+    if (!m_dxpedSlots[i].call.isEmpty () &&
+        Radio::base_callsign (m_dxpedSlots[i].call) == Radio::base_callsign (callerCall)) {
+      // Early-exit: se già avanzati (txStep>=3) e arriva 73/RR73, chiudi subito
+      if (isFinalAck && m_dxpedSlots[i].txStep >= 3) {
+        dxpedLogQSO (i);
+        dxpedLoadSlot (i);
+      } else {
+        dxpedRxProcess (callerCall, rptRcvd);
+      }
+      return;
+    }
+  }
+
+  // "73"/"RR73" non in slot = conferma tardiva di QSO già completato → ignora
+  if (isFinalAck) return;
+
+  // Filtro B4: non accodare stazioni già lavorate su questa banda
+  if (ui->cbNoBefore->isChecked ()) {
+    bool callB4=false, cB4=false, gB4=false, contB4=false, cqzB4=false, ituzB4=false;
+    auto looked_up = m_logBook.countries ()->lookup (callerCall);
+    m_logBook.match (callerCall, m_mode, QString{}, looked_up,
+                     callB4, cB4, gB4, contB4, cqzB4, ituzB4, m_currentBand);
+    if (callB4) return;
+  }
+
+  // Caller non in nessuno slot: aggiungi alla coda
+  enqueueCaller (callerCall, msg.frequencyOffset (), msg.snr ());
+}
+
+void MainWindow::dxpedLogQSO (int slot)
+{
+  DXpedSlot const& sl = m_dxpedSlots[slot];
+  if (sl.call.isEmpty ()) return;
+
+  m_hisCall = sl.call;
+  m_hisGrid = "";
+  m_rptSent = sl.rptSent.isEmpty () ? "+00" : sl.rptSent;
+  // Rimuovi il prefisso "R" dal report ricevuto (es. "R-05" → "-05")
+  m_rptRcvd = sl.rptRcvd.isEmpty () ? "RRR"
+               : (sl.rptRcvd.startsWith ('R') ? sl.rptRcvd.mid (1) : sl.rptRcvd);
+  m_dateTimeQSOOn = sl.dateTimeOn.isValid ()
+                    ? sl.dateTimeOn
+                    : QDateTime::currentDateTimeUtc ().addSecs (-30);
+
+  writeFoxQSO (QString (" Log:  %1 %2 %3").arg (sl.call, m_rptSent, m_rptRcvd));
+  on_logQSOButton_clicked ();
 }
 
 void MainWindow::lookup()
@@ -11688,9 +11817,10 @@ void MainWindow::on_logQSOButton_clicked()                 //Log QSO button
   stopWCTimer.stop();           // Stop any Wait & Call timeout
 
   // Auto CQ: restart CQ calling after logging the QSO
-  if (m_autoCQ) {
+  // DXped mode: skip reset, la macchina a stati DXped gestisce la continuazione
+  if (m_autoCQ && !m_bDXpedMode) {
     QTimer::singleShot(500, [this] {
-      if (!m_autoCQ) return;
+      if (!m_autoCQ || m_bDXpedMode) return;
       m_ntx = 6;
       ui->txrb6->setChecked(true);
       m_QSOProgress = CALLING;
@@ -15214,9 +15344,12 @@ void MainWindow::statusUpdate () const
       tr_period = m_externalCtrl ? (int)(m_TRperiod * 1000) :quint32_max;   //avt 9/30/25
     }
 
-  m_messageClient->status_update (m_freqNominal, m_mode, (m_externalCtrl ? m_dxCall : m_hisCall),   //avt 11/12/21
+  // JTAlert compatibility: FT2 is not in JTAlert's mode table, map it to FT8
+  // (FT2 uses the same encoding as FT8, only different T/R period)
+  QString udpMode = (m_mode == "FT2") ? "FT8" : m_mode;
+  m_messageClient->status_update (m_freqNominal, udpMode, (m_externalCtrl ? m_dxCall : m_hisCall),   //avt 11/12/21
                                   QString::number (ui->rptSpinBox->value ()),
-                                  m_mode, m_auto,
+                                  udpMode, m_auto,
                                   m_transmitting, m_decoderBusy,
                                   rx_frequency, ui->TxFreqSpinBox->value (),
                                   m_config.my_callsign (), m_config.my_grid (),
