@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>CAboutDlg</class>
  <widget class="QDialog" name="CAboutDlg">
@@ -6,7 +6,7 @@
    <enum>Qt::NonModal</enum>
   </property>
   <property name="windowTitle">
-   <string>About Decodium v3.0 FT2 "Raptor" — Build 2603041600</string>
+   <string>About Decodium v3.0 FT2 "Raptor" — Build 2603050304</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

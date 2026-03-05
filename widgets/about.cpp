@@ -1,4 +1,4 @@
-#include "about.h"
+﻿#include "about.h"
 
 #include <QCoreApplication>
 #include <QDateTime>
@@ -19,7 +19,7 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
     "<p align=\"center\"><img src=\":/ft2logo.png\" width=\"180\" height=\"180\" /></p>"
     "<h2 align=\"center\">Decodium v3.0 FT2</h2>"
     "<h3 align=\"center\">Codename: <i>Raptor</i></h3>"
-    "<p align=\"center\" style=\"font-size:14px;\"><b>Build 2603041600</b></p>"
+    "<p align=\"center\" style=\"font-size:14px;\"><b>Build 2603050304</b></p>"
     "<p align=\"center\"><a href=\"https://buymeacoffee.com/iu8lmc\">"
     "<img src=\"https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=iu8lmc&button_colour=FFDD00&font_colour=000000&font_family=Arial&outline_colour=000000&coffee_colour=ffffff\" "
     "height=\"40\" /></a></p>"

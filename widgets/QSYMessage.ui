@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>QSYMessage</class>
  <widget class="QWidget" name="QSYMessage">
@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Decodium v3.0 FT2 Raptor 2603041600</string>
+   <string>Decodium v3.0 FT2 Raptor 2603050304</string>
   </property>
   <widget class="QLabel" name="label">
    <property name="geometry">
