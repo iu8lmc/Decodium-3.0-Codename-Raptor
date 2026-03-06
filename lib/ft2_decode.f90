@@ -35,7 +35,7 @@ contains
       use timer_module, only: timer
       use packjt77
       include 'ft2/ft2_params.f90'
-      parameter (MAXCAND=200)
+      parameter (MAXCAND=300)
       class(ft2_decoder), intent(inout) :: this
       procedure(ft2_decode_callback) :: callback
       parameter (NSS=NSPS/NDOWN,NDMAX=NMAX/NDOWN)
@@ -208,9 +208,9 @@ contains
 ! ndepth0=1: 1 pass, no subtraction
 
       max_iterations=40
-      syncmin=0.90
-      if(ndepth0.ge.2) syncmin=0.85
-      if(ndepth0.ge.3) syncmin=0.80
+      syncmin=0.80
+      if(ndepth0.ge.2) syncmin=0.75
+      if(ndepth0.ge.3) syncmin=0.70
       dosubtract=.true.
       doosd=.true.
       nsp=3
@@ -300,8 +300,8 @@ contains
                   call timer('sync2d  ',1)
                enddo
                if(iseg.eq.1) smax1=smax
-               smaxthresh=0.9
-               if(ndepth0.ge.3) smaxthresh=0.75
+               smaxthresh=0.80
+               if(ndepth0.ge.3) smaxthresh=0.65
                if(smax.lt.smaxthresh) cycle
                if(iseg.gt.1 .and. smax.lt.smax1) cycle
                f1=f0+real(idfbest)
@@ -342,8 +342,8 @@ contains
                ns3=count(hbits(133:140).eq.(/1,1,1,0,0,1,0,0/))
                ns4=count(hbits(199:206).eq.(/1,0,1,1,0,0,0,1/))
                nsync_qual=ns1+ns2+ns3+ns4
-               nsync_qual_min=15
-               if(ndepth0.ge.3) nsync_qual_min=12
+               nsync_qual_min=13
+               if(ndepth0.ge.3) nsync_qual_min=10
                if(nsync_qual.lt.nsync_qual_min) cycle
 
                scalefac=2.83
@@ -530,7 +530,7 @@ contains
          else
 ! Accumulate using EMA (Exponential Moving Average)
             navg_ft2=navg_ft2+1
-            ntc=min(navg_ft2,4)
+            ntc=min(navg_ft2,6)
             u=1.0/real(ntc)
             bm_avg=u*best_bm + (1.0-u)*bm_avg
             f_avg=u*best_f1_avg + (1.0-u)*f_avg
