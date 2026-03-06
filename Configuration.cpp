@@ -3726,7 +3726,7 @@ void Configuration::impl::on_CTY_download_button_clicked (bool /*clicked*/)
   cty_download.configure(network_manager_,
                          "http://www.country-files.com/bigcty/cty.dat",
                          dataPath.absoluteFilePath("cty.dat"),
-                         "Decodium v3.0 FT2 Raptor 2603050304 CTY Downloader");
+                         "Decodium v3.0 FT2 Raptor 2603060001 CTY Downloader");
 
   // set up LoTW users CSV file fetching
   connect (&cty_download, &FileDownload::complete, this, &Configuration::impl::after_CTY_downloaded, Qt::UniqueConnection);
@@ -3857,7 +3857,7 @@ void Configuration::impl::on_LotW_CSV_fetch_push_button_clicked (bool /*checked*
 void Configuration::impl::on_decoded_text_font_push_button_clicked ()
 {
   next_decoded_text_font_ = QFontDialog::getFont (0, decoded_text_font_ , this
-                                                  , tr ("Decodium v3.0 FT2 Raptor 2603050304 Decoded Text Font Chooser")
+                                                  , tr ("Decodium v3.0 FT2 Raptor 2603060001 Decoded Text Font Chooser")
                                                   , QFontDialog::MonospacedFonts
                                                   );
 }

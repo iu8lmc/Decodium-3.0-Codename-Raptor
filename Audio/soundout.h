@@ -7,6 +7,7 @@
 #include <QAudioOutput>
 #include <QAudioDeviceInfo>
 #include <QOperatingSystemVersion>
+#include <QTimer>
 
 class QIODevice;
 class QAudioDeviceInfo;
@@ -55,6 +56,8 @@ private:
   int m_framesBuffered;
   qreal m_volume;
   bool error_;
+  QIODevice* m_source {nullptr};   // saved for auto-recovery
+  int m_retryCount {0};            // consecutive recovery attempts
 };
 
 #endif
