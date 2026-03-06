@@ -4967,7 +4967,12 @@ void MainWindow::on_stopButton_clicked()                       //stopButton
   }
   pounce = false;
   m_autoCQ = false;
+  m_callerQueue.clear();
   ui->autoCQButton->setChecked(false);
+  ui->tab2StackedWidget->setCurrentIndex(0);   // Bug fix: ripristina Fox/Hound page
+  ui->tabWidget->setCurrentIndex(0);           // Bug fix: torna a Tab 1
+  ui->callerQueueTextBrowser->erase();
+  ui->callerQueueTitleLabel->setText(tr("Caller Queue (0)"));
   ui->autoButton->setChecked(false);  // ensure autoButton is unchecked
   m_autoButtonState = false;   //avt 10/2/25
   //debugToFile(QString{"onStopButton m_autoButtonState:%1"}.arg(m_autoButtonState));   //avt 2/2/24
@@ -10703,18 +10708,22 @@ void MainWindow::enqueueCaller (QString const& call, int freq, int snr)
 
 void MainWindow::processNextInQueue ()
 {
-  if (m_callerQueue.isEmpty ()) return;
-  QString entry = m_callerQueue.dequeue ();
-  auto parts = entry.split (' ');
-  if (parts.size () < 2) return;
-  ui->dxCallEntry->setText (parts.at (0));
-  ui->RxFreqSpinBox->setValue (parts.at (1).toInt ());
-  genStdMsgs (parts.at (0));
-  m_autoCQPeriodsMissed = 0;
-  m_receivedReplyThisPeriod = false;
-  setTxMsg (2);            // MSHV-style: inizia sempre da Tx2 (report diretto)
-  m_QSOProgress = REPORT;
-  if (!m_auto) auto_tx_mode (true);
+  while (!m_callerQueue.isEmpty ()) {
+    QString entry = m_callerQueue.dequeue ();
+    auto parts = entry.split (' ');
+    if (parts.size () < 2) continue;   // Bug fix: entry malformata → prova la prossima
+    ui->dxCallEntry->setText (parts.at (0));
+    ui->RxFreqSpinBox->setValue (parts.at (1).toInt ());
+    genStdMsgs (parts.at (0));
+    m_autoCQPeriodsMissed = 0;
+    m_receivedReplyThisPeriod = false;
+    setTxMsg (2);            // MSHV-style: inizia sempre da Tx2 (report diretto)
+    m_QSOProgress = REPORT;
+    if (!m_auto) auto_tx_mode (true);
+    refreshCallerQueueDisplay();
+    return;
+  }
+  // Coda esaurita: torna a CQ
   refreshCallerQueueDisplay();
 }
 
@@ -10829,6 +10838,8 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
     if (!m_auto) auto_tx_mode(true);
     // Se auto_tx_mode è stato bloccato dal logbook-loading check, forza m_auto=true per DXped
     if (!m_auto) { m_auto = true; ui->autoButton->setChecked(true); }
+    // Fix: DXped usa Fox/Hound controls — assicura stacked widget su page 0
+    ui->tab2StackedWidget->setCurrentIndex(0);
     refreshCallerQueueDisplay();
     // Porta al tab CallerQueue/DXped (index 1) per mostrare la coda subito
     ui->tabWidget->setCurrentIndex(1);
@@ -10837,6 +10848,14 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
     m_dxpedSlots[0] = DXpedSlot{"", 0, 0, 0, -99};
     m_dxpedSlots[1] = DXpedSlot{"", 0, 0, 0, -99};
     auto_tx_mode(false);
+    // Fix: resetta m_autoCQ che DXped aveva impostato a true
+    m_autoCQ = false;
+    m_callerQueue.clear();
+    ui->autoCQButton->setChecked(false);
+    ui->tab2StackedWidget->setCurrentIndex(0);
+    ui->tabWidget->setCurrentIndex(0);
+    ui->callerQueueTextBrowser->erase();
+    ui->callerQueueTitleLabel->setText(tr("Caller Queue (0)"));
   }
 }
 
