@@ -63,6 +63,8 @@ void SoundOutput::setFormat (QAudioDeviceInfo const& device, unsigned channels, 
 
 void SoundOutput::restart (QIODevice * source)
 {
+  m_source = source;       // save for auto-recovery
+  m_retryCount = 0;        // reset on explicit restart
   if (!m_device.isNull ())
     {
       QAudioFormat format (m_device.preferredFormat ());
@@ -218,7 +220,35 @@ void SoundOutput::handleStateChanged (QAudio::State newState)
 #endif
 
     case QAudio::StoppedState:
-      if (!checkStream ())
+      if (m_stream && m_stream->error () == QAudio::FatalError && m_source)
+        {
+          // USB/WASAPI device reset — attempt auto-recovery (max 3 retries)
+          if (m_retryCount < 3)
+            {
+              m_retryCount++;
+              int delayMs = m_retryCount * 800;   // 800ms, 1600ms, 2400ms
+              qDebug () << "SoundOutput: FatalError on USB device, auto-recovery attempt"
+                        << m_retryCount << "in" << delayMs << "ms";
+              Q_EMIT status (tr ("Audio device lost — retrying (%1/3)...").arg (m_retryCount));
+              QTimer::singleShot (delayMs, this, [this] () {
+                if (m_source && !m_device.isNull ())
+                  {
+                    qDebug () << "SoundOutput: recovery restart attempt" << m_retryCount;
+                    m_retryCount--;   // restart() will set it to 0; keep count for outer guard
+                    restart (m_source);
+                  }
+              });
+            }
+          else
+            {
+              // All retries exhausted — surface the error to the user
+              m_retryCount = 0;
+              Q_EMIT error (tr ("Audio output device lost and could not be recovered. "
+                                "Please check the USB audio device and re-select it in Settings."));
+              Q_EMIT status (tr ("Error"));
+            }
+        }
+      else if (!checkStream ())
         {
           Q_EMIT status (tr ("Error"));
         }
