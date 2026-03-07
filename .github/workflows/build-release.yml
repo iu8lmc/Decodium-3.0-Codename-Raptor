@@ -17,10 +17,6 @@ on:
 
 env:
   QT_VERSION: '5.15.2'
-  MSYS2_ROOT: 'C:\msys64'
-  BUILD_DIR: '${{ github.workspace }}\build'
-  DIST_64: '${{ github.workspace }}\dist_64bit'
-  DIST_32: '${{ github.workspace }}\dist_32bit'
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
@@ -45,10 +41,6 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             TAG="${{ github.event.inputs.build_tag }}"
           else
-            # Estrai da tag git: v3.0.2603070002 → 2603070002
-            TAG="${GITHUB_REF_NAME##*.}"
-            TAG="${GITHUB_REF_NAME#v}"
-            # Prende solo la parte numerica finale
             TAG=$(echo "$GITHUB_REF_NAME" | grep -oE '[0-9]{10}$' || echo "${GITHUB_REF_NAME##*v}")
           fi
           echo "build_tag=$TAG" >> "$GITHUB_OUTPUT"
@@ -107,7 +99,6 @@ jobs:
           cp build/udp_daemon.exe dist_64bit/ 2>/dev/null || true
           /mingw64/bin/windeployqt.exe --release --no-translations \
             --multimedia --websockets dist_64bit/decodium.exe
-          # Copia JPLEPH
           cp contrib/Ephemeris/JPLEPH dist_64bit/
           cp cty.dat dist_64bit/ 2>/dev/null || true
           cp ALLCALL7.TXT dist_64bit/ 2>/dev/null || true
@@ -115,65 +106,52 @@ jobs:
       - name: Upload dist_64bit artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dist-64bit
+          name: dist-64bit-unsigned
           path: dist_64bit/
           retention-days: 1
 
   # ─────────────────────────────────────────────────────────────────────────
-  # JOB 2: Sign + Package + Release
+  # JOB 2: Sign con SignPath (open source gratuito)
   # ─────────────────────────────────────────────────────────────────────────
-  sign-and-release:
-    name: Sign & Release
+  sign:
+    name: Sign (SignPath)
     needs: build-x64
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Submit signing request to SignPath
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
+          project-slug: 'Decodium'
+          signing-policy-slug: 'release-signing'
+          artifact-configuration-slug: 'exe-collection'
+          github-artifact-name: 'dist-64bit-unsigned'
+          wait-for-completion: true
+          output-artifact-name: 'dist-64bit-signed'
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 3: Package + Release
+  # ─────────────────────────────────────────────────────────────────────────
+  package-and-release:
+    name: Package & Release
+    needs: [build-x64, sign]
     runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download dist_64bit
+      - name: Download signed dist_64bit
         uses: actions/download-artifact@v4
         with:
-          name: dist-64bit
+          name: dist-64bit-signed
           path: dist_64bit
 
       - name: Install Inno Setup
-        run: |
-          choco install innosetup --no-progress -y
         shell: powershell
-
-      - name: Install Azure CLI + Trusted Signing extension
-        run: |
-          az extension add --name trustedsigning --allow-preview true
-        shell: powershell
-
-      # Scarica e installa Microsoft.Azure.SignTool
-      - name: Install SignTool (Azure Trusted Signing)
-        run: |
-          dotnet tool install --global sign --version 0.9.1-beta.25170.4
-        shell: powershell
-
-      # Login Azure con Service Principal
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      # Firma tutti gli exe con Azure Trusted Signing
-      - name: Sign executables (Azure Trusted Signing)
-        shell: powershell
-        run: |
-          $exes = Get-ChildItem -Path "dist_64bit" -Filter "*.exe" | Select-Object -ExpandProperty FullName
-          foreach ($exe in $exes) {
-            Write-Host "Signing: $exe"
-            sign code azure-key-vault `
-              --azure-key-vault-url "${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}" `
-              --azure-key-vault-certificate "${{ secrets.AZURE_CERT_PROFILE_NAME }}" `
-              --code-signing-account-name "${{ secrets.AZURE_CODE_SIGNING_ACCOUNT }}" `
-              --certificate-profile-name "${{ secrets.AZURE_CERT_PROFILE_NAME }}" `
-              --timestamp-url "http://timestamp.acs.microsoft.com" `
-              "$exe"
-          }
+        run: choco install innosetup --no-progress -y
 
       - name: Build x64 installer (Inno Setup)
         shell: cmd
@@ -181,20 +159,30 @@ jobs:
           "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" decodium_x64.iss
           if errorlevel 1 exit /b 1
 
-      - name: Sign x64 installer
-        shell: powershell
-        run: |
-          $tag = "${{ needs.build-x64.outputs.build_tag }}"
-          $installer = "Decodium_3.0_${tag}_FT2_x64_Setup.exe"
-          if (Test-Path $installer) {
-            sign code azure-key-vault `
-              --azure-key-vault-url "${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}" `
-              --azure-key-vault-certificate "${{ secrets.AZURE_CERT_PROFILE_NAME }}" `
-              --code-signing-account-name "${{ secrets.AZURE_CODE_SIGNING_ACCOUNT }}" `
-              --certificate-profile-name "${{ secrets.AZURE_CERT_PROFILE_NAME }}" `
-              --timestamp-url "http://timestamp.acs.microsoft.com" `
-              "$installer"
-          }
+      - name: Upload installer unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-unsigned
+          path: 'Decodium_3.0_*_FT2_x64_Setup.exe'
+          retention-days: 1
+
+      - name: Sign installer (SignPath)
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
+          project-slug: 'Decodium'
+          signing-policy-slug: 'release-signing'
+          artifact-configuration-slug: 'installer'
+          github-artifact-name: 'installer-unsigned'
+          wait-for-completion: true
+          output-artifact-name: 'installer-signed'
+
+      - name: Download signed installer
+        uses: actions/download-artifact@v4
+        with:
+          name: installer-signed
+          path: .
 
       - name: Create GitHub Release
         if: ${{ github.event_name == 'push' || github.event.inputs.create_release == 'true' }}
@@ -205,7 +193,7 @@ jobs:
           body: |
             ## Decodium v3.0 FT2 Raptor — Build automatica da GitHub Actions
 
-            **Firmato con Azure Trusted Signing** (certificato Microsoft-trusted)
+            **Firmato con SignPath** (certificato Authenticode trusted)
 
             | File | Architettura |
             |------|-------------|
