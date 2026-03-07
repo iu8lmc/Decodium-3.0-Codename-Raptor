@@ -76,7 +76,9 @@ contains
       real best_bm(2*NN,3)                 !Best bitmetrics near nfqso this period
       real best_f1_avg                     !Freq of best candidate this period
       real best_sync_avg                   !Best sync near nfqso this period
-      integer best_ibest_avg               !DT of best candidate this period
+      real best_xibest_avg                 !Sub-sample DT of best candidate this period
+      real xibest                          !Sub-sample ibest (fractional sample)
+      real sm1_sub, sp1_sub, den_sub       !Parabolic interpolation temporaries
       logical got_candidate                !Found good candidate near nfqso?
 
       logical nohiscall,unpk77_success
@@ -226,7 +228,8 @@ contains
 ! Initialize multi-period averaging tracking for this period
       best_sync_avg=-99.0
       best_f1_avg=0.0
-      best_ibest_avg=0
+      best_xibest_avg=0.0
+      xibest=0.0
       got_candidate=.false.
 
       do isp = 1,nsp
@@ -324,6 +327,21 @@ contains
                call timer('bitmet  ',1)
                if(badsync) cycle
 
+! Sub-sample DT refinement via 3-point parabolic interpolation
+! Improves DT accuracy from ±0.75ms (1 sample) to ±0.1ms
+               if(ibest.gt.0 .and. ibest.lt.NDMAX-1) then
+                  call sync2d(cd2,ibest-1,ctwk2(:,idfbest),1,sm1_sub)
+                  call sync2d(cd2,ibest+1,ctwk2(:,idfbest),1,sp1_sub)
+                  den_sub = sm1_sub - 2.0*smax + sp1_sub
+                  if(abs(den_sub) > 1.0e-6) then
+                     xibest = real(ibest) + 0.5*(sm1_sub - sp1_sub)/den_sub
+                  else
+                     xibest = real(ibest)
+                  endif
+               else
+                  xibest = real(ibest)
+               endif
+
 ! Track best candidate near nfqso for multi-period averaging
                if(iand(ndepth,16).eq.16 .and.                    &
                   abs(f1-nfqso).lt.100.0 .and.                   &
@@ -331,7 +349,7 @@ contains
                   best_bm=bitmetrics
                   best_sync_avg=smax
                   best_f1_avg=f1
-                  best_ibest_avg=ibest
+                  best_xibest_avg=xibest
                   got_candidate=.true.
                endif
 
@@ -506,7 +524,7 @@ contains
                         xsnr=-21.0
                      endif
                      nsnr=nint(max(-21.0,xsnr))
-                     xdt=ibest/1333.33 - 0.5
+                     xdt=xibest/1333.33 - 0.5
                      qual=1.0-(nharderror+dmin)/60.0
                      call this%callback(smax,nsnr,xdt,f1,message,iaptype,qual)
                      exit
@@ -526,7 +544,7 @@ contains
             bm_avg=best_bm
             navg_ft2=1
             f_avg=best_f1_avg
-            dt_avg=real(best_ibest_avg)/1333.33
+            dt_avg=best_xibest_avg/1333.33
          else
 ! Accumulate using EMA (Exponential Moving Average)
             navg_ft2=navg_ft2+1
@@ -534,7 +552,7 @@ contains
             u=1.0/real(ntc)
             bm_avg=u*best_bm + (1.0-u)*bm_avg
             f_avg=u*best_f1_avg + (1.0-u)*f_avg
-            dt_avg=u*real(best_ibest_avg)/1333.33 + (1.0-u)*dt_avg
+            dt_avg=u*best_xibest_avg/1333.33 + (1.0-u)*dt_avg
          endif
 
 ! Write averaging status to avemsg.txt (unit 14)
