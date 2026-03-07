@@ -1,0 +1,218 @@
+name: Build & Release Decodium
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'          # Es. v3.0.2603070002 → crea release automatica
+  workflow_dispatch:      # Esecuzione manuale da GitHub UI
+    inputs:
+      build_tag:
+        description: 'Build tag (es. 2603070002)'
+        required: true
+        default: ''
+      create_release:
+        description: 'Crea release GitHub?'
+        type: boolean
+        default: true
+
+env:
+  QT_VERSION: '5.15.2'
+  MSYS2_ROOT: 'C:\msys64'
+  BUILD_DIR: '${{ github.workspace }}\build'
+  DIST_64: '${{ github.workspace }}\dist_64bit'
+  DIST_32: '${{ github.workspace }}\dist_32bit'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 1: Build x64
+  # ─────────────────────────────────────────────────────────────────────────
+  build-x64:
+    name: Build x64
+    runs-on: windows-2022
+    outputs:
+      build_tag: ${{ steps.get_tag.outputs.build_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get build tag
+        id: get_tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.build_tag }}"
+          else
+            # Estrai da tag git: v3.0.2603070002 → 2603070002
+            TAG="${GITHUB_REF_NAME##*.}"
+            TAG="${GITHUB_REF_NAME#v}"
+            # Prende solo la parte numerica finale
+            TAG=$(echo "$GITHUB_REF_NAME" | grep -oE '[0-9]{10}$' || echo "${GITHUB_REF_NAME##*v}")
+          fi
+          echo "build_tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Build tag: $TAG"
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-gcc-fortran
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-make
+            mingw-w64-x86_64-qt5-base
+            mingw-w64-x86_64-qt5-multimedia
+            mingw-w64-x86_64-qt5-serialport
+            mingw-w64-x86_64-qt5-websockets
+            mingw-w64-x86_64-fftw
+            mingw-w64-x86_64-boost
+            mingw-w64-x86_64-hamlib
+            mingw-w64-x86_64-libusb
+
+      - name: Configure CMake (x64)
+        shell: msys2 {0}
+        run: |
+          mkdir -p build
+          cmake "${{ github.workspace }}" \
+            -B "${{ github.workspace }}/build" \
+            -G "MinGW Makefiles" \
+            -DCMAKE_PREFIX_PATH=/mingw64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_MAKE_PROGRAM=/mingw64/bin/mingw32-make.exe
+
+      - name: Build Fortran (single thread)
+        shell: msys2 {0}
+        run: |
+          cd "${{ github.workspace }}/build"
+          mingw32-make -j1 wsjt_fort_omp
+
+      - name: Build decodium + jt9
+        shell: msys2 {0}
+        run: |
+          cd "${{ github.workspace }}/build"
+          mingw32-make -j4 decodium jt9
+
+      - name: Deploy Qt (windeployqt)
+        shell: msys2 {0}
+        run: |
+          mkdir -p "${{ github.workspace }}/dist_64bit"
+          cp build/decodium.exe dist_64bit/
+          cp build/jt9.exe dist_64bit/
+          cp build/message_aggregator.exe dist_64bit/ 2>/dev/null || true
+          cp build/wsprd.exe dist_64bit/ 2>/dev/null || true
+          cp build/udp_daemon.exe dist_64bit/ 2>/dev/null || true
+          /mingw64/bin/windeployqt.exe --release --no-translations \
+            --multimedia --websockets dist_64bit/decodium.exe
+          # Copia JPLEPH
+          cp contrib/Ephemeris/JPLEPH dist_64bit/
+          cp cty.dat dist_64bit/ 2>/dev/null || true
+          cp ALLCALL7.TXT dist_64bit/ 2>/dev/null || true
+
+      - name: Upload dist_64bit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-64bit
+          path: dist_64bit/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # JOB 2: Sign + Package + Release
+  # ─────────────────────────────────────────────────────────────────────────
+  sign-and-release:
+    name: Sign & Release
+    needs: build-x64
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download dist_64bit
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-64bit
+          path: dist_64bit
+
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup --no-progress -y
+        shell: powershell
+
+      - name: Install Azure CLI + Trusted Signing extension
+        run: |
+          az extension add --name trustedsigning --allow-preview true
+        shell: powershell
+
+      # Scarica e installa Microsoft.Azure.SignTool
+      - name: Install SignTool (Azure Trusted Signing)
+        run: |
+          dotnet tool install --global sign --version 0.9.1-beta.25170.4
+        shell: powershell
+
+      # Login Azure con Service Principal
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Firma tutti gli exe con Azure Trusted Signing
+      - name: Sign executables (Azure Trusted Signing)
+        shell: powershell
+        run: |
+          $exes = Get-ChildItem -Path "dist_64bit" -Filter "*.exe" | Select-Object -ExpandProperty FullName
+          foreach ($exe in $exes) {
+            Write-Host "Signing: $exe"
+            sign code azure-key-vault `
+              --azure-key-vault-url "${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}" `
+              --azure-key-vault-certificate "${{ secrets.AZURE_CERT_PROFILE_NAME }}" `
+              --code-signing-account-name "${{ secrets.AZURE_CODE_SIGNING_ACCOUNT }}" `
+              --certificate-profile-name "${{ secrets.AZURE_CERT_PROFILE_NAME }}" `
+              --timestamp-url "http://timestamp.acs.microsoft.com" `
+              "$exe"
+          }
+
+      - name: Build x64 installer (Inno Setup)
+        shell: cmd
+        run: |
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" decodium_x64.iss
+          if errorlevel 1 exit /b 1
+
+      - name: Sign x64 installer
+        shell: powershell
+        run: |
+          $tag = "${{ needs.build-x64.outputs.build_tag }}"
+          $installer = "Decodium_3.0_${tag}_FT2_x64_Setup.exe"
+          if (Test-Path $installer) {
+            sign code azure-key-vault `
+              --azure-key-vault-url "${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}" `
+              --azure-key-vault-certificate "${{ secrets.AZURE_CERT_PROFILE_NAME }}" `
+              --code-signing-account-name "${{ secrets.AZURE_CODE_SIGNING_ACCOUNT }}" `
+              --certificate-profile-name "${{ secrets.AZURE_CERT_PROFILE_NAME }}" `
+              --timestamp-url "http://timestamp.acs.microsoft.com" `
+              "$installer"
+          }
+
+      - name: Create GitHub Release
+        if: ${{ github.event_name == 'push' || github.event.inputs.create_release == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Decodium v3.0 FT2 Raptor — Build ${{ needs.build-x64.outputs.build_tag }}"
+          body: |
+            ## Decodium v3.0 FT2 Raptor — Build automatica da GitHub Actions
+
+            **Firmato con Azure Trusted Signing** (certificato Microsoft-trusted)
+
+            | File | Architettura |
+            |------|-------------|
+            | `Decodium_3.0_${{ needs.build-x64.outputs.build_tag }}_FT2_x64_Setup.exe` | Windows x64 |
+          files: |
+            Decodium_3.0_${{ needs.build-x64.outputs.build_tag }}_FT2_x64_Setup.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
