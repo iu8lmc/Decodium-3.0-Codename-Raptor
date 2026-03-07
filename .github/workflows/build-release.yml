@@ -15,9 +15,6 @@ on:
         type: boolean
         default: true
 
-env:
-  QT_VERSION: '5.15.2'
-
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
   # JOB 1: Build x64
@@ -106,48 +103,51 @@ jobs:
       - name: Upload dist_64bit artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dist-64bit-unsigned
+          name: dist-64bit
           path: dist_64bit/
           retention-days: 1
 
   # ─────────────────────────────────────────────────────────────────────────
-  # JOB 2: Sign con SignPath (open source gratuito)
+  # JOB 2: Sign + Package + Release
   # ─────────────────────────────────────────────────────────────────────────
-  sign:
-    name: Sign (SignPath)
+  sign-and-release:
+    name: Sign & Release
     needs: build-x64
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Submit signing request to SignPath
-        uses: signpath/github-action-submit-signing-request@v1
-        with:
-          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
-          project-slug: 'Decodium'
-          signing-policy-slug: 'release-signing'
-          artifact-configuration-slug: 'exe-collection'
-          github-artifact-name: 'dist-64bit-unsigned'
-          wait-for-completion: true
-          output-artifact-name: 'dist-64bit-signed'
-
-  # ─────────────────────────────────────────────────────────────────────────
-  # JOB 3: Package + Release
-  # ─────────────────────────────────────────────────────────────────────────
-  package-and-release:
-    name: Package & Release
-    needs: [build-x64, sign]
     runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download signed dist_64bit
+      - name: Download dist_64bit
         uses: actions/download-artifact@v4
         with:
-          name: dist-64bit-signed
+          name: dist-64bit
           path: dist_64bit
+
+      - name: Import code signing certificate
+        shell: powershell
+        run: |
+          $pfxBytes = [Convert]::FromBase64String("${{ secrets.CODESIGN_PFX_BASE64 }}")
+          $pfxPath = "$env:TEMP\codesign.pfx"
+          [IO.File]::WriteAllBytes($pfxPath, $pfxBytes)
+          $pwd = ConvertTo-SecureString -String "${{ secrets.CODESIGN_PFX_PASSWORD }}" -Force -AsPlainText
+          Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation Cert:\CurrentUser\My -Password $pwd
+          Remove-Item $pfxPath
+
+      - name: Sign executables
+        shell: powershell
+        run: |
+          $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
+          if (-not (Test-Path $signtool)) {
+            $signtool = (Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" | Select-Object -First 1).FullName
+          }
+          $thumb = (Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Sort-Object NotAfter -Descending | Select-Object -First 1).Thumbprint
+          Write-Host "Thumbprint: $thumb"
+          Get-ChildItem -Path "dist_64bit" -Filter "*.exe" | ForEach-Object {
+            Write-Host "Signing: $($_.FullName)"
+            & $signtool sign /sha1 $thumb /fd SHA256 /t http://timestamp.digicert.com /v $_.FullName
+          }
 
       - name: Install Inno Setup
         shell: powershell
@@ -159,30 +159,16 @@ jobs:
           "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" decodium_x64.iss
           if errorlevel 1 exit /b 1
 
-      - name: Upload installer unsigned
-        uses: actions/upload-artifact@v4
-        with:
-          name: installer-unsigned
-          path: 'Decodium_3.0_*_FT2_x64_Setup.exe'
-          retention-days: 1
-
-      - name: Sign installer (SignPath)
-        uses: signpath/github-action-submit-signing-request@v1
-        with:
-          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-          organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
-          project-slug: 'Decodium'
-          signing-policy-slug: 'release-signing'
-          artifact-configuration-slug: 'installer'
-          github-artifact-name: 'installer-unsigned'
-          wait-for-completion: true
-          output-artifact-name: 'installer-signed'
-
-      - name: Download signed installer
-        uses: actions/download-artifact@v4
-        with:
-          name: installer-signed
-          path: .
+      - name: Sign x64 installer
+        shell: powershell
+        run: |
+          $signtool = (Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin" -Recurse -Filter "signtool.exe" | Select-Object -First 1).FullName
+          $thumb = (Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Sort-Object NotAfter -Descending | Select-Object -First 1).Thumbprint
+          $tag = "${{ needs.build-x64.outputs.build_tag }}"
+          $installer = "Decodium_3.0_${tag}_FT2_x64_Setup.exe"
+          if (Test-Path $installer) {
+            & $signtool sign /sha1 $thumb /fd SHA256 /t http://timestamp.digicert.com /v $installer
+          }
 
       - name: Create GitHub Release
         if: ${{ github.event_name == 'push' || github.event.inputs.create_release == 'true' }}
@@ -191,9 +177,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: "Decodium v3.0 FT2 Raptor — Build ${{ needs.build-x64.outputs.build_tag }}"
           body: |
-            ## Decodium v3.0 FT2 Raptor — Build automatica da GitHub Actions
-
-            **Firmato con SignPath** (certificato Authenticode trusted)
+            ## Decodium v3.0 FT2 Raptor — Build ${{ needs.build-x64.outputs.build_tag }}
 
             | File | Architettura |
             |------|-------------|
