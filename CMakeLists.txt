@@ -279,6 +279,7 @@ set (decodium_CXXSRCS
   getfile.cpp
   Audio/soundout.cpp
   Audio/soundin.cpp
+  UpdateChecker.cpp
   widgets/meterwidget.cpp
   widgets/signalmeter.cpp
   widgets/plotter.cpp

@@ -2,7 +2,7 @@
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
-#define MyBuildTag "2603060001"
+#define MyBuildTag "2603070001"
 #define DistDir "dist_32bit"
 
 [Setup]
@@ -14,6 +14,8 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL=https://www.qrz.com/db/IU8LMC
 DefaultDirName={autopf}\Decodium_3.0_FT2_x86
 DefaultGroupName=Decodium 3.0 FT2
+DisableDirPage=no
+DisableProgramGroupPage=no
 OutputDir=.
 OutputBaseFilename=Decodium_3.0_{#MyBuildTag}_FT2_x86_Setup
 SetupIconFile=icons\windows-icons\decodium.ico
@@ -51,6 +53,7 @@ Source: "{#DistDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\cty.dat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\ALLCALL7.TXT"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "{#DistDir}\ft2logo.png"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#DistDir}\JPLEPH"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Qt plugins
 Source: "{#DistDir}\platforms\*"; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs
