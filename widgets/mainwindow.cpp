@@ -4673,7 +4673,7 @@ void MainWindow::statusChanged()
     ui->cbSendMsg->setVisible(false);
     // Reset multi-slot markers — bande visibili solo in Fox mode
     m_Nslots=1;
-    int spacing = (m_mode=="FT2") ? 200 : 60;
+    int spacing = (m_mode=="FT2") ? 500 : 60;
     m_wideGraph->setMultiSlot(1, spacing);
   }
   if (SpecOp::HOUND==m_specOp) ui->cbRxAll->setVisible(!m_config.superFox());
@@ -8696,8 +8696,21 @@ void MainWindow::guiUpdate()
               foxcom_.bSendMsg=ui->cbSendMsg->isChecked();
               memcpy(foxcom_.textMsg, m_freeTextMsg.leftJustified(26,' ').toLatin1(),26);
               foxgenft2_();
+            } else if (ui->cbDualCarrier->isChecked()) {
+              // Dual-carrier: stesso messaggio su 2 sub-portanti a +500 Hz
+              QString fm = QString::fromLatin1(msgsent).trimmed()
+                           .leftJustified(40, ' ').left(40);
+              memcpy(foxcom_.cmsg[0], fm.toLatin1().constData(), 40);
+              memcpy(foxcom_.cmsg[1], fm.toLatin1().constData(), 40);
+              foxcom_.nslots = 2;
+              foxcom_.nfreq  = ui->TxFreqSpinBox->value() - m_XIT;
+              foxcom_.bMoreCQs = false;
+              foxcom_.bSendMsg = false;
+              QString mycall = m_config.my_callsign() + "         ";
+              ::memcpy(foxcom_.mycall, mycall.toLatin1(), sizeof foxcom_.mycall);
+              foxgenft2_();
             } else {
-              // Single-slot (unico path per non-Fox)
+              // Single-slot (unico path per non-Fox, non-DualCarrier)
               int nsym=103;
               int nsps=4*288;    // 1152 at 48000 Hz TX
               float fsample=48000.0;
@@ -10844,9 +10857,7 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
     m_autoCQ = true;
     m_bCallingCQ = true;
     ui->cbAutoSeq->setChecked(true);
-    dxpedLoadSlot(0);
-    dxpedLoadSlot(1);
-    dxpedLoadSlot(2);
+    dxpedFillEmptySlots();   // frequency-diverse selection all'avvio
     // Fox usa sempre il primo semiciclo (periodo fisso, come MSHV)
     if(!m_txFirst) {
       m_txFirst = true;
@@ -10892,6 +10903,66 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
     ui->callerQueueTextBrowser->erase();
     ui->callerQueueTitleLabel->setText(tr("Caller Queue (0)"));
   }
+}
+
+// Riempie gli slot vuoti con selezione frequency-diverse:
+// tra i callers disponibili, preferisce quelli con frequenze
+// distanziate >= 150 Hz l'una dall'altra per ridurre interferenze.
+void MainWindow::dxpedFillEmptySlots()
+{
+  if (m_callerQueue.isEmpty()) return;
+
+  // Individua quali slot sono vuoti
+  bool slotEmpty[3];
+  int  nEmpty = 0;
+  for (int i = 0; i < 3; i++) {
+    slotEmpty[i] = m_dxpedSlots[i].call.isEmpty();
+    if (slotEmpty[i]) nEmpty++;
+  }
+  if (nEmpty == 0) return;
+
+  // Pool di candidati dalla coda
+  QList<QString> pool(m_callerQueue.begin(), m_callerQueue.end());
+  m_callerQueue.clear();
+
+  QVector<int> selFreqs;  // frequenze già assegnate in questo round
+
+  for (int i = 0; i < 3; i++) {
+    if (!slotEmpty[i] || pool.isEmpty()) continue;
+
+    float bestScore = -1e9f;
+    int   bestIdx   = -1;
+
+    for (int j = 0; j < pool.size(); j++) {
+      auto  parts = pool[j].split(' ');
+      int   freq  = parts.size() > 1 ? parts[1].toInt()   : 0;
+      float snr   = parts.size() > 2 ? parts[2].toFloat() : -20.0f;
+      float dt    = parts.size() > 3 ? parts[3].toFloat() : 0.0f;
+      float score = snr - 8.0f * qAbs(dt);
+
+      // Penalità soft se troppo vicino a freq già selezionate (< 150 Hz)
+      for (int sf : selFreqs)
+        if (qAbs(freq - sf) < 150) { score -= 20.0f; break; }
+
+      if (score > bestScore) { bestScore = score; bestIdx = j; }
+    }
+
+    if (bestIdx < 0) break;
+
+    auto  entry = pool.takeAt(bestIdx);
+    auto  parts = entry.split(' ');
+    int   rsnr  = parts.size() > 2 ? parts[2].toInt()   : -10;
+    float rdt   = parts.size() > 3 ? parts[3].toFloat() : 0.0f;
+    int   freq  = parts.size() > 1 ? parts[1].toInt()   : 0;
+
+    m_dxpedSlots[i] = DXpedSlot{ parts[0], freq, 2, 0, rsnr, rdt };
+    m_dxpedSlots[i].dateTimeOn = QDateTime::currentDateTimeUtc();
+    selFreqs.append(freq);
+  }
+
+  // Rimette i non-selezionati in coda
+  for (const auto& e : pool) m_callerQueue.enqueue(e);
+  refreshCallerQueueDisplay();
 }
 
 void MainWindow::dxpedLoadSlot(int slot)
@@ -15726,7 +15797,7 @@ void MainWindow::on_sbNslots_valueChanged(int n)
   }
   if(!m_config.superFox()) m_Nslots0=n;
   // Update multi-slot markers on waterfall
-  int spacing = (m_mode=="FT2") ? 200 : 60;
+  int spacing = (m_mode=="FT2") ? 500 : 60;
   m_wideGraph->setMultiSlot(m_Nslots, spacing);
 }
 
@@ -16520,7 +16591,7 @@ void MainWindow::foxGenWaveform(int i,QString fm)
   if(fm.mid(0,3)=="CQ ") m_tFoxTxSinceCQ=-1;
 
   QString txModeArg;
-  int fstep = (m_mode=="FT2") ? 200 : 60;
+  int fstep = (m_mode=="FT2") ? 500 : 60;
   txModeArg = txModeArg.asprintf("%sfox %d", m_mode.toStdString().c_str(), i+1);
   int nfreq=ui->TxFreqSpinBox->value()+fstep*i;
 

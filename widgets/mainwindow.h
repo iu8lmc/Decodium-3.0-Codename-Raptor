@@ -810,6 +810,7 @@ private:
   bool      m_bDXpedMode      {false};
   int       m_dxpedCQcounter  {0};   // piggyback CQ ogni N periodi TX
   DXpedSlot m_dxpedSlots[3];
+  void dxpedFillEmptySlots ();
   void dxpedLoadSlot   (int slot);
   int  dxpedTxSequencer();
   void dxpedRxProcess  (QString const& call, QString const& rptRcvd = QString());

@@ -4,7 +4,7 @@ subroutine foxfiltft2(nslots,nfreq,width,wave)
 ! Analogous to foxfilt.f90 for FT8.
 !
 ! FT2 baud rate = 41.667 Hz, 4 tones -> signal BW ~167 Hz
-! Slot spacing = 200 Hz
+! Slot spacing = 500 Hz (3x isolation margin)
 
   parameter (NN2=105,NSPS=4*288)
   parameter (NWAVEFT2=NN2*NSPS)
@@ -24,7 +24,7 @@ subroutine foxfiltft2(nslots,nfreq,width,wave)
 ! With GFSK spreading, effective BW ~167 Hz
   baud=48000.0/NSPS
   fa=nfreq - 0.5*baud
-  fb=nfreq + 3.5*baud + (nslots-1)*200.0
+  fb=nfreq + 3.5*baud + (nslots-1)*500.0
   ia2=nint(fa/df)
   ib1=nint(fb/df)
   ia1=nint(ia2-width/df)
