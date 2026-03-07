@@ -788,7 +788,7 @@ private:
   bool    m_bCallingCQ;
   bool    m_autoCQ;
   QQueue<QString> m_callerQueue;
-  void enqueueCaller (QString const& call, int freq, int snr = -99);
+  void enqueueCaller (QString const& call, int freq, int snr = -99, float dt = 0.0f);
   void processNextInQueue ();
   void refreshCallerQueueDisplay ();
 
@@ -799,12 +799,13 @@ private:
     int       txStep        {0};  // 2=Tx2, 3=Tx3, 5=Tx5, 0=slot libero
     int       missedPeriods {0};
     int       snr           {-99};
+    float     dt            {0.0f}; // DT misurato del caller (seconds)
     QString   rptSent;
     QString   rptRcvd;
     QDateTime dateTimeOn;
     DXpedSlot() = default;
-    DXpedSlot(QString c, int f, int t, int m, int s)
-      : call{c}, freq{f}, txStep{t}, missedPeriods{m}, snr{s} {}
+    DXpedSlot(QString c, int f, int t, int m, int s, float d = 0.0f)
+      : call{c}, freq{f}, txStep{t}, missedPeriods{m}, snr{s}, dt{d} {}
   };
   bool      m_bDXpedMode      {false};
   int       m_dxpedCQcounter  {0};   // piggyback CQ ogni N periodi TX

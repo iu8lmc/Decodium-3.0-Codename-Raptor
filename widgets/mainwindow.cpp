@@ -8093,7 +8093,7 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
                             callB4, cB4, gB4, contB4, cqzB4, ituzB4, m_currentBand);
             if (callB4) return;
           }
-          enqueueCaller (newCaller, message.frequencyOffset (), message.snr());
+          enqueueCaller (newCaller, message.frequencyOffset (), message.snr(), message.dt());
           return;
         }
       }
@@ -9671,7 +9671,7 @@ void MainWindow::doubleClickOnCall(Qt::KeyboardModifiers modifiers)
         QString dxGrid;
         message.deCallAndGrid(dxCall, dxGrid);
         if (!dxCall.isEmpty() && dxCall != m_hisCall) {
-          enqueueCaller(dxCall, message.frequencyOffset(), message.snr());
+          enqueueCaller(dxCall, message.frequencyOffset(), message.snr(), message.dt());
           return;
         }
       }
@@ -10699,20 +10699,38 @@ void MainWindow::TxAgain()
   auto_tx_mode(true);
 }
 
-void MainWindow::enqueueCaller (QString const& call, int freq, int snr)
+void MainWindow::enqueueCaller (QString const& call, int freq, int snr, float dt)
 {
-  QString entry = call + " " + QString::number (freq) + " " + QString::number (snr);
-  for (auto const& e : m_callerQueue)
-    if (e.startsWith (call + " ")) return;   // no duplicates
-  if (m_callerQueue.size () >= 20) return;
-  // Inserimento ordinato per SNR decrescente: caller più forti serviti prima
-  int insertPos = m_callerQueue.size ();
-  for (int j = 0; j < m_callerQueue.size (); j++) {
-    auto parts = m_callerQueue.at (j).split (' ');
-    int existingSnr = parts.size () >= 3 ? parts.at (2).toInt () : -99;
-    if (snr > existingSnr) { insertPos = j; break; }
+  // FT2: filtra caller con DT fuori dal guard time (1.28s).
+  // DT > +1.0s: TX sfora nel periodo successivo → QRM garantito.
+  // DT < -0.3s: trasmette prima del periodo → over sul DX TX.
+  if (m_mode == "FT2") {
+    if (dt > 1.0f || dt < -0.3f) return;
   }
-  m_callerQueue.insert (insertPos, entry);
+
+  // Niente duplicati
+  for (auto const& e : m_callerQueue)
+    if (e.startsWith (call + " ")) return;
+  if (m_callerQueue.size () >= 20) return;
+
+  // Score combinato: SNR pesato + bonus timing (|DT| piccolo = meglio)
+  // Scala: ogni 0.1s di DT vale ~0.8 dB. DT=0 → pieno SNR, DT=1.0s → SNR -8.
+  float score = float(snr) - 8.0f * qAbs(dt);
+
+  QString entry = call + " " + QString::number(freq) + " " +
+                  QString::number(snr) + " " +
+                  QString::number(double(dt), 'f', 2);
+
+  // Inserimento ordinato per score decrescente
+  int insertPos = m_callerQueue.size();
+  for (int j = 0; j < m_callerQueue.size(); j++) {
+    auto parts = m_callerQueue.at(j).split(' ');
+    int   eSnr = parts.size() >= 3 ? parts.at(2).toInt()   : -99;
+    float eDt  = parts.size() >= 4 ? parts.at(3).toFloat() : 0.0f;
+    float eScore = float(eSnr) - 8.0f * qAbs(eDt);
+    if (score > eScore) { insertPos = j; break; }
+  }
+  m_callerQueue.insert(insertPos, entry);
   refreshCallerQueueDisplay();
 }
 
@@ -10748,12 +10766,15 @@ void MainWindow::refreshCallerQueueDisplay ()
     auto parts = entry.split(' ');
     if (parts.size() < 2) continue;
     n++;
-    int snr = parts.size() >= 3 ? parts.at(2).toInt() : -99;
-    QString snrStr = (snr > -99) ? QString("%1%2 dB").arg(snr >= 0 ? "+" : "").arg(snr, 3) : "  ?  ";
-    QString line = QString("  #%1  %2  %3 Hz  %4")
-        .arg(n, 2).arg(parts.at(0), -12).arg(parts.at(1), 5).arg(snrStr);
-    ui->callerQueueTextBrowser->insertText(
-        line, QColor("#2a5a2a"), QColor("#ffffff"));
+    int   snr = parts.size() >= 3 ? parts.at(2).toInt()   : -99;
+    float dt  = parts.size() >= 4 ? parts.at(3).toFloat() : 0.0f;
+    QString snrStr = (snr > -99) ? QString("%1%2dB").arg(snr >= 0 ? "+" : "").arg(snr, 3) : "  ?  ";
+    QString dtStr  = QString("%1%2s").arg(dt >= 0 ? "+" : "").arg(dt, 4, 'f', 1);
+    // Colora in arancione i caller con DT borderline (0.7..1.0s)
+    QColor bg = (qAbs(dt) > 0.7f) ? QColor("#5a3a00") : QColor("#2a5a2a");
+    QString line = QString("  #%1  %2  %3Hz  %4  DT%5")
+        .arg(n, 2).arg(parts.at(0), -12).arg(parts.at(1), 5).arg(snrStr).arg(dtStr);
+    ui->callerQueueTextBrowser->insertText(line, bg, QColor("#ffffff"));
   }
   if (m_callerQueue.isEmpty()) {
     ui->callerQueueTextBrowser->insertText(
@@ -10878,13 +10899,15 @@ void MainWindow::dxpedLoadSlot(int slot)
   }
   QString entry = m_callerQueue.dequeue();
   auto parts = entry.split(' ');
-  int rsnr = parts.size() > 2 ? parts.at(2).toInt() : -10;
+  int   rsnr = parts.size() > 2 ? parts.at(2).toInt()   : -10;
+  float rdt  = parts.size() > 3 ? parts.at(3).toFloat() : 0.0f;
   m_dxpedSlots[slot] = DXpedSlot{
     parts.at(0),
     parts.size() > 1 ? parts.at(1).toInt() : 0,
     2,   // inizia da Tx2
     0,
-    rsnr
+    rsnr,
+    rdt
   };
   m_dxpedSlots[slot].dateTimeOn = QDateTime::currentDateTimeUtc();
   refreshCallerQueueDisplay();
@@ -11043,7 +11066,7 @@ void MainWindow::dxpedAutoSequence (DecodedText const& msg)
   }
 
   // Caller non in nessuno slot: aggiungi alla coda
-  enqueueCaller (callerCall, msg.frequencyOffset (), msg.snr ());
+  enqueueCaller (callerCall, msg.frequencyOffset (), msg.snr (), msg.dt ());
 }
 
 void MainWindow::dxpedLogQSO (int slot)
