@@ -74,6 +74,7 @@
 #include "fastgraph.h"
 #include "otpgenerator.h"
 #include "about.h"
+#include "UpdateChecker.hpp"
 #include "messageaveraging.h"
 #include "activeStations.h"
 #include "colorhighlighting.h"
@@ -1616,6 +1617,10 @@ void MainWindow::initialize_fonts ()
 void MainWindow::splash_done ()
 {
   m_splash && m_splash->close ();
+  // Check silenzioso aggiornamenti 5s dopo lo splash (non blocca lo startup)
+  QTimer::singleShot (5000, this, [this] () {
+    UpdateChecker::checkForUpdates (this, true);   // silent=true: mostra dialog solo se c'è update
+  });
 }
 
 void MainWindow::invalidate_frequencies_filter ()
@@ -4002,6 +4007,11 @@ void MainWindow::monitor (bool state)
 void MainWindow::on_actionAbout_triggered()                  //Display "About"
 {
   CAboutDlg {this}.exec ();
+}
+
+void MainWindow::on_actionCheck_for_Updates_triggered ()
+{
+  UpdateChecker::checkForUpdates (this, false);   // false = non-silent, mostra sempre risultato
 }
 
 void MainWindow::on_autoButton_clicked (bool checked)       //avt 10/2/25 manually or as result of controller command

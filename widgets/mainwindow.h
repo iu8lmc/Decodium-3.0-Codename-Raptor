@@ -234,6 +234,7 @@ private slots:
   void on_actionSettings_triggered();
   void on_monitorButton_clicked (bool);
   void on_actionAbout_triggered();
+  void on_actionCheck_for_Updates_triggered();
   void on_autoButton_clicked (bool);
   void on_stopTxButton_clicked();
   void on_stopButton_clicked();

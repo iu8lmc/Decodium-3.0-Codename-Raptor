@@ -1,0 +1,214 @@
+#include "UpdateChecker.hpp"
+
+#include <QApplication>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QMessageBox>
+#include <QProgressDialog>
+#include <QFile>
+#include <QDir>
+#include <QStandardPaths>
+#include <QProcess>
+#include <QSysInfo>
+#include <QNetworkRequest>
+#include <QDebug>
+
+#include "revision_utils.hpp"
+
+// GitHub repo — cambia se il repo cambia nome
+static constexpr char GITHUB_API_URL[] =
+    "https://api.github.com/repos/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest";
+
+// ──────────────────────────────────────────────────────────────────────────────
+void UpdateChecker::checkForUpdates (QWidget * parent, bool silent)
+{
+  // L'oggetto si auto-distrugge quando ha finito
+  auto * checker = new UpdateChecker {parent, silent};
+  Q_UNUSED (checker);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+UpdateChecker::UpdateChecker (QWidget * parent, bool silent)
+  : QObject {parent}
+  , m_parent {parent}
+  , m_silent {silent}
+{
+  connect (&m_nam, &QNetworkAccessManager::finished,
+           this,   &UpdateChecker::onReleaseFetched);
+
+  QNetworkRequest req {QUrl {GITHUB_API_URL}};
+  req.setHeader (QNetworkRequest::UserAgentHeader,
+                 QStringLiteral ("Decodium/") + program_title ());
+  req.setRawHeader ("Accept", "application/vnd.github+json");
+  m_nam.get (req);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Confronta tag remoto (es. "v3.0.2603060002") con build locale (es. "2603070001")
+// Estrae la parte numerica finale e la confronta come intero.
+bool UpdateChecker::isNewerVersion (QString const& remoteTag) const
+{
+  // Rimuove prefissi tipo "v3.0."
+  QString cleaned = remoteTag;
+  cleaned.remove (QRegExp ("^v?[0-9]+\\.[0-9]+\\.?"));
+  bool ok = false;
+  qint64 remote = cleaned.toLongLong (&ok);
+  if (!ok) return false;
+
+  QString localTag = program_title ();
+  // program_version() restituisce "Decodium v3.0 FT2 Raptor v3.0.XXXXXXXXXX"
+  // Estrai ultimo blocco numerico
+  QRegExp rx ("(\\d{10})$");
+  if (rx.indexIn (localTag) < 0) return false;
+  qint64 local = rx.cap (1).toLongLong ();
+  return remote > local;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
+{
+  reply->deleteLater ();
+  disconnect (&m_nam, &QNetworkAccessManager::finished,
+              this,   &UpdateChecker::onReleaseFetched);
+
+  if (reply->error () != QNetworkReply::NoError) {
+    if (!m_silent)
+      QMessageBox::warning (m_parent, tr ("Aggiornamento"),
+                            tr ("Impossibile contattare il server:\n%1")
+                            .arg (reply->errorString ()));
+    deleteLater ();
+    return;
+  }
+
+  QJsonDocument doc = QJsonDocument::fromJson (reply->readAll ());
+  if (doc.isNull () || !doc.isObject ()) {
+    deleteLater ();
+    return;
+  }
+
+  QJsonObject root = doc.object ();
+  m_remoteVersion  = root["tag_name"].toString ();
+
+  if (!isNewerVersion (m_remoteVersion)) {
+    if (!m_silent)
+      QMessageBox::information (m_parent, tr ("Aggiornamento"),
+                                tr ("Decodium è aggiornato all'ultima versione."));
+    deleteLater ();
+    return;
+  }
+
+  // Cerca l'asset giusto per questa architettura
+  QString arch = (QSysInfo::currentCpuArchitecture () == "x86_64") ? "x64" : "x86";
+  QJsonArray assets = root["assets"].toArray ();
+  for (auto const& a : assets) {
+    QString name = a.toObject ()["name"].toString ();
+    if (name.contains (arch, Qt::CaseInsensitive) && name.endsWith (".exe")) {
+      m_assetUrl = a.toObject ()["browser_download_url"].toString ();
+      break;
+    }
+  }
+
+  QString notes = root["body"].toString ().left (400);
+  QString msg   = tr ("Nuova versione disponibile: <b>%1</b><br><br>"
+                      "%2<br><br>"
+                      "Vuoi scaricare e installare l'aggiornamento adesso?")
+                  .arg (m_remoteVersion)
+                  .arg (notes.toHtmlEscaped ().replace ("\n", "<br>"));
+
+  QMessageBox box {m_parent};
+  box.setWindowTitle (tr ("Aggiornamento Decodium"));
+  box.setTextFormat  (Qt::RichText);
+  box.setText        (msg);
+  box.setStandardButtons (QMessageBox::Yes | QMessageBox::No);
+  box.setDefaultButton   (QMessageBox::Yes);
+  box.setIcon            (QMessageBox::Information);
+
+  if (box.exec () != QMessageBox::Yes || m_assetUrl.isEmpty ()) {
+    deleteLater ();
+    return;
+  }
+
+  // Avvia il download
+  QString filename = QStringLiteral ("Decodium_%1_Setup.exe").arg (m_remoteVersion);
+  startDownload (m_assetUrl, filename);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+void UpdateChecker::startDownload (QString const& url, QString const& filename)
+{
+  QString tempDir  = QStandardPaths::writableLocation (QStandardPaths::TempLocation);
+  QString destPath = tempDir + QDir::separator () + filename;
+
+  m_outFile = new QFile {destPath, this};
+  if (!m_outFile->open (QIODevice::WriteOnly)) {
+    QMessageBox::critical (m_parent, tr ("Aggiornamento"),
+                           tr ("Impossibile scrivere nella cartella temporanea:\n%1").arg (destPath));
+    deleteLater ();
+    return;
+  }
+
+  m_progress = new QProgressDialog {tr ("Download aggiornamento…"), tr ("Annulla"),
+                                    0, 100, m_parent};
+  m_progress->setWindowModality (Qt::WindowModal);
+  m_progress->setMinimumDuration (0);
+  m_progress->setValue (0);
+
+  connect (m_progress, &QProgressDialog::canceled, this, [this] () {
+    if (m_downloadReply) m_downloadReply->abort ();
+  });
+
+  QNetworkRequest req {QUrl {url}};
+  req.setAttribute (QNetworkRequest::RedirectPolicyAttribute,
+                    QNetworkRequest::NoLessSafeRedirectPolicy);
+  req.setHeader (QNetworkRequest::UserAgentHeader,
+                 QStringLiteral ("Decodium/") + program_title ());
+
+  m_downloadReply = m_nam.get (req);
+  connect (m_downloadReply, &QNetworkReply::downloadProgress,
+           this,             &UpdateChecker::onDownloadProgress);
+  connect (m_downloadReply, &QNetworkReply::finished,
+           this,             &UpdateChecker::onDownloadFinished);
+  connect (m_downloadReply, &QNetworkReply::readyRead, this, [this] () {
+    if (m_outFile) m_outFile->write (m_downloadReply->readAll ());
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+void UpdateChecker::onDownloadProgress (qint64 received, qint64 total)
+{
+  if (m_progress && total > 0)
+    m_progress->setValue (static_cast<int> (received * 100 / total));
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+void UpdateChecker::onDownloadFinished ()
+{
+  m_downloadReply->deleteLater ();
+
+  if (m_progress) { m_progress->close (); m_progress->deleteLater (); m_progress = nullptr; }
+  if (m_outFile)  { m_outFile->close ();  }
+
+  if (m_downloadReply->error () != QNetworkReply::NoError) {
+    QMessageBox::critical (m_parent, tr ("Aggiornamento"),
+                           tr ("Download fallito:\n%1").arg (m_downloadReply->errorString ()));
+    deleteLater ();
+    return;
+  }
+
+  QString path = m_outFile->fileName ();
+  QMessageBox::information (m_parent, tr ("Aggiornamento"),
+                             tr ("Download completato.\n"
+                                 "L'installer verrà avviato.\n"
+                                 "Decodium si chiuderà automaticamente."));
+  launchInstaller (path);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+void UpdateChecker::launchInstaller (QString const& path)
+{
+  // Avvia l'installer in modo indipendente e chiudi l'app
+  QProcess::startDetached (path, {"/SILENT"});
+  QApplication::quit ();
+  deleteLater ();
+}

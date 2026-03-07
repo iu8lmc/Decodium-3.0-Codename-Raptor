@@ -119,6 +119,12 @@ auto Astro::astroUpdate(QDateTime const& t, QString const& mygrid, QString const
   if(freq_moon < 1) freq_moon = 144000000;
   auto const& AzElFileName = QDir::toNativeSeparators (configuration_->azel_directory ().absoluteFilePath ("azel.dat"));
   auto const& jpleph = configuration_->data_dir ().absoluteFilePath ("JPLEPH");
+  if (!QFile::exists (jpleph)) {
+    ui_->text_label->setText (tr ("Astronomical data unavailable:\n"
+                                  "JPLEPH ephemeris file not found.\n\n"
+                                  "Expected location:\n%1").arg (jpleph));
+    return {};
+  }
   SettingsGroup g (settings_, "Configuration");
   bool extraazel=settings_->value("AzElExtraLines",false).toBool();
   astrosub(nyear, month, nday, uth, static_cast<double> (freq_moon),
