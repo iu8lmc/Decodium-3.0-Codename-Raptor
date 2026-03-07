@@ -1,0 +1,16 @@
+[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_code_sign
+prompt = no
+
+[req_distinguished_name]
+CN = IU8LMC Decodium
+O = IU8LMC
+C = IT
+
+[v3_code_sign]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always
+basicConstraints = critical,CA:false
+keyUsage = critical,digitalSignature
+extendedKeyUsage = codeSigning
