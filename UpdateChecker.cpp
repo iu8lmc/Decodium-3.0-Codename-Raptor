@@ -57,9 +57,9 @@ bool UpdateChecker::isNewerVersion (QString const& remoteTag) const
   if (!ok) return false;
 
   QString localTag = program_title ();
-  // program_version() restituisce "Decodium v3.0 FT2 Raptor v3.0.XXXXXXXXXX"
-  // Estrai ultimo blocco numerico
-  QRegExp rx ("(\\d{10})$");
+  // program_title() restituisce "Decodium v3.0 FT2 Raptor v3.0.XXXXXXXXXX ..."
+  // Cerca il build number dopo "v3.0." (non ancorato alla fine)
+  QRegExp rx ("v3\\.0\\.(\\d{10})");
   if (rx.indexIn (localTag) < 0) return false;
   qint64 local = rx.cap (1).toLongLong ();
   return remote > local;
