@@ -8419,7 +8419,7 @@ void MainWindow::guiUpdate()
 
     // DXped mode: non alzare il PTT se la coda caller è vuota e gli slot sono vuoti
     bool dxpedSilent = m_bDXpedMode && m_callerQueue.isEmpty()
-        && m_dxpedSlots[0].call.isEmpty() && m_dxpedSlots[1].call.isEmpty();
+        && m_dxpedSlots[0].call.isEmpty() && m_dxpedSlots[1].call.isEmpty() && m_dxpedSlots[2].call.isEmpty();
     // CQ mode: coda vuota ma tx5 disponibile → trasmetti CQ singolo (come MSHV)
     bool dxpedCQmode = dxpedSilent && !ui->tx5->currentText().trimmed().isEmpty();
     if(dxpedSilent && !dxpedCQmode && g_iptt==1) stopTx(); // abbassa PTT solo se silenzio totale
@@ -8517,6 +8517,7 @@ void MainWindow::guiUpdate()
         && m_callerQueue.isEmpty()
         && m_dxpedSlots[0].call.isEmpty()
         && m_dxpedSlots[1].call.isEmpty()
+        && m_dxpedSlots[2].call.isEmpty()
         && !ui->tx5->currentText().trimmed().isEmpty();
     QByteArray ba;
     QByteArray ba0;
@@ -10839,18 +10840,20 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
   if (checked) {
     m_dxpedSlots[0] = DXpedSlot{"", 0, 0, 0, -99};
     m_dxpedSlots[1] = DXpedSlot{"", 0, 0, 0, -99};
+    m_dxpedSlots[2] = DXpedSlot{"", 0, 0, 0, -99};
     m_autoCQ = true;
     m_bCallingCQ = true;
     ui->cbAutoSeq->setChecked(true);
     dxpedLoadSlot(0);
     dxpedLoadSlot(1);
+    dxpedLoadSlot(2);
     // Fox usa sempre il primo semiciclo (periodo fisso, come MSHV)
     if(!m_txFirst) {
       m_txFirst = true;
       ui->txFirstCheckBox->setChecked(true);
     }
     // Coda vuota all'avvio: prepara CQ da tx5
-    if(m_callerQueue.isEmpty() && m_dxpedSlots[0].call.isEmpty() && m_dxpedSlots[1].call.isEmpty()) {
+    if(m_callerQueue.isEmpty() && m_dxpedSlots[0].call.isEmpty() && m_dxpedSlots[1].call.isEmpty() && m_dxpedSlots[2].call.isEmpty()) {
       m_ntx = 5;
       ui->txrb5->setChecked(true);
       // Se tx5 è vuoto, auto-popola dal messaggio CQ (tx6)
@@ -10878,6 +10881,7 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
     m_bDXpedMode = false;
     m_dxpedSlots[0] = DXpedSlot{"", 0, 0, 0, -99};
     m_dxpedSlots[1] = DXpedSlot{"", 0, 0, 0, -99};
+    m_dxpedSlots[2] = DXpedSlot{"", 0, 0, 0, -99};
     auto_tx_mode(false);
     // Fix: resetta m_autoCQ che DXped aveva impostato a true
     m_autoCQ = false;
@@ -10918,7 +10922,7 @@ int MainWindow::dxpedTxSequencer()
   int nActiveSlots = 0;
   QString myBase = Radio::base_callsign(m_config.my_callsign());
 
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     DXpedSlot &sl = m_dxpedSlots[i];
 
     // Non skippare mai un caller che ha già risposto (txStep=3 = attende RR73)
@@ -10994,7 +10998,7 @@ int MainWindow::dxpedTxSequencer()
 
 void MainWindow::dxpedRxProcess(QString const& call, QString const& rptRcvd)
 {
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     DXpedSlot &sl = m_dxpedSlots[i];
     if (sl.call.isEmpty()) continue;
     if (Radio::base_callsign(sl.call) == Radio::base_callsign(call)) {
@@ -11039,7 +11043,7 @@ void MainWindow::dxpedAutoSequence (DecodedText const& msg)
   bool isFinalAck = (rptRcvd == "73" || rptRcvd == "RR73");
 
   // Cerca il caller negli slot attivi
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     if (!m_dxpedSlots[i].call.isEmpty () &&
         Radio::base_callsign (m_dxpedSlots[i].call) == Radio::base_callsign (callerCall)) {
       // Early-exit: se già avanzati (txStep>=3) e arriva 73/RR73, chiudi subito
