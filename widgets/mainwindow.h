@@ -210,6 +210,7 @@ private slots:
   void bandHopping();
   void on_houndButton_clicked(bool checked);
   void on_cbHoldTxFreq_clicked (bool);
+  void on_cbDualCarrier_toggled (bool checked);
   void on_ft8Button_clicked();
   void on_ft4Button_clicked();
   void on_ft2Button_clicked();

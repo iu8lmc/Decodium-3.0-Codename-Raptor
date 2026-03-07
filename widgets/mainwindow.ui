@@ -2103,6 +2103,22 @@ When not checked you can view the calibration results.</string>
                      </widget>
                     </item>
                     <item>
+                     <widget class="QLabel" name="labelDualCarrierWarning">
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Con Dual Carrier ogni sub-portante riceve metà potenza (-3 dB). Usare solo con segnale forte o pileup denso.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string>TX -3dB</string>
+                      </property>
+                      <property name="styleSheet">
+                       <string>color: red; font-weight: bold;</string>
+                      </property>
+                      <property name="visible">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QStackedWidget" name="opt_controls_stack">
                       <property name="currentIndex">
                        <number>1</number>

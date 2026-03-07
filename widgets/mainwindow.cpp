@@ -1162,6 +1162,8 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   connect (&m_config, &Configuration::udp_server_port_changed, m_messageClient, &MessageClient::set_server_port);
   connect (&m_config, &Configuration::udp_TTL_changed, m_messageClient, &MessageClient::set_TTL);
   connect (&m_config, &Configuration::accept_udp_requests_changed, m_messageClient, &MessageClient::enable);
+  connect (&m_config, &Configuration::udp_listen_port_changed, m_messageClient, &MessageClient::set_listen_port);
+  m_messageClient->set_listen_port (m_config.udp_listen_port ());
   connect (&m_config, &Configuration::enumerating_audio_devices, [this] () {
                                                                    showStatusMessage (tr ("Enumerating audio devices"));
                                                                  });
@@ -17058,6 +17060,11 @@ void MainWindow::on_houndButton_clicked (bool checked)
 void MainWindow::on_cbHoldTxFreq_clicked (bool)
 {
     HoldTxFreqStatus = ui->cbHoldTxFreq->isChecked();  // save state of the Hold Tx Freq checkbox
+}
+
+void MainWindow::on_cbDualCarrier_toggled (bool checked)
+{
+    ui->labelDualCarrierWarning->setVisible (checked);
 }
 
 void MainWindow::on_ft8Button_clicked()
