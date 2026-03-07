@@ -215,8 +215,9 @@ contains
       if(ndepth0.ge.3) syncmin=0.70
       dosubtract=.true.
       doosd=.true.
-      nsp=3
+      nsp=4        ! 4 subtraction passes: maggiore decode in scenari ad alta QRM
       if(ndepth0.eq.2) then
+         nsp=3
          doosd=.false.
       endif
       if(ndepth0.eq.1) then
@@ -224,6 +225,7 @@ contains
          dosubtract=.false.
          doosd=.false.
       endif
+      nd2=0        ! inizializza per isp=4 check (nd2 usato in elseif(isp.eq.4))
 
 ! Initialize multi-period averaging tracking for this period
       best_sync_avg=-99.0
@@ -239,12 +241,21 @@ contains
          elseif(isp.eq.3) then
             nd2=ndecodes-nd1
             if(nd2.eq.0) exit
+         elseif(isp.eq.4) then
+            nd3=ndecodes-nd1-nd2
+            if(nd3.eq.0) exit
          endif
+
+! Syncmin adattivo: soglia ridotta per pass successive (segnali più deboli
+! rimangono dopo la sottrazione dei segnali forti)
+         syncmin_pass=syncmin
+         if(isp.ge.2) syncmin_pass=syncmin*0.88
+         if(isp.ge.3) syncmin_pass=syncmin*0.76
 
          candidate=0.0
          ncand=0
          call timer('getcand2',0)
-         call getcandidates2(dd,fa,fb,syncmin,nfqso,MAXCAND,savg,candidate,   &
+         call getcandidates2(dd,fa,fb,syncmin_pass,nfqso,MAXCAND,savg,candidate,   &
             ncand,sbase)
          call timer('getcand2',1)
          dobigfft=.true.
@@ -305,6 +316,8 @@ contains
                if(iseg.eq.1) smax1=smax
                smaxthresh=0.80
                if(ndepth0.ge.3) smaxthresh=0.65
+               if(isp.ge.2) smaxthresh=smaxthresh*0.88  ! pass 2: ~15% più bassa
+               if(isp.ge.3) smaxthresh=smaxthresh*0.76  ! pass 3+: ~25% più bassa
                if(smax.lt.smaxthresh) cycle
                if(iseg.gt.1 .and. smax.lt.smax1) cycle
                f1=f0+real(idfbest)
