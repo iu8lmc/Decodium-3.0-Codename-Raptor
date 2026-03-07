@@ -2093,6 +2093,16 @@ When not checked you can view the calibration results.</string>
                      </widget>
                     </item>
                     <item>
+                     <widget class="QCheckBox" name="cbDualCarrier">
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;TX su 2 sub-portanti FT2 (+500 Hz) per ridurre scontri di segnale.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string>Dual Carrier</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QStackedWidget" name="opt_controls_stack">
                       <property name="currentIndex">
                        <number>1</number>

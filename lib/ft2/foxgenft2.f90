@@ -5,7 +5,7 @@ subroutine foxgenft2()
 ! FT2 signal.  Analogous to foxgen.f90 for FT8.
 !
 ! FT2 signals are ~167 Hz wide (4-GFSK, baud=41.667 Hz), so we use
-! fstep=200 Hz between slots (vs 60 Hz for FT8).
+! fstep=500 Hz between slots for 3x isolation margin (was 200 Hz).
 !
 ! Input message information is provided in character array cmsg(5), in
 ! common/foxcom/.  The generated wave(NWAVE) is passed back in the same
@@ -27,7 +27,7 @@ subroutine foxgenft2()
   common/foxcom/wave(NWAVE),nslots,nfreq,i3bit(5),cmsg(5),mycall(12), &
        textMsg,bMoreCQs,bSendMsg
 
-  fstep=200.d0
+  fstep=500.d0
   wave=0.
 
   do n=1,nslots
