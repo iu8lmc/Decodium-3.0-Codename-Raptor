@@ -92,6 +92,7 @@ public:
   int dns_lookup_id_;
   QHostAddress server_;
   port_type server_port_;
+  port_type listen_port_ {0};   // 0 = ephemeral (vecchio comportamento), >0 = porta fissa
   int TTL_;
   std::vector<QNetworkInterface> network_interfaces_;
   quint32 schema_;
@@ -182,9 +183,13 @@ void MessageClient::impl::start ()
         {
           close ();
         }
-      // bind to an ephemeral port on the selected interface and set
-      // up for sending datagrams
-      bind (interface_addr);
+      // Bind to fixed listen_port_ if configured, otherwise ephemeral.
+      // A fixed port allows external programs (JTAlert, DecoAlert) to
+      // reliably send commands to Decodium without heartbeat discovery.
+      if (listen_port_ > 0)
+        bind (interface_addr, listen_port_, ShareAddress | ReuseAddressHint);
+      else
+        bind (interface_addr);
       // qDebug () << "Bound to UDP port:" << localPort () << "on:" << localAddress ();
 
       // set multicast TTL to limit scope when sending to multicast
@@ -587,6 +592,25 @@ void MessageClient::set_TTL (int TTL)
 {
   m_->TTL_ = TTL;
   m_->setSocketOption (QAbstractSocket::MulticastTtlOption, m_->TTL_);
+}
+
+void MessageClient::set_listen_port (port_type listen_port)
+{
+  if (m_->listen_port_ != listen_port)
+    {
+      m_->listen_port_ = listen_port;
+      // Rebind immediately if already connected to a server
+      if (!m_->server_.isNull ())
+        {
+          QHostAddress interface_addr (QAbstractSocket::IPv6Protocol == m_->server_.protocol ()
+                                       ? QHostAddress::AnyIPv6 : QHostAddress::AnyIPv4);
+          m_->close ();
+          if (listen_port > 0)
+            m_->bind (interface_addr, listen_port, QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint);
+          else
+            m_->bind (interface_addr);
+        }
+    }
 }
 
 void MessageClient::enable (bool flag)

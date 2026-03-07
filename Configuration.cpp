@@ -927,6 +927,7 @@ private:
   bool udp_server_name_edited_;
   int dns_lookup_id_;
   port_type udp_server_port_;
+  port_type udp_listen_port_;   // porta fissa dove Decodium ascolta comandi in ingresso
   QStringList udp_interface_names_;
   QString loopback_interface_name_;
   int udp_TTL_;
@@ -1099,6 +1100,7 @@ QString Configuration::opCall() const {return m_->opCall_;}
 void Configuration::opCall (QString const& call) {m_->opCall_ = call;}
 QString Configuration::udp_server_name () const {return m_->udp_server_name_;}
 auto Configuration::udp_server_port () const -> port_type {return m_->udp_server_port_;}
+auto Configuration::udp_listen_port () const -> port_type {return m_->udp_listen_port_;}
 QStringList Configuration::udp_interface_names () const {return m_->udp_interface_names_;}
 int Configuration::udp_TTL () const {return m_->udp_TTL_;}
 bool Configuration::accept_udp_requests () const {return m_->accept_udp_requests_;}
@@ -2269,6 +2271,7 @@ void Configuration::impl::initialize_models ()
   ui_->udp_server_line_edit->setEnabled(true);
   on_udp_server_line_edit_editingFinished ();
   ui_->udp_server_port_spin_box->setValue (udp_server_port_);
+  ui_->udp_listen_port_spin_box->setValue (udp_listen_port_);
   load_network_interfaces (ui_->udp_interfaces_combo_box, udp_interface_names_);
   if (!udp_interface_names_.size ())
     {
@@ -2681,6 +2684,7 @@ void Configuration::impl::read_settings ()
   udp_interface_names_ = settings_->value ("UDPInterface").toStringList ();
   udp_TTL_ = settings_->value ("UDPTTL", 1).toInt ();
   udp_server_port_ = settings_->value ("UDPServerPort", 2237).toUInt ();
+  udp_listen_port_ = settings_->value ("UDPListenPort", 2238).toUInt ();
   n1mm_server_name_ = settings_->value ("N1MMServer", "127.0.0.1").toString ();
   n1mm_server_port_ = settings_->value ("N1MMServerPort", 2333).toUInt ();
   broadcast_to_n1mm_ = settings_->value ("BroadcastToN1MM", false).toBool ();
@@ -2944,6 +2948,7 @@ void Configuration::impl::write_settings ()
   settings_->setValue ("OpCall", opCall_);
   settings_->setValue ("UDPServer", udp_server_name_);
   settings_->setValue ("UDPServerPort", udp_server_port_);
+  settings_->setValue ("UDPListenPort", udp_listen_port_);
   settings_->setValue ("UDPInterface", QVariant::fromValue (udp_interface_names_));
   settings_->setValue ("UDPTTL", udp_TTL_);
   settings_->setValue ("N1MMServer", n1mm_server_name_);
@@ -3562,6 +3567,13 @@ void Configuration::impl::accept ()
     {
       udp_TTL_ = new_TTL;
       Q_EMIT self_->udp_TTL_changed (udp_TTL_);
+    }
+
+  auto new_listen_port = static_cast<port_type> (ui_->udp_listen_port_spin_box->value ());
+  if (new_listen_port != udp_listen_port_)
+    {
+      udp_listen_port_ = new_listen_port;
+      Q_EMIT self_->udp_listen_port_changed (udp_listen_port_);
     }
 
   if (ui_->accept_udp_requests_check_box->isChecked () != accept_udp_requests_)
