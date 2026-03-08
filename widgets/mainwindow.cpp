@@ -1364,6 +1364,15 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 
   connect(&watcher3, SIGNAL(finished()),this,SLOT(fast_decode_done()));
   connect(&m_asyncDecodeWatcher, &QFutureWatcher<void>::finished, this, &MainWindow::asyncDecodeDone);
+
+  // Async TX guard timer: fires 300ms after decode to start TX immediately
+  m_asyncTxGuardTimer.setSingleShot(true);
+  connect(&m_asyncTxGuardTimer, &QTimer::timeout, this, [this]() {
+    if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && m_auto) {
+      m_bAsyncTxArmed = true;  // guiUpdate() will pick this up and start TX
+    }
+  });
+
   connect(&m_asyncDecodeTimer, &QTimer::timeout, this, [this]() {
     if (m_mode != "FT2" || !ui->cbAsyncDecode->isChecked()) return;
     if (m_bAsyncDecoding) return;  // previous decode still running
@@ -4112,6 +4121,13 @@ void MainWindow::process_autoButton (bool checked)   //manually or by controller
   if (checked) {
     m_auto = checked;
 
+    // Async FT2: arm guard timer for immediate TX start
+    if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
+      if (!m_asyncTxGuardTimer.isActive()) {
+        m_asyncTxGuardTimer.start(300);
+      }
+    }
+
     if (is_externalCtrlMode()) {    //avt 10/2/25
       if (m_auto) {         //avt 10/2/25
         ui->label->setStyleSheet ("QLabel{color: #0000ff}");        //avt 10/2/25
@@ -4175,6 +4191,13 @@ void MainWindow::auto_tx_mode (bool state)
   m_autoButtonState = state;   //avt 10/2/25
   //debugToFile(QString{"autoTxMode   m_autoButtonState:%1"}.arg(m_autoButtonState));   //avt 2/2/24
   on_autoButton_clicked (state);
+
+  // Async FT2: arm guard timer for immediate TX (bypass period wait)
+  if (state && m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
+    if (!m_asyncTxGuardTimer.isActive()) {
+      m_asyncTxGuardTimer.start(300);  // 300ms guard before TX
+    }
+  }
 }
 
 void MainWindow::keyPressEvent (QKeyEvent * e)
@@ -8139,6 +8162,12 @@ void MainWindow::guiUpdate()
   }
   if(m_tune) m_bTxTime=true;                 //"Tune" takes precedence
 
+  // Async TX: bypass period timing — transmit immediately when armed
+  if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && m_bAsyncTxArmed && m_auto) {
+    m_bTxTime = true;
+    m_bAsyncTxArmed = false;  // one-shot
+  }
+
   if(m_transmitting or m_auto or m_tune) {
     m_dateTimeLastTX = QDateTime::currentDateTimeUtc ();
 
@@ -8236,7 +8265,9 @@ void MainWindow::guiUpdate()
       ui->txrb5->setChecked(true);
     }
 
-    if(g_iptt==0 and ((m_bTxTime and (fTR < 0.75) and txReady) or m_tune)) {
+    // Async FT2: no period gate (fTR < 0.75) — TX starts immediately
+    bool asyncBypass = (m_mode == "FT2" && ui->cbAsyncDecode->isChecked());
+    if(g_iptt==0 and ((m_bTxTime and (asyncBypass || fTR < 0.75) and txReady) or m_tune)) {
       //### Allow late starts
       icw[0]=m_ncw;
       g_iptt = 1;
@@ -8291,7 +8322,8 @@ void MainWindow::guiUpdate()
       m_tx_when_ready = true;
     }
 //    if(!m_bTxTime and !m_tune and m_mode!="FT4") m_btxok=false;       //Time to stop transmitting
-    if(!m_bTxTime and !m_tune) m_btxok=false;       //Time to stop transmitting
+    // Async FT2: don't kill TX based on period — Modulator stops when waveform is done
+    if(!m_bTxTime and !m_tune and !asyncBypass) m_btxok=false;
   }
 
   if((m_mode=="WSPR" or m_mode=="FST4W") and
@@ -13857,15 +13889,16 @@ void MainWindow::transmit (double snr)
   if (m_mode == "FT2") {
     m_dateTimeSentTx3=QDateTime::currentDateTimeUtc();
     toneSpacing=-2.0;                     //Transmit a pre-computed, filtered waveform.
+    bool syncTx = !(ui->cbAsyncDecode->isChecked());  // Async: no period sync
     if (m_tci_audio) {
       Q_EMIT m_config.transceiver_modulator_start(m_mode, NUM_FT2_SYMBOLS,
              288.0,ui->TxFreqSpinBox->value()-m_XIT,
-             toneSpacing,true,false,snr,m_TRperiod);
+             toneSpacing,syncTx,false,snr,m_TRperiod);
     } else {
       Q_EMIT sendMessage (m_mode, NUM_FT2_SYMBOLS,
              288.0, ui->TxFreqSpinBox->value() - m_XIT,
              toneSpacing, m_soundOutput, m_config.audio_output_channel(),
-             true, false, snr, m_TRperiod);
+             syncTx, false, snr, m_TRperiod);
     }
   }
 
