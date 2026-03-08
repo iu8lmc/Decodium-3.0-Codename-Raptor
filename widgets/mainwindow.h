@@ -896,6 +896,8 @@ private:
   char m_asyncMsg[100][80];          // async decode results
   QSet<QString> m_asyncDedupeSet;    // deduplication within sliding window
   QDateTime m_asyncDedupeLastCleared;
+  bool m_bAsyncTxArmed {false};       // async TX ready after guard timer
+  QTimer m_asyncTxGuardTimer;         // 300ms guard between RX decode and TX start
   QFutureWatcher<QString> m_saveWAVWatcher;
 
   NonInheritingProcess proc_jt9;
