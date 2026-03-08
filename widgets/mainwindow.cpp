@@ -570,7 +570,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
         m_config.udp_server_name (), m_config.udp_server_port (),
         m_config.udp_interface_names (), m_config.udp_TTL (),
         this}},
-  m_psk_Reporter {&m_config, QString {"Decodium v3.0 FT2 Raptor v" + version () + " " + m_revision}.simplified ()},
+  m_psk_Reporter {&m_config, QString {"Decodium 3.0 ASYMX v" + version () + " " + m_revision}.simplified ()},
   m_manual {&m_network_manager},
   m_block_udp_status_updates {false},
   m_useDarkStyle {false},
@@ -588,6 +588,12 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->sbTR_FST4W->values ({120, 300, 900, 1800});
   ui->decodedTextBrowser->set_configuration (&m_config, true);
   ui->decodedTextBrowser2->set_configuration (&m_config);
+
+  // ASYMX: hide right decode panel — single unified Band Activity
+  ui->rh_decodes_widget->hide();
+
+  // ASYMX: hide period 1/2 selector — async mode has no period concept
+  ui->txFirstCheckBox->hide();
 
   m_optimizingProgress.setWindowModality (Qt::WindowModal);
   m_optimizingProgress.setAutoReset (false);
@@ -1632,15 +1638,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 
 void MainWindow::not_GA_warning_message ()
 {
-  if(m_config.my_callsign()=="IU8LMC") return;    //IU8LMC mod
-  MessageBox::critical_message (this,
-                                "This is a pre-release version of Decodium v3.0 FT2 Raptor " + version (false) + " made\n"
-                                "available for testing purposes.  By design it will\n"
-                                "be nonfunctional after April 30, 2026.");
-  auto now = QDateTime::currentDateTimeUtc ();
-  if (now >= QDateTime {{2026, 4, 30}, {23, 59, 59, 999}, Qt::UTC}) {
-    Q_EMIT finished ();
-  }
+  // Official release — no expiration
 }
 
 void MainWindow::handle_leavingSettings ()
@@ -1943,7 +1941,7 @@ void MainWindow::writeSettings()
 void MainWindow::update_tx5(const QString &qsy_text)
 {
   if (m_hisCall=="") {
-    QMessageBox::warning(this, "Decodium v3.0 FT2 Raptor","There must be a callsign in the\n DX Call Box to send QSY Request");
+    QMessageBox::warning(this, "Decodium 3.0 ASYMX","There must be a callsign in the\n DX Call Box to send QSY Request");
   } else {
     QString text = qsy_text;
     ui->tx6->setText(text.replace("$DX",m_hisCall));
@@ -4512,7 +4510,7 @@ QString MainWindow::userAgent() {
   QString platform = "(" + QSysInfo::prettyProductName()+"; "+QSysInfo::productType() + " " + QSysInfo::productVersion() + "; " +
                      QSysInfo::currentCpuArchitecture() + "; " +
                      QString("rv:%1").arg(QSysInfo::kernelVersion()) + ")";
-  QString userAgent = QString{"Decodium3FT2-Raptor/" + version() + "_" + m_revision}.simplified() + " " +platform;
+  QString userAgent = QString{"Decodium3-ASYMX/" + version() + "_" + m_revision}.simplified() + " " +platform;
   return userAgent;
   }
 
@@ -5588,7 +5586,7 @@ void MainWindow::on_actionKeyboard_shortcuts_triggered()
   <tr><td><b>Esc      </b></td><td>Stop Tx, abort QSO, clear next-call queue</td></tr>
   <tr><td><b>F1       </b></td><td>Online User's Guide (Alt: transmit Tx6)</td></tr>
   <tr><td><b>Shift+F1  </b></td><td>Copyright Notice</td></tr>
-  <tr><td><b>Ctrl+F1  </b></td><td>About Decodium v3.0 FT2 Raptor</td></tr>
+  <tr><td><b>Ctrl+F1  </b></td><td>About Decodium 3.0 ASYMX</td></tr>
   <tr><td><b>F2       </b></td><td>Open settings window (Alt: transmit Tx2)</td></tr>
   <tr><td><b>F3       </b></td><td>Display keyboard shortcuts (Alt: transmit Tx3)</td></tr>
   <tr><td><b>F4       </b></td><td>Clear DX Call, DX Grid, Tx messages 1-4 (Alt: transmit Tx4)</td></tr>
@@ -8183,7 +8181,7 @@ void MainWindow::guiUpdate()
       if(onAirFreq!=m_onAirFreq0) {
         m_onAirFreq0=onAirFreq;
         auto const& message = tr ("Please choose another Tx frequency."
-                                  " Decodium v3.0 FT2 Raptor will not knowingly transmit another"
+                                  " Decodium 3.0 ASYMX will not knowingly transmit another"
                                   " mode in the WSPR sub-band on 30m.");
         QTimer::singleShot (0, [=] { // don't block guiUpdate
             MessageBox::warning_message (this, tr ("WSPR Guard Band"), message);
@@ -8202,7 +8200,7 @@ void MainWindow::guiUpdate()
           if (m_tune) stop_tuning();
           auto const& message = tr ("Please choose another dial frequency.\n"
                                     "Must be 3Khz away from %1.\n"
-                                    "Decodium v3.0 FT2 Raptor will not operate in Fox mode\n"
+                                    "Decodium 3.0 ASYMX will not operate in Fox mode\n"
                                     "overlapping the standard FT8 sub-bands.").arg(ft8Freq[i]);
           QTimer::singleShot (0, [=] {               // don't block guiUpdate
             MessageBox::warning_message (this, tr ("Fox Mode warning"), message);
@@ -8219,7 +8217,7 @@ void MainWindow::guiUpdate()
           if (m_auto) auto_tx_mode (false);
           if (m_tune) stop_tuning();
           auto const& message = tr ("Please choose another dial frequency.\n"
-                                    "Decodium v3.0 FT2 Raptor will not operate in Fox mode\n"
+                                    "Decodium 3.0 ASYMX will not operate in Fox mode\n"
                                     "overlapping the WSPR sub-bands.").arg(ft8Freq[i]);
           QTimer::singleShot (0, [=] {               // don't block guiUpdate
             MessageBox::warning_message (this, tr ("Fox Mode warning"), message);
@@ -14202,7 +14200,7 @@ void MainWindow::pskSetLocal ()
   if (rig_information.contains("OmniRig")) rig_information = "N/A (OmniRig)";
   if (rig_information == "FLRig") rig_information = "N/A (FLRig)";
   if (rig_information.contains("TCI Cli")) rig_information = "N/A (TCI)";
-  m_psk_Reporter.setLocalStation(m_config.my_callsign (), m_config.my_grid (), antenna_description, rig_information, QString {"Decodium v3.0 FT2 Raptor v" + version () + " " + m_revision}.simplified ());
+  m_psk_Reporter.setLocalStation(m_config.my_callsign (), m_config.my_grid (), antenna_description, rig_information, QString {"Decodium 3.0 ASYMX v" + version () + " " + m_revision}.simplified ());
 }
 
 void MainWindow::transmitDisplay (bool transmitting)
@@ -17647,9 +17645,9 @@ void MainWindow::on_actionDiagnostic_mode_triggered()
             "                                     DIAGNOSTIC MODE\n"
             "\n"
             "You have switched to diagnostic mode. It allows you to collect data to\n"
-            "troubleshoot problems with Decodium v3.0 FT2 Raptor, or its communication with your rig.\n"
+            "troubleshoot problems with Decodium 3.0 ASYMX, or its communication with your rig.\n"
             "\n"
-            "The diagnostic mode is active after closing and restarting Decodium v3.0 FT2 Raptor,\n"
+            "The diagnostic mode is active after closing and restarting Decodium 3.0 ASYMX,\n"
             "and is then automatically deactivated when the program is next closed.\n"
             "In the diagnostic mode a new \"logs\" folder appears on your screen, and\n"
             "in it two files are created: \"decodium_syslog.log\" and \"Decodium_RigControl.log\".\n"
@@ -18931,11 +18929,11 @@ void MainWindow::on_actionDownload_from_LOTW_triggered()
   QString logFilePathName = m_config.writeable_data_dir().absolutePath() + "/" + FULL_LOG_FNAME;
   if (m_firstLotwDl and QFile::exists(logFilePathName)) {
     if (MessageBox::No == MessageBox::query_message (this,
-      QString {"This is your first request to download your complete QSO history from LOTW by Decodium v3.0 FT2 Raptor.\n\n"} +
+      QString {"This is your first request to download your complete QSO history from LOTW by Decodium 3.0 ASYMX.\n\n"} +
       QString {"IMPORTANT!!! Before continuing:\n"} +
       QString {"- Be sure you have already uploaded your current QSOs to LOTW, by whatever method you previously used (manually with TQSL and wsjt_log.adi, or automatically with a separate logging program).\n"} +
       QString {"- Allow enough time after this upload for LOTW to process it.\n\n"} +
-      QString {"Note: All QSO activity is archived in the 'Decodium v3.0 FT2 Raptor log directory', which is accessible from the File menu.\n\n"} +
+      QString {"Note: All QSO activity is archived in the 'Decodium 3.0 ASYMX log directory', which is accessible from the File menu.\n\n"} +
       QString {"Are you ready to continue with downloading QSOs from LOTW?"})) return;
 
     //backup log file
@@ -19384,7 +19382,7 @@ void MainWindow::lotwError (QProcess * process, QProcess::ProcessError)
 //avt
 void MainWindow::download (QUrl url) {
   QNetworkRequest request {url};
-  request.setRawHeader("User-Agent", "Decodium3FT2-Raptor Downloader");
+  request.setRawHeader("User-Agent", "Decodium3-ASYMX Downloader");
   request.setOriginatingObject (this);
 
   // this blocks for a second or two the first time it is used on
