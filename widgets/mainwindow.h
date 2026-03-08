@@ -791,7 +791,7 @@ private:
   bool    m_bCallingCQ;
   bool    m_autoCQ;
   QQueue<QString> m_callerQueue;
-  void enqueueCaller (QString const& call, int freq, int snr = -99, float dt = 0.0f);
+  void enqueueCaller (QString const& call, int freq, int snr = -99, float dt = 0.0f, bool fromL2 = false);
   void processNextInQueue ();
   void refreshCallerQueueDisplay ();
 
@@ -811,6 +811,7 @@ private:
       : call{c}, freq{f}, txStep{t}, missedPeriods{m}, snr{s}, dt{d} {}
   };
   bool      m_bDXpedMode      {false};
+  bool      m_bLastDecodeFromL2 {false};
   int       m_dxpedCQcounter  {0};   // piggyback CQ ogni N periodi TX
   DXpedSlot m_dxpedSlots[3];
   void dxpedFillEmptySlots ();
