@@ -992,19 +992,6 @@
           </widget>
          </item>
          <item>
-          <widget class="QCheckBox" name="cbAutoTogglePeriod">
-           <property name="toolTip">
-            <string>Auto CQ: toggle Tx Even/1st after repeated CQ without response</string>
-           </property>
-           <property name="text">
-            <string>Alt 1/2</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QCheckBox" name="cbNoBefore">
            <property name="toolTip">
             <string>Skip stations already worked on this band (No QSO B4)</string>
