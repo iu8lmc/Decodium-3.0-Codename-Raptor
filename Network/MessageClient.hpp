@@ -54,9 +54,6 @@ public:
   // change the server port messages are sent to
   Q_SLOT void set_TTL (int TTL);
 
-  // set fixed UDP listen port for incoming commands (0 = ephemeral)
-  Q_SLOT void set_listen_port (port_type listen_port);
-
   // enable incoming messages
   Q_SLOT void enable (bool);
 

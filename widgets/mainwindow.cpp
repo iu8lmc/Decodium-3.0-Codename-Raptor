@@ -1168,8 +1168,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   connect (&m_config, &Configuration::udp_server_port_changed, m_messageClient, &MessageClient::set_server_port);
   connect (&m_config, &Configuration::udp_TTL_changed, m_messageClient, &MessageClient::set_TTL);
   connect (&m_config, &Configuration::accept_udp_requests_changed, m_messageClient, &MessageClient::enable);
-  connect (&m_config, &Configuration::udp_listen_port_changed, m_messageClient, &MessageClient::set_listen_port);
-  m_messageClient->set_listen_port (m_config.udp_listen_port ());
   connect (&m_config, &Configuration::enumerating_audio_devices, [this] () {
                                                                    showStatusMessage (tr ("Enumerating audio devices"));
                                                                  });
@@ -6410,8 +6408,13 @@ void MainWindow::applyDtFeedback()
       m_dtSmoothFactor);
   }
 
-  // Update status bar DT label with actual DT info
-  if (m_dtLastSampleCount > 0) {
+  // Update status bar DT label
+  // When Level 2 async is active, show "L2:ON" instead of DT feedback
+  // (L2 decodes have DT from Costas scan, not from clock sync — not useful for DT feedback)
+  if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
+    dt_correction_label.setText("L2:ON");
+    dt_correction_label.setStyleSheet("QLabel{color:#000;background:#00e676;font-weight:bold}");
+  } else if (m_dtLastSampleCount > 0) {
     QString text = QString("DT:%1%2ms(%3)")
       .arg(m_dtCorrection_ms > 0 ? "+" : "")
       .arg(m_dtCorrection_ms, 0, 'f', 1)
@@ -10772,12 +10775,14 @@ void MainWindow::TxAgain()
   auto_tx_mode(true);
 }
 
-void MainWindow::enqueueCaller (QString const& call, int freq, int snr, float dt)
+void MainWindow::enqueueCaller (QString const& call, int freq, int snr, float dt, bool fromL2)
 {
+  // L2 decode: either explicit parameter or member flag (set by asyncDecodeDone)
+  bool isL2 = fromL2 || m_bLastDecodeFromL2;
+
   // FT2: filtra caller con DT fuori dal guard time (1.28s).
-  // DT > +1.0s: TX sfora nel periodo successivo → QRM garantito.
-  // DT < -0.3s: trasmette prima del periodo → over sul DX TX.
-  if (m_mode == "FT2") {
+  // L2 decodes: skip DT guard filter — DT is from Costas scan, not clock offset.
+  if (m_mode == "FT2" && !isL2) {
     if (dt > 1.0f || dt < -0.3f) return;
   }
 
@@ -10787,8 +10792,8 @@ void MainWindow::enqueueCaller (QString const& call, int freq, int snr, float dt
   if (m_callerQueue.size () >= 20) return;
 
   // Score combinato: SNR pesato + bonus timing (|DT| piccolo = meglio)
-  // Scala: ogni 0.1s di DT vale ~0.8 dB. DT=0 → pieno SNR, DT=1.0s → SNR -8.
-  float score = float(snr) - 8.0f * qAbs(dt);
+  // L2 decodes: no DT penalty — DT from Costas scan is not meaningful for timing quality
+  float score = isL2 ? float(snr) : float(snr) - 8.0f * qAbs(dt);
 
   QString entry = call + " " + QString::number(freq) + " " +
                   QString::number(snr) + " " +
@@ -17164,11 +17169,18 @@ void MainWindow::asyncDecodeDone()
           m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
           false, false, 0.0, false, -99, "", m_muted);
 
+      // NOTE: L2 decodes have DT from Costas sync scan, NOT from clock offset.
+      // Do NOT feed DT samples to applyDtFeedback — they would corrupt the
+      // timing feedback loop. The standard decoder provides real DT samples.
+
       postDecode(true, decodedtext);
       write_all("Rx", message);
 
-      // Auto-sequence
+      // Auto-sequence — works normally with L2 decodes
+      // Set flag so enqueueCaller() knows this is an L2 decode (skip DT penalty)
+      m_bLastDecodeFromL2 = true;
       auto_sequence(decodedtext, ui->sbFtol->value(), ui->sbFtol->value());
+      m_bLastDecodeFromL2 = false;
     }
 }
 
