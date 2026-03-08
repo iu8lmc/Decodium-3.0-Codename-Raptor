@@ -17131,9 +17131,11 @@ void MainWindow::on_cbAsyncDecode_toggled (bool checked)
       m_asyncDedupeSet.clear();
       m_asyncDedupeLastCleared = QDateTime::currentDateTimeUtc();
       m_asyncDecodeTimer.start(750);  // Level 2: sync-triggered every 750ms
+      ui->labelAsyncL2Active->setVisible(true);
     } else {
       m_asyncDecodeTimer.stop();
       m_bAsyncDecoding = false;
+      ui->labelAsyncL2Active->setVisible(false);
     }
 }
 
