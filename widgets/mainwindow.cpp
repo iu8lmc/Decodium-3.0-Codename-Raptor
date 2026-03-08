@@ -581,11 +581,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   setUnifiedTitleAndToolBarOnMac (true);
   createStatusBar();
 
-  // NTP Time Synchronization
-  m_ntpClient = new NtpClient(this);
-  connect(m_ntpClient, &NtpClient::offsetUpdated, this, &MainWindow::onNtpOffsetUpdated);
-  connect(m_ntpClient, &NtpClient::syncStatusChanged, this, &MainWindow::onNtpSyncStatusChanged);
-
   add_child_to_event_filter (this);
   ui->dxGridEntry->setValidator (new MaidenheadLocatorValidator {this});
   ui->dxCallEntry->setValidator (new CallsignValidator {this});
@@ -1282,16 +1277,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->rh_decodes_headings_label->setText(t);
   readSettings();            //Restore user's setup parameters
 
-  // Start NTP sync after settings are loaded
-  if (!m_ntpCustomServer.isEmpty()) {
-    m_ntpClient->setCustomServer(m_ntpCustomServer);
-  }
-  if (m_ntpEnabled) {
-    m_ntpClient->setInitialOffset(m_ntpOffset_ms);
-    m_ntpClient->setEnabled(true);
-    // NTP offset displayed in TimeSyncPanel only — not injected into Detector
-  }
-
   // Auto-launch ChronoGPS if enabled in settings
   {
     QSettings s;
@@ -1820,10 +1805,6 @@ void MainWindow::writeSettings()
   m_settings->setValue("EchoCW",ui->rbEchoCW->isChecked());
   m_settings->setValue("EchoMessage",ui->leEchoMessage->text());
   m_settings->setValue("DTtol",m_DTtol);
-  // DTCorrection_ms and DTFeedbackEnabled no longer saved (DT feedback disabled)
-  m_settings->setValue("NTPOffset_ms", m_ntpOffset_ms);
-  m_settings->setValue("NTPEnabled", m_ntpEnabled);
-  m_settings->setValue("NTPCustomServer", m_ntpCustomServer);
   m_settings->setValue("MinSync",m_minSync);
   m_settings->setValue ("AutoSeq", ui->cbAutoSeq->isChecked ());
   m_settings->setValue ("RxAll", ui->cbRxAll->isChecked ());
@@ -2172,13 +2153,6 @@ void MainWindow::readSettings()
   ui->cbRxAll->setChecked (m_settings->value ("RxAll", false).toBool());
 // m_bShMsgs=m_settings->value("ShMsgs",false).toBool();
   m_bSWL=m_settings->value("SWL",false).toBool();
-  m_dtCorrection_ms = 0.0;
-  m_dtFeedbackEnabled = true;
-  m_ntpOffset_ms = m_settings->value("NTPOffset_ms", 0.0).toDouble();
-  m_ntpEnabled = m_settings->value("NTPEnabled", false).toBool();
-  ntp_checkbox.setChecked(m_ntpEnabled);
-  m_ntpCustomServer = m_settings->value("NTPCustomServer", "").toString();
-  ntp_server_edit.setText(m_ntpCustomServer);
   m_bFast9=m_settings->value("Fast9",false).toBool();
   m_bFastMode=m_settings->value("FastMode",false).toBool();
   ui->sbMaxDrift->setValue (m_settings->value ("MaxDrift",0).toInt());
@@ -4798,53 +4772,6 @@ void MainWindow::createStatusBar()                           //createStatusBar
   ndecodes_label.setFrameStyle (QFrame::Panel | QFrame::Sunken);
   statusBar()->addWidget (&ndecodes_label);
 
-  dt_correction_label.setAlignment(Qt::AlignHCenter);
-  dt_correction_label.setMinimumSize(QSize{90, 18});
-  dt_correction_label.setFrameStyle(QFrame::Panel | QFrame::Sunken);
-  dt_correction_label.setText("DT:OFF");
-  dt_correction_label.setStyleSheet("QLabel{color:#888;background:#333}");
-  statusBar()->addWidget(&dt_correction_label);
-
-  ntp_checkbox.setText("NTP");
-  ntp_checkbox.setToolTip("Enable/disable internal NTP time synchronization");
-  ntp_checkbox.setChecked(m_ntpEnabled);
-  connect(&ntp_checkbox, &QCheckBox::toggled, this, [this](bool checked) {
-    m_ntpEnabled = checked;
-    if (m_ntpClient) {
-      m_ntpClient->setEnabled(checked);
-    }
-    if (!checked) {
-      ntp_status_label.setText("NTP: OFF");
-      ntp_status_label.setStyleSheet("QLabel{color:#888;background:#333}");
-      ntp_status_label.setToolTip("NTP disabled");
-      m_ntpOffset_ms = 0.0;
-    }
-    if (m_timeSyncPanel) m_timeSyncPanel->syncNtpEnabled(checked);
-  });
-  statusBar()->addWidget(&ntp_checkbox);
-
-  ntp_server_edit.setPlaceholderText("NTP server...");
-  ntp_server_edit.setMinimumSize(QSize{140, 18});
-  ntp_server_edit.setMaximumSize(QSize{200, 18});
-  ntp_server_edit.setToolTip("Custom NTP server (leave empty for defaults)");
-  ntp_server_edit.setText(m_ntpCustomServer);
-  connect(&ntp_server_edit, &QLineEdit::editingFinished, this, [this]() {
-    m_ntpCustomServer = ntp_server_edit.text().trimmed();
-    if (m_ntpClient) {
-      m_ntpClient->setCustomServer(m_ntpCustomServer);
-      if (m_ntpEnabled) m_ntpClient->syncNow();
-    }
-    if (m_timeSyncPanel) m_timeSyncPanel->syncCustomServer(m_ntpCustomServer);
-  });
-  statusBar()->addWidget(&ntp_server_edit);
-
-  ntp_status_label.setAlignment(Qt::AlignHCenter);
-  ntp_status_label.setMinimumSize(QSize{120, 18});
-  ntp_status_label.setFrameStyle(QFrame::Panel | QFrame::Sunken);
-  ntp_status_label.setText(m_ntpEnabled ? "NTP: --" : "NTP: OFF");
-  ntp_status_label.setStyleSheet("QLabel{color:#888;background:#333}");
-  statusBar()->addWidget(&ntp_status_label);
-
   last_tx_label.setAlignment (Qt::AlignHCenter);
   last_tx_label.setMinimumSize (QSize {150, 18});
   last_tx_label.setFrameStyle (QFrame::Panel | QFrame::Sunken);
@@ -5341,57 +5268,7 @@ void MainWindow::on_actionQSY_Monitor_triggered()
 
 void MainWindow::on_actionTime_Sync_triggered()
 {
-  if (!m_timeSyncPanel) {
-    m_timeSyncPanel.reset(new TimeSyncPanel{m_settings, m_ntpClient, this});
-    connect(this, &MainWindow::finished,
-            m_timeSyncPanel.data(), &TimeSyncPanel::close);
-
-    // Panel → MainWindow: NTP enable toggle
-    connect(m_timeSyncPanel.data(), &TimeSyncPanel::ntpEnableToggled,
-            this, [this](bool en) {
-      m_ntpEnabled = en;
-      ntp_checkbox.setChecked(en);
-      if (m_ntpClient) {
-        m_ntpClient->setEnabled(en);
-      }
-      if (!en) {
-        m_ntpOffset_ms = 0;
-        ntp_status_label.setText("NTP: OFF");
-        ntp_status_label.setStyleSheet("QLabel{color:#888;background:#333}");
-        ntp_status_label.setToolTip("NTP disabled");
-      }
-    });
-
-    // Panel → MainWindow: custom server changed
-    connect(m_timeSyncPanel.data(), &TimeSyncPanel::customServerChanged,
-            this, [this](QString const& server) {
-      m_ntpCustomServer = server;
-      if (m_ntpClient) {
-        m_ntpClient->setCustomServer(server);
-        if (m_ntpEnabled) m_ntpClient->syncNow();
-      }
-    });
-
-    // Panel → MainWindow: sync now
-    connect(m_timeSyncPanel.data(), &TimeSyncPanel::syncNowRequested,
-            this, [this]() {
-      if (m_ntpClient && m_ntpEnabled) m_ntpClient->syncNow();
-    });
-
-    // Sync initial state to panel
-    m_timeSyncPanel->syncNtpEnabled(m_ntpEnabled);
-    m_timeSyncPanel->syncCustomServer(m_ntpCustomServer);
-    int srvCount = m_ntpClient ? m_ntpClient->lastServerCount() : 0;
-    if (srvCount > 0) {
-      m_timeSyncPanel->updateNtpOffset(m_ntpOffset_ms, srvCount);
-    }
-    m_timeSyncPanel->updateNtpSyncStatus(
-      m_ntpClient ? m_ntpClient->isSynced() : false,
-      m_ntpEnabled ? "Initializing..." : "NTP disabled");
-  }
-  m_timeSyncPanel->showNormal();
-  m_timeSyncPanel->raise();
-  m_timeSyncPanel->activateWindow();
+  // Time Sync panel removed — DT/NTP systems eliminated
 }
 
 void MainWindow::on_fox_log_action_triggered()
@@ -6171,7 +6048,6 @@ void MainWindow::decode()                                       //decode()
         memcpy(to, from, qMin(mem_jt9->size(), size));
         mem_jt9->unlock ();
         to_jt9(m_ihsym,1,-1);                //Send m_ihsym to jt9[.exe] and start decoding
-        m_decodeStartMs = QDateTime::currentMSecsSinceEpoch();
         decodeBusy(true);
       }
     }
@@ -6289,9 +6165,6 @@ void MainWindow::decodeDone ()
 
   to_jt9(m_ihsym,-1,1);                //Tell jt9 we know it has finished
 
-  // DT Feedback Loop: update TimeSyncPanel display (correction disabled via m_dtFeedbackEnabled=false)
-  applyDtFeedback();
-
   m_startAnother=m_loopall;
   if(m_bNoMoreFiles) {
     MessageBox::information_message(this, tr("No more files to open."));
@@ -6317,120 +6190,6 @@ void MainWindow::decodeDone ()
   }
 }
 
-void MainWindow::applyDtFeedback()
-{
-  m_dtLastSampleCount = m_dtSamples.size();
-
-  // #7: FT2 adaptive thresholds — need fewer samples due to shorter period
-  int minSamples = m_dtMinSamples;
-  if (m_mode == "FT2") minSamples = 2;  // FT2: 2 decodes enough (shorter period)
-
-  if (m_dtFeedbackEnabled && m_dtSamples.size() >= minSamples && !m_diskData) {
-    // Use median for robustness against outliers
-    QVector<double> sorted = m_dtSamples;
-    std::sort(sorted.begin(), sorted.end());
-    double medianDt = sorted[sorted.size() / 2];
-
-    // #4: Adaptive EMA — conservative to avoid oscillation with NTP active
-    // FT2 uses gentler factors since 3.75s period means rapid updates
-    if (m_mode == "FT2") {
-      if (m_totalDecodesForDt < 10) {
-        m_dtSmoothFactor = 0.3;    // FT2 warm-up: moderate convergence
-      } else if (qAbs(m_avgDtValue) < 0.1) {
-        m_dtSmoothFactor = 0.1;    // FT2 stable: gentle tracking
-      } else {
-        m_dtSmoothFactor = 0.2;    // FT2 transitional
-      }
-    } else {
-      if (m_totalDecodesForDt < 20) {
-        m_dtSmoothFactor = 0.5;    // warm-up: converge quickly
-      } else if (qAbs(m_avgDtValue) < 0.1) {
-        m_dtSmoothFactor = 0.15;   // stable: maintain precision
-      } else {
-        m_dtSmoothFactor = 0.3;    // transitional: balanced
-      }
-    }
-
-    // EMA smoothing of median DT
-    if (m_totalDecodesForDt == 0) {
-      m_avgDtValue = medianDt;
-    } else {
-      m_avgDtValue = m_dtSmoothFactor * medianDt + (1.0 - m_dtSmoothFactor) * m_avgDtValue;
-    }
-    m_totalDecodesForDt += m_dtSamples.size();
-
-    // Convert averaged DT (seconds) to ms correction — negative DT means we're
-    // starting too early, so we need positive correction
-    double correctionStep = -m_avgDtValue * 1000.0 * m_dtSmoothFactor;
-
-    // Clamp correction step — tighter for FT2 (short period, small steps safer)
-    double maxStep = (m_mode == "FT2") ? 30.0 : 50.0;
-    correctionStep = qBound(-maxStep, correctionStep, maxStep);
-    m_dtCorrection_ms += correctionStep;
-
-    // Clamp total correction — tighter for FT2 (should never be far off sync)
-    double maxTotal = (m_mode == "FT2") ? 300.0 : 500.0;
-    m_dtCorrection_ms = qBound(-maxTotal, m_dtCorrection_ms, maxTotal);
-
-    // DT correction is computed for TimeSyncPanel display only — NOT applied
-    // to Detector (shifting period boundary degrades decoder performance)
-
-    // #5: NTP vs DT cross-validation — warn if corrections are diverging
-    if (m_ntpEnabled && qAbs(m_ntpOffset_ms) > 1.0) {
-      bool diverging = qAbs(m_dtCorrection_ms) > 3.0 * qAbs(m_ntpOffset_ms)
-                        && m_dtCorrection_ms * m_ntpOffset_ms < 0;  // opposite signs
-      if (diverging) {
-        m_ntpDtDivergenceCount++;
-      } else {
-        m_ntpDtDivergenceCount = 0;
-      }
-    } else {
-      m_ntpDtDivergenceCount = 0;
-    }
-  }
-
-  // Calculate decode latency
-  if (m_decodeStartMs > 0) {
-    m_lastDecodeLatencyMs = QDateTime::currentMSecsSinceEpoch() - m_decodeStartMs;
-    m_decodeStartMs = 0;
-  }
-
-  // Forward timing stats to TimeSyncPanel
-  if (m_timeSyncPanel) {
-    m_timeSyncPanel->updateDecodeTiming(
-      m_dtSamples,
-      m_avgDtValue,
-      m_dtCorrection_ms,
-      m_lastDecodeLatencyMs,
-      m_dtLastSampleCount,
-      0.0,                      // soundcard drift removed
-      m_ntpDtDivergenceCount,
-      m_dtSmoothFactor);
-  }
-
-  // Update status bar DT label
-  // When Level 2 async is active, show "L2:ON" instead of DT feedback
-  // (L2 decodes have DT from Costas scan, not from clock sync — not useful for DT feedback)
-  if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
-    dt_correction_label.setText("L2:ON");
-    dt_correction_label.setStyleSheet("QLabel{color:#000;background:#00e676;font-weight:bold}");
-  } else if (m_dtLastSampleCount > 0) {
-    QString text = QString("DT:%1%2ms(%3)")
-      .arg(m_dtCorrection_ms > 0 ? "+" : "")
-      .arg(m_dtCorrection_ms, 0, 'f', 1)
-      .arg(m_dtLastSampleCount);
-    dt_correction_label.setText(text);
-    // Color based on convergence quality
-    if (qAbs(m_avgDtValue) < 0.1)
-      dt_correction_label.setStyleSheet("QLabel{color:#000;background:#00ff00}");
-    else if (qAbs(m_avgDtValue) < 0.3)
-      dt_correction_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
-    else
-      dt_correction_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
-  }
-
-  m_dtSamples.clear();
-}
 
 void MainWindow::refreshPileupList()
 {
@@ -6881,22 +6640,6 @@ void MainWindow::readFromStdout()                             //readFromStdout
            || (decodedtext.snr() < -21 && decodedtext.isLowConfidence()))))       // very weak + uncertain
       )
     {
-    // Collect DT samples for TimeSyncPanel display
-    if(!decodedtext.isLowConfidence()) {
-      int snr = decodedtext.snr();
-      // #7: FT2 uses lower SNR threshold (-20) to collect more DT samples
-      // FT2 has 6.67x better DT precision so even weaker signals give usable DT
-      int snrThreshold = (m_mode=="FT2") ? -20 : -18;
-      if(snr >= snrThreshold) {
-        float dt_val = decodedtext.dt();
-        // #7: FT2 tighter outlier rejection (±0.5s) due to higher DT precision
-        float dtLimit = (m_mode=="FT2") ? 0.5f : 2.0f;
-        if(qAbs(dt_val) < dtLimit) {
-          m_dtSamples.append(dt_val);
-        }
-      }
-    }
-
     if (m_mode!="FT8" and m_mode!="FT2" and m_mode!="FT4" and !m_mode.startsWith ("FST4") and m_mode!="Q65") {
       //Pad 22-char msg to at least 37 chars
       line_read = line_read.left(44) + "              " + line_read.mid(44);
@@ -8155,7 +7898,7 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
                             callB4, cB4, gB4, contB4, cqzB4, ituzB4, m_currentBand);
             if (callB4) return;
           }
-          enqueueCaller (newCaller, message.frequencyOffset (), message.snr(), message.dt());
+          enqueueCaller (newCaller, message.frequencyOffset (), message.snr());
           return;
         }
       }
@@ -8349,10 +8092,7 @@ void MainWindow::guiUpdate()
     tx2 += m_TRperiod;
   }
 
-  // Use precise system time + DT feedback correction + NTP offset
-  // DT > 0 means signals arrive late → our clock is FAST → subtract correction
-  // NTP offset > 0 means our clock is ahead of UTC → subtract offset
-  qint64 ms = (preciseCurrentMSecsSinceEpoch() - qRound64(m_ntpOffset_ms)) % 86400000;
+  qint64 ms = preciseCurrentMSecsSinceEpoch() % 86400000;
   if(ms < 0) ms += 86400000;  // handle negative modulo
   int nsec=ms/1000;
   double tsec=0.001*ms;
@@ -9747,7 +9487,7 @@ void MainWindow::doubleClickOnCall(Qt::KeyboardModifiers modifiers)
         QString dxGrid;
         message.deCallAndGrid(dxCall, dxGrid);
         if (!dxCall.isEmpty() && dxCall != m_hisCall) {
-          enqueueCaller(dxCall, message.frequencyOffset(), message.snr(), message.dt());
+          enqueueCaller(dxCall, message.frequencyOffset(), message.snr());
           return;
         }
       }
@@ -10775,38 +10515,22 @@ void MainWindow::TxAgain()
   auto_tx_mode(true);
 }
 
-void MainWindow::enqueueCaller (QString const& call, int freq, int snr, float dt, bool fromL2)
+void MainWindow::enqueueCaller (QString const& call, int freq, int snr)
 {
-  // L2 decode: either explicit parameter or member flag (set by asyncDecodeDone)
-  bool isL2 = fromL2 || m_bLastDecodeFromL2;
-
-  // FT2: filtra caller con DT fuori dal guard time (1.28s).
-  // L2 decodes: skip DT guard filter — DT is from Costas scan, not clock offset.
-  if (m_mode == "FT2" && !isL2) {
-    if (dt > 1.0f || dt < -0.3f) return;
-  }
-
   // Niente duplicati
   for (auto const& e : m_callerQueue)
     if (e.startsWith (call + " ")) return;
   if (m_callerQueue.size () >= 20) return;
 
-  // Score combinato: SNR pesato + bonus timing (|DT| piccolo = meglio)
-  // L2 decodes: no DT penalty — DT from Costas scan is not meaningful for timing quality
-  float score = isL2 ? float(snr) : float(snr) - 8.0f * qAbs(dt);
-
   QString entry = call + " " + QString::number(freq) + " " +
-                  QString::number(snr) + " " +
-                  QString::number(double(dt), 'f', 2);
+                  QString::number(snr);
 
-  // Inserimento ordinato per score decrescente
+  // Inserimento ordinato per SNR decrescente
   int insertPos = m_callerQueue.size();
   for (int j = 0; j < m_callerQueue.size(); j++) {
     auto parts = m_callerQueue.at(j).split(' ');
-    int   eSnr = parts.size() >= 3 ? parts.at(2).toInt()   : -99;
-    float eDt  = parts.size() >= 4 ? parts.at(3).toFloat() : 0.0f;
-    float eScore = float(eSnr) - 8.0f * qAbs(eDt);
-    if (score > eScore) { insertPos = j; break; }
+    int eSnr = parts.size() >= 3 ? parts.at(2).toInt() : -99;
+    if (snr > eSnr) { insertPos = j; break; }
   }
   m_callerQueue.insert(insertPos, entry);
   refreshCallerQueueDisplay();
@@ -10844,15 +10568,11 @@ void MainWindow::refreshCallerQueueDisplay ()
     auto parts = entry.split(' ');
     if (parts.size() < 2) continue;
     n++;
-    int   snr = parts.size() >= 3 ? parts.at(2).toInt()   : -99;
-    float dt  = parts.size() >= 4 ? parts.at(3).toFloat() : 0.0f;
+    int snr = parts.size() >= 3 ? parts.at(2).toInt() : -99;
     QString snrStr = (snr > -99) ? QString("%1%2dB").arg(snr >= 0 ? "+" : "").arg(snr, 3) : "  ?  ";
-    QString dtStr  = QString("%1%2s").arg(dt >= 0 ? "+" : "").arg(dt, 4, 'f', 1);
-    // Colora in arancione i caller con DT borderline (0.7..1.0s)
-    QColor bg = (qAbs(dt) > 0.7f) ? QColor("#5a3a00") : QColor("#2a5a2a");
-    QString line = QString("  #%1  %2  %3Hz  %4  DT%5")
-        .arg(n, 2).arg(parts.at(0), -12).arg(parts.at(1), 5).arg(snrStr).arg(dtStr);
-    ui->callerQueueTextBrowser->insertText(line, bg, QColor("#ffffff"));
+    QString line = QString("  #%1  %2  %3Hz  %4")
+        .arg(n, 2).arg(parts.at(0), -12).arg(parts.at(1), 5).arg(snrStr);
+    ui->callerQueueTextBrowser->insertText(line, QColor("#2a5a2a"), QColor("#ffffff"));
   }
   if (m_callerQueue.isEmpty()) {
     ui->callerQueueTextBrowser->insertText(
@@ -11001,8 +10721,7 @@ void MainWindow::dxpedFillEmptySlots()
       auto  parts = pool[j].split(' ');
       int   freq  = parts.size() > 1 ? parts[1].toInt()   : 0;
       float snr   = parts.size() > 2 ? parts[2].toFloat() : -20.0f;
-      float dt    = parts.size() > 3 ? parts[3].toFloat() : 0.0f;
-      float score = snr - 8.0f * qAbs(dt);
+      float score = snr;
 
       // Penalità soft se troppo vicino a freq già selezionate (< 150 Hz)
       for (int sf : selFreqs)
@@ -11205,7 +10924,7 @@ void MainWindow::dxpedAutoSequence (DecodedText const& msg)
   }
 
   // Caller non in nessuno slot: aggiungi alla coda
-  enqueueCaller (callerCall, msg.frequencyOffset (), msg.snr (), msg.dt ());
+  enqueueCaller (callerCall, msg.frequencyOffset (), msg.snr ());
 }
 
 void MainWindow::dxpedLogQSO (int slot)
@@ -12328,7 +12047,6 @@ void MainWindow::on_actionFT2_triggered()
   });
   m_mode="FT2";
   m_TRperiod=3.75;
-  m_dtSamples.clear();  // discard stale DT samples from previous mode
   bool bVHF=m_config.enable_VHF_features();
   m_bFast9=false;
   m_bFastMode=false;
@@ -12371,11 +12089,6 @@ void MainWindow::on_actionFT2_triggered()
   ui->txb6->setEnabled(true);
   ui->txFirstCheckBox->setEnabled(true);
   ui->cbAutoSeq->setEnabled(true);
-  // Decodium FT2: faster NTP refresh and tighter RTT filter
-  if (m_ntpClient) {
-    m_ntpClient->setRefreshInterval(60000);  // 60s for FT2 (was 30s — too frequent destabilizes DT)
-    m_ntpClient->setMaxRtt(100.0);           // default RTT filter (50ms rejected too many servers)
-  }
   initExternalCtrl();
   statusChanged();
 }
@@ -12389,7 +12102,6 @@ void MainWindow::on_actionFT4_triggered()
     ui->cbHoldTxFreq->setChecked (HoldTxFreqStatus);
   });
   m_mode="FT4";
-  m_dtSamples.clear();  // discard stale DT samples from previous mode
   if(m_specOp==SpecOp::HOUND) {
     m_config.setSpecial_None();
     m_specOp=m_config.special_op_id();
@@ -12451,7 +12163,6 @@ void MainWindow::on_actionFT8_triggered()
     ui->cbHoldTxFreq->setChecked (HoldTxFreqStatus);
   });
   m_mode="FT8";
-  m_dtSamples.clear();  // discard stale DT samples from previous mode
   bool bVHF=m_config.enable_VHF_features();
   m_bFast9=false;
   m_bFastMode=false;
@@ -15289,7 +15000,7 @@ void MainWindow::WSPR_scheduling ()
     int n=t.right (1).toInt (&ok);
     if (!ok || 0 == n) return;
 
-    qint64 ms = (preciseCurrentMSecsSinceEpoch() - qRound64(m_ntpOffset_ms)) % 86400000;
+    qint64 ms = preciseCurrentMSecsSinceEpoch() % 86400000;
     if(ms < 0) ms += 86400000;  // handle negative modulo
     int nsec=ms/1000;
     int ntr=m_TRperiod;
@@ -17169,18 +16880,11 @@ void MainWindow::asyncDecodeDone()
           m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
           false, false, 0.0, false, -99, "", m_muted);
 
-      // NOTE: L2 decodes have DT from Costas sync scan, NOT from clock offset.
-      // Do NOT feed DT samples to applyDtFeedback — they would corrupt the
-      // timing feedback loop. The standard decoder provides real DT samples.
-
       postDecode(true, decodedtext);
       write_all("Rx", message);
 
       // Auto-sequence — works normally with L2 decodes
-      // Set flag so enqueueCaller() knows this is an L2 decode (skip DT penalty)
-      m_bLastDecodeFromL2 = true;
       auto_sequence(decodedtext, ui->sbFtol->value(), ui->sbFtol->value());
-      m_bLastDecodeFromL2 = false;
     }
 }
 
@@ -19845,35 +19549,5 @@ void MainWindow::setIncrLogCount()
   }
 }
 
-void MainWindow::onNtpOffsetUpdated(double offsetMs)
-{
-  m_ntpOffset_ms = offsetMs;
-  int rounded = qRound(offsetMs);
-  int srvCount = m_ntpClient ? m_ntpClient->lastServerCount() : 0;
-  QString text = QString("NTP:%1%2ms(%3srv)")
-    .arg(rounded > 0 ? "+" : "")
-    .arg(rounded)
-    .arg(srvCount);
-  ntp_status_label.setText(text);
-  if(qAbs(offsetMs) < 20)
-    ntp_status_label.setStyleSheet("QLabel{color:#000;background:#00ff00}");
-  else if(qAbs(offsetMs) < 100)
-    ntp_status_label.setStyleSheet("QLabel{color:#000;background:#ffff00}");
-  else
-    ntp_status_label.setStyleSheet("QLabel{color:#fff;background:#ff0000}");
-
-  if (m_timeSyncPanel) m_timeSyncPanel->updateNtpOffset(offsetMs, srvCount);
-}
-
-void MainWindow::onNtpSyncStatusChanged(bool synced, QString const& statusText)
-{
-  if(!synced) {
-    ntp_status_label.setText("NTP: no sync");
-    ntp_status_label.setStyleSheet("QLabel{color:#888;background:#333}");
-  }
-  ntp_status_label.setToolTip(statusText);
-
-  if (m_timeSyncPanel) m_timeSyncPanel->updateNtpSyncStatus(synced, statusText);
-}
 
 

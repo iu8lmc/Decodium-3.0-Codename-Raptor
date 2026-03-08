@@ -52,10 +52,8 @@
 #include "widgets/QSYMessageCreator.h"
 #include "widgets/QSYMessage.h"
 #include "widgets/qsymonitor.h"
-#include "widgets/TimeSyncPanel.h"
 #include "MessageBox.hpp"
 #include "Network/NetworkAccessManager.hpp"
-#include "Network/NtpClient.hpp"
 
 #define NUM_JT4_SYMBOLS 206                //(72+31)*2, embedded sync
 #define NUM_JT65_SYMBOLS 126               //63 data + 63 sync
@@ -497,8 +495,6 @@ private slots:
   void on_leEchoMessage_textChanged();
   void downloadQsoComplete(bool result);  //avt 10/2/25
   void downloadQslComplete(bool result);  //avt 10/2/25
-  void onNtpOffsetUpdated(double offsetMs);
-  void onNtpSyncStatusChanged(bool synced, QString const& statusText);
 
 private:
   Q_SIGNAL void initializeAudioOutputStream (QAudioDeviceInfo,
@@ -571,7 +567,6 @@ private:
   QScopedPointer<QSYMessageCreator> m_QSYMessageCreatorWidget;
   QScopedPointer<QSYMessage> m_QSYMessageWidget;
   QScopedPointer<QSYMonitor> m_qsymonitorWidget;
-  QScopedPointer<TimeSyncPanel> m_timeSyncPanel;
   QScopedPointer<HelpTextWindow> m_shortcuts;
   QScopedPointer<HelpTextWindow> m_prefixes;
   QScopedPointer<HelpTextWindow> m_mouseCmnds;
@@ -791,7 +786,7 @@ private:
   bool    m_bCallingCQ;
   bool    m_autoCQ;
   QQueue<QString> m_callerQueue;
-  void enqueueCaller (QString const& call, int freq, int snr = -99, float dt = 0.0f, bool fromL2 = false);
+  void enqueueCaller (QString const& call, int freq, int snr = -99);
   void processNextInQueue ();
   void refreshCallerQueueDisplay ();
 
@@ -811,7 +806,6 @@ private:
       : call{c}, freq{f}, txStep{t}, missedPeriods{m}, snr{s}, dt{d} {}
   };
   bool      m_bDXpedMode      {false};
-  bool      m_bLastDecodeFromL2 {false};
   int       m_dxpedCQcounter  {0};   // piggyback CQ ogni N periodi TX
   DXpedSlot m_dxpedSlots[3];
   void dxpedFillEmptySlots ();
@@ -888,7 +882,6 @@ private:
   QLabel auto_tx_label;
   QLabel band_hopping_label;
   QLabel ndecodes_label;
-  QLabel dt_correction_label;
   QProgressBar progressBar;
   QLabel watchdog_label;
 
@@ -1085,28 +1078,6 @@ private:
   bool m_externalCtrl;         //avt  10/1/25
   bool m_autoButtonState;     //avt 10/2/25
 
-  //---- DT Display (no correction applied) ----
-  QVector<double> m_dtSamples;        // DT values collected in current period
-  double m_dtCorrection_ms {0.0};     // accumulated correction (display only)
-  double m_dtSmoothFactor {0.3};      // EMA smoothing factor
-  int m_dtMinSamples {3};             // minimum decodes before computing
-  bool m_dtFeedbackEnabled {true};    // enables DT collection & display
-  int m_dtLastSampleCount {0};        // sample count for display
-
-  qint64 m_decodeStartMs {0};         // timestamp when decode was triggered
-  double m_lastDecodeLatencyMs {0.0}; // last decode cycle latency
-  double m_avgDtValue {0.0};          // EMA of DT values across periods
-  int m_totalDecodesForDt {0};        // total decodes used for DT calculation
-  int m_ntpDtDivergenceCount {0};     // consecutive NTP/DT divergence periods
-
-  // NTP Time Synchronization
-  NtpClient *m_ntpClient {nullptr};
-  double m_ntpOffset_ms {0.0};
-  bool m_ntpEnabled {false};
-  QString m_ntpCustomServer;
-  QCheckBox ntp_checkbox;
-  QLineEdit ntp_server_edit;
-  QLabel ntp_status_label;
 
   //---------------------------------------------------- private functions
   void readSettings();
@@ -1169,7 +1140,6 @@ private:
   void rm_tb4(QString houndCall);
   void read_wav_file (QString const& fname);
   void decodeDone ();
-  void applyDtFeedback ();
   bool subProcessFailed (QProcess *, int exit_code, QProcess::ExitStatus);
   void subProcessError (QProcess *, QProcess::ProcessError);
   void statusUpdate () const;
