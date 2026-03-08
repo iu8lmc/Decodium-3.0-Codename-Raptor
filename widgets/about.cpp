@@ -1,4 +1,4 @@
-﻿#include "about.h"
+#include "about.h"
 
 #include <QCoreApplication>
 #include <QDateTime>
@@ -15,11 +15,10 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
   ui->setupUi(this);
 
   ui->labelTxt->setText(
-    // Decodium FT2 logo on top
     "<p align=\"center\"><img src=\":/ft2logo.png\" width=\"180\" height=\"180\" /></p>"
-    "<h2 align=\"center\">Decodium v3.0 FT2</h2>"
-    "<h3 align=\"center\">Codename: <i>Raptor</i></h3>"
-    "<p align=\"center\" style=\"font-size:14px;\"><b>Build 2603080007</b></p>"
+    "<h2 align=\"center\">Decodium 3.0 ASYMX</h2>"
+    "<h3 align=\"center\"><i>Official Release</i></h3>"
+    "<p align=\"center\" style=\"font-size:14px;\"><b>Build 2603080008</b></p>"
     "<p align=\"center\">"
     "<a href=\"https://buymeacoffee.com/iu8lmc\" style=\""
     "background-color:#FFDD00;color:#000000;font-family:Arial,sans-serif;"
@@ -28,10 +27,10 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
     "&#9749; Buy me a coffee</a></p>"
     "<hr>"
     "<p align=\"center\"><b>Mod by IU8LMC</b> — <a href=\"https://www.qrz.com/db/IU8LMC\">qrz.com/db/IU8LMC</a></p>"
-    "<p>Decodium v3.0 FT2 <i>\"Raptor\"</i> is an optimized weak-signal digital "
-    "communication client focused exclusively on the FT2 mode (3.75s period, 4-GFSK). "
-    "Enhanced decoder sensitivity, extended frequency range, and real-time "
-    "NTP/DT feedback for maximum decoding performance.</p>"
+    "<p>Decodium 3.0 ASYMX is an asynchronous weak-signal digital "
+    "communication client focused on the FT2 mode (3.75s period, 4-GFSK). "
+    "Async TX without period synchronization, enhanced decoder sensitivity, "
+    "extended frequency range for maximum decoding performance.</p>"
     "<hr>"
     "<h3 align=\"center\">Built-in Alert Engine (replaces JTAlert)</h3>"
     "<p><b>12 Audio Alerts:</b> CQ, MyCall, DXCC, DXCCOnBand, Grid, GridOnBand, "
@@ -67,7 +66,7 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
     "<a href=\"https://github.com/jp1lrt/ChronoGPS\">github.com/jp1lrt/ChronoGPS</a><br>"
     "MIT License &copy; 2026 JP1LRT</p>"
     "<p align=\"center\"><img src=\":/icon_128x128.png\" /></p>"
-    "<p>Decodium v3.0 FT2 is licensed under the terms of Version 3 "
+    "<p>Decodium 3.0 ASYMX is licensed under the terms of Version 3 "
     "of the <a href=\"https://www.gnu.org/licenses/gpl-3.0.txt\">GNU General Public License (GPL)</a></p>");
 }
 
