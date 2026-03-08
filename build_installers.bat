@@ -6,7 +6,7 @@ set ISCC="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 set PFX=C:\Users\IU8LMC\decodium_codesign.pfx
 set PASS=Dec2026sign
 set SRC=C:\Users\IU8LMC\Downloads\WSJTX_3.0_Source
-set BUILD=2603080006
+set BUILD=2603080007
 
 echo ============================================
 echo  Decodium v3.0 Raptor %BUILD% - Build Installers

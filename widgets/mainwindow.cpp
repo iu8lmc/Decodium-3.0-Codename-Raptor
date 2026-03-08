@@ -8320,9 +8320,17 @@ void MainWindow::guiUpdate()
       setXIT (ui->TxFreqSpinBox->value ());
       m_config.transceiver_ptt (true); //Assert the PTT
       m_tx_when_ready = true;
+
+      // Async FT2: schedule TX stop after waveform duration (~2.5s + margin)
+      if (asyncBypass && !m_tune) {
+        QTimer::singleShot(2800, this, [this]() {
+          if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && g_iptt == 1) {
+            m_btxok = false;  // triggers stopTx() via m_btxok0 transition in guiUpdate
+          }
+        });
+      }
     }
 //    if(!m_bTxTime and !m_tune and m_mode!="FT4") m_btxok=false;       //Time to stop transmitting
-    // Async FT2: don't kill TX based on period — Modulator stops when waveform is done
     if(!m_bTxTime and !m_tune and !asyncBypass) m_btxok=false;
   }
 
@@ -8771,7 +8779,6 @@ void MainWindow::guiUpdate()
             qDebug () << "AutoCQ: Tx" << m_ntx << "sent" << MAX_TX_RETRIES << "times without response, returning to CQ";
             m_txRetryCount = 0;
             m_lastNtx = -1;
-            m_cqRetryCount = 0;
             // Reset to CQ without disabling TX (set CALLING so clearDX skips auto_tx_mode(false))
             QTimer::singleShot (0, this, [this] () {
               m_QSOProgress = CALLING;
@@ -8783,15 +8790,6 @@ void MainWindow::guiUpdate()
           m_lastNtx = m_ntx;
         }
       } else if (m_ntx == 6) {
-        // Rule 2: CQ (Tx6) repeated 10 times without response → toggle Tx Even/1st
-        ++m_cqRetryCount;
-        if (m_cqRetryCount >= MAX_CQ_RETRIES && ui->cbAutoTogglePeriod->isChecked ()) {
-          m_cqRetryCount = 0;
-          m_txFirst = !m_txFirst;
-          ui->txFirstCheckBox->setChecked (m_txFirst);
-          qDebug () << "AutoCQ: CQ sent" << MAX_CQ_RETRIES << "times without response, toggling Tx period to"
-                    << (m_txFirst ? "1st" : "Even");
-        }
         m_txRetryCount = 0;
         m_lastNtx = 6;
       } else {
@@ -8833,10 +8831,6 @@ void MainWindow::guiUpdate()
 
   if(!m_btxok && m_btxok0 && g_iptt==1) {
     stopTx();
-    if ("1" == m_env.value ("WSJT_TX_BOTH", "0")) {
-      m_txFirst = !m_txFirst;
-      ui->txFirstCheckBox->setChecked (m_txFirst);
-    }
   }
 
   if(m_startAnother) {
@@ -9916,7 +9910,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
              || "RR73" == word_3
              || ("R" == word_3 && m_QSOProgress != REPORT))) {
           if((m_mode=="FT2" or m_mode=="FT4") and "RR73" == word_3) m_dateTimeRcvdRR73=QDateTime::currentDateTimeUtc();
-          m_txRetryCount = 0; m_lastNtx = -1; m_cqRetryCount = 0;  // Reset Tx retry counter on valid response
+          m_txRetryCount = 0; m_lastNtx = -1;  // Reset Tx retry counter on valid response
           m_bTUmsg=false;
           m_nextCall="";   //### Temporary: disable use of "TU;" message
           if(SpecOp::RTTY == m_specOp and m_nextCall!="") {
@@ -9990,7 +9984,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                    (m_mode=="MSK144" or m_mode=="FT8" or m_mode=="FT2" or m_mode=="FT4" || "Q65" == m_mode)))
                   && word_3.startsWith ('R')) {
           m_ntx=4;
-          m_txRetryCount = 0; m_lastNtx = -1; m_cqRetryCount = 0;  // Reset Tx retry counter on R+rpt response
+          m_txRetryCount = 0; m_lastNtx = -1;  // Reset Tx retry counter on R+rpt response
           m_QSOProgress = ROGERS;
           if(SpecOp::RTTY == m_specOp) {
             int n=t.size();
@@ -10196,7 +10190,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
 void MainWindow::setTxMsg(int n)
 {
   m_ntx=n;
-  if (n != m_lastNtx) { m_txRetryCount = 0; m_lastNtx = -1; m_cqRetryCount = 0; }  // Reset Tx retry counter when Tx changes
+  if (n != m_lastNtx) { m_txRetryCount = 0; m_lastNtx = -1; }  // Reset Tx retry counter when Tx changes
   if(n==1) ui->txrb1->setChecked(true);
   if(n==2) ui->txrb2->setChecked(true);
   if(n==3) ui->txrb3->setChecked(true);
@@ -10647,7 +10641,7 @@ void MainWindow::clearDX ()
   m_qsoStart.clear ();
   m_qsoStop.clear ();
   m_inQSOwith.clear();
-  m_txRetryCount = 0; m_lastNtx = -1; m_cqRetryCount = 0;  // Reset Tx retry counter on QSO clear
+  m_txRetryCount = 0; m_lastNtx = -1;  // Reset Tx retry counter on QSO clear
   genStdMsgs (QString {});
   if ((m_mode=="FT8" or m_mode=="FT2") and SpecOp::HOUND == m_specOp) {
     m_ntx=1;
