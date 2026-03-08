@@ -2121,10 +2121,26 @@ When not checked you can view the calibration results.</string>
                     <item>
                      <widget class="QCheckBox" name="cbAsyncDecode">
                       <property name="toolTip">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Decoder asincrono FT2: decodifica continua a finestra scorrevole (~1.5s). I segnali vengono decodificati indipendentemente dai bordi periodo.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Level 2 Sync-Triggered decoder: scansione Costas continua ogni 750ms, decode solo su sync confermato. DT eliminato dalla pipeline di decodifica.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                       <property name="text">
-                       <string>Async</string>
+                       <string>Async L2</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="labelAsyncL2Active">
+                      <property name="text">
+                       <string>L2</string>
+                      </property>
+                      <property name="styleSheet">
+                       <string>color: #00e676; font-weight: bold; font-size: 11px;</string>
+                      </property>
+                      <property name="visible">
+                       <bool>false</bool>
+                      </property>
+                      <property name="toolTip">
+                       <string>Sync-Triggered Decoder attivo: Phase 1 Costas scan + Phase 2 targeted LDPC</string>
                       </property>
                      </widget>
                     </item>
