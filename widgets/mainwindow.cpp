@@ -19686,38 +19686,34 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
       .arg(call)
       .arg(mode);
 
-  // Use QTcpSocket on main thread with async signals (waitFor* unreliable on Windows without event loop)
   auto *sock = new QTcpSocket(this);
-  auto *state = new int(0);  // 0=connecting, 1=login sent, 2=spot sent
+  QPointer<QTcpSocket> guard(sock);
 
   connect(sock, &QTcpSocket::connected, this, [=]() {
-    // Connected — wait a moment for banner then send login
     QTimer::singleShot(1500, this, [=]() {
-      sock->readAll();  // consume welcome banner
-      sock->write((myCall + "\r\n").toLatin1());
-      *state = 1;
-      // Wait for login response then send spot
+      if (!guard) return;
+      guard->readAll();
+      guard->write((myCall + "\r\n").toLatin1());
       QTimer::singleShot(2000, this, [=]() {
-        sock->readAll();  // consume login response
-        sock->write((spotCmd + "\r\n").toLatin1());
-        *state = 2;
-        // Wait for spot confirmation then disconnect
+        if (!guard) return;
+        guard->readAll();
+        guard->write((spotCmd + "\r\n").toLatin1());
         QTimer::singleShot(2000, this, [=]() {
-          sock->write("bye\r\n");
+          if (!guard) return;
+          guard->write("bye\r\n");
           QTimer::singleShot(1000, this, [=]() {
-            sock->disconnectFromHost();
-            sock->deleteLater();
-            delete state;
+            if (!guard) return;
+            guard->disconnectFromHost();
+            guard->deleteLater();
           });
         });
       });
     });
   });
 
-  connect(sock, &QTcpSocket::errorOccurred, this, [=](QAbstractSocket::SocketError err) {
-    Q_UNUSED(err);
-    sock->deleteLater();
-    delete state;
+  connect(sock, &QAbstractSocket::errorOccurred,
+          this, [=](QAbstractSocket::SocketError) {
+    if (guard) guard->deleteLater();
   });
 
   sock->connectToHost(clusterHost, clusterPort);
