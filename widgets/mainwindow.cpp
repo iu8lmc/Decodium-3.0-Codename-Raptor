@@ -589,11 +589,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->decodedTextBrowser->set_configuration (&m_config, true);
   ui->decodedTextBrowser2->set_configuration (&m_config);
 
-  // ASYMX: single unified Band Activity — hide right panel, expand left to full width
-  ui->rh_decodes_widget->hide();
-  ui->decodes_splitter->setSizes({1, 0});
-  ui->decodes_splitter->setHandleWidth(0);
-
   // ASYMX: hide period 1/2 selector — async mode has no period concept
   ui->txFirstCheckBox->hide();
 
@@ -2264,9 +2259,6 @@ void MainWindow::readSettings()
   ui->actionAuto_Clear_Avg->setChecked (m_settings->value ("AutoClearAvg", false).toBool());
   ui->actionDisable_clicks_on_waterfall->setChecked (m_settings->value ("DisableClicksOnWaterfall", false).toBool());
   ui->decodes_splitter->restoreState(m_settings->value("SplitterState").toByteArray());
-  // ASYMX: override saved splitter state — force full-width Band Activity
-  ui->rh_decodes_widget->hide();
-  ui->decodes_splitter->setSizes({1, 0});
   ui->sbNB->setValue(m_settings->value("Blanker",0).toInt());
   ui->sbEchoAvg->setValue(m_settings->value("EchoAvg",10).toInt());
   {
