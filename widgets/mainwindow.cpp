@@ -6135,13 +6135,10 @@ void::MainWindow::fast_decode_done()
     if(rawMsg.length()>80) rawMsg=rawMsg.left (80);
     if(narg[13]/8==narg[12]) rawMsg=rawMsg.trimmed().replace("<...>",m_calls);
 
-    // ASYMX: split packed lines and deduplicate
-    auto lines = splitPackedDecodes(rawMsg);
-    for (auto const& message : lines) {
+    QString message = rawMsg;
 
 //Left (Band activity) window
     DecodedText decodedtext {QString(message).replace (QChar::LineFeed, "")};
-    if (isDuplicateDecode(message)) continue;  // 5s dedup, best SNR
     if(!m_bFastDone) {
       ui->decodedTextBrowser->displayDecodedText (decodedtext, m_config.my_callsign (), m_mode, m_config.DXCC (),
          m_logBook, m_currentBandPeriod, m_config.ppfx (), false, false, 0.0, false, -99, "", m_muted);
@@ -6165,7 +6162,6 @@ void::MainWindow::fast_decode_done()
       if (stdMsg) pskPost (decodedtext);
     }
     if (tmax >= 0.0) auto_sequence (decodedtext, ui->sbFtol->value (), ui->sbFtol->value ());
-    } // end splitPackedDecodes loop
   }
   m_startAnother=m_loopall;
   m_nPick=0;
@@ -7410,6 +7406,10 @@ void MainWindow::readFromStdout()                             //readFromStdout
             }
           }
 
+          // ASYMX: deduplicate FT2 decodes (async + normal paths share the same display)
+          if (m_mode == "FT2" && isDuplicateDecode(decodedtext1.string())) {
+            // skip — already displayed by async or normal path within 5s window
+          } else
           // display country names for JT65 and JT9 like for FT8
           if ((m_mode == "JT65" or m_mode == "JT9" or m_mode == "JT4") && m_config.DXCC()) {
               DecodedText decodedtextJT {((QString::fromUtf8(line_read.left(44).constData())) + (QString::fromUtf8(line_read.mid(62, 2).constData())))};
@@ -16971,26 +16971,26 @@ void MainWindow::asyncDecodeDone()
       m_asyncMsg[i][0] = 0;
       if (raw.trimmed().isEmpty()) continue;
 
-      // Split packed lines and prepend timestamp
-      auto lines = splitPackedDecodes(raw);
-      for (auto const& line : lines) {
-        QString message = hhmmss + line;
+      // Async Fortran output: "snr(i4) dt(f5.1) freq(i5) ' ~ ' msg(a37) annot(a2)"
+      // Normal FT2 jt9 output: "HHMMSS(i6.6) snr(i4) dt(f5.1) freq(i5) ' + ' msg(a37) annot(a2)"
+      // Prepend timestamp to match normal format; replace " ~ " with " + " for consistency
+      QString message = hhmmss + raw;
+      message.replace(" ~ ", " + ");  // match FT2 marker used by jt9
 
-        // Unified dedup: 5s window, best SNR wins
-        if (isDuplicateDecode(message)) continue;
+      // Unified dedup: 5s window, best SNR wins
+      if (isDuplicateDecode(message)) continue;
 
-        // Display in left (Band Activity) window
-        DecodedText decodedtext {QString(message).replace(QChar::LineFeed, "")};
-        ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
-            m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
-            false, false, 0.0, false, -99, "", m_muted);
+      // Display in left (Band Activity) window
+      DecodedText decodedtext {QString(message).replace(QChar::LineFeed, "")};
+      ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
+          m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
+          false, false, 0.0, false, -99, "", m_muted);
 
-        postDecode(true, decodedtext);
-        write_all("Rx", message);
+      postDecode(true, decodedtext);
+      write_all("Rx", message);
 
-        // Auto-sequence — works normally with L2 decodes
-        auto_sequence(decodedtext, ui->sbFtol->value(), ui->sbFtol->value());
-      }
+      // Auto-sequence — works normally with L2 decodes
+      auto_sequence(decodedtext, ui->sbFtol->value(), ui->sbFtol->value());
     }
 }
 
