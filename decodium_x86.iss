@@ -2,7 +2,7 @@
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
-#define MyBuildTag "2603080008"
+#define MyBuildTag "2603090009"
 #define DistDir "dist_32bit"
 
 [Setup]
@@ -43,8 +43,6 @@ Source: "{#DistDir}\rigctl-decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\rigctld-decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\rigctlcom-decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\udp_daemon.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#DistDir}\ChronoGPS.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#DistDir}\chronogps_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 ; DLLs
 Source: "{#DistDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
