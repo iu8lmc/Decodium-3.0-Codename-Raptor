@@ -13,6 +13,17 @@ echo  Decodium 3.0 ASYMX %BUILD% - Build Installers
 echo ============================================
 echo.
 
+echo === Step 0: Copy build output to dist ===
+if exist "%SRC%\build\decodium.exe" (
+    copy /Y "%SRC%\build\decodium.exe" "%SRC%\dist_64bit\decodium.exe"
+    echo   Copied decodium.exe to dist_64bit
+)
+if exist "%SRC%\build\jt9.exe" (
+    copy /Y "%SRC%\build\jt9.exe" "%SRC%\dist_64bit\jt9.exe"
+    echo   Copied jt9.exe to dist_64bit
+)
+echo.
+
 echo === Step 1: Signing x64 executables ===
 for %%f in (decodium.exe jt9.exe message_aggregator.exe wsprd.exe udp_daemon.exe rigctl-decodium.exe rigctld-decodium.exe rigctlcom-decodium.exe) do (
     if exist "%SRC%\dist_64bit\%%f" (
