@@ -8375,17 +8375,10 @@ void MainWindow::guiUpdate()
       m_config.transceiver_ptt (true); //Assert the PTT
       m_tx_when_ready = true;
 
-      // Async FT2: schedule TX stop after waveform duration (~2.5s + margin)
-      if (asyncBypass && !m_tune) {
-        QTimer::singleShot(2800, this, [this]() {
-          if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && g_iptt == 1) {
-            m_btxok = false;  // triggers stopTx() via m_btxok0 transition in guiUpdate
-          }
-        });
-      }
+      // FT2 TX stop handled by period boundary (m_bTxTime becomes false at end of TX window)
     }
 //    if(!m_bTxTime and !m_tune and m_mode!="FT4") m_btxok=false;       //Time to stop transmitting
-    if(!m_bTxTime and !m_tune and !asyncBypass) m_btxok=false;
+    if(!m_bTxTime and !m_tune) m_btxok=false;  // stop TX at end of TX window (async included)
   }
 
   if((m_mode=="WSPR" or m_mode=="FST4W") and
