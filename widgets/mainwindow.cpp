@@ -19681,72 +19681,45 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
   QString myCall = m_config.my_callsign();
   double freqKHz = dial_freq / 1e3;
 
-  // Build spot command: "DX <freq_kHz> <call> <comment>"
   QString spotCmd = QString("DX %1 %2 73 Tnx %3")
       .arg(freqKHz, 0, 'f', 1)
       .arg(call)
       .arg(mode);
 
-  debugToFile("DxSpot       connecting to " + clusterHost + ":" + QString::number(clusterPort));
-  debugToFile("DxSpot       cmd='" + spotCmd + "'");
+  // Use QTcpSocket on main thread with async signals (waitFor* unreliable on Windows without event loop)
+  auto *sock = new QTcpSocket(this);
+  auto *state = new int(0);  // 0=connecting, 1=login sent, 2=spot sent
 
-  // Run in background to avoid blocking the UI
-  QtConcurrent::run([clusterHost, clusterPort, myCall, spotCmd, this]() {
-    QTcpSocket sock;
-    sock.connectToHost(clusterHost, clusterPort);
-    if (!sock.waitForConnected(10000)) {
-      QMetaObject::invokeMethod(this, [this]() {
-        debugToFile("DxSpot       FAILED: connection timeout");
-      }, Qt::QueuedConnection);
-      return;
-    }
-
-    // Telnet cluster: read all prompts, send login, read response, send spot
-    // Some clusters send multiple banners before the login prompt
-    auto readAll = [&sock]() -> QByteArray {
-      QByteArray data;
-      for (int i = 0; i < 5; i++) {
-        if (!sock.waitForReadyRead(2000) && data.size() > 0) break;
-        data += sock.readAll();
-      }
-      return data;
-    };
-
-    // Read welcome banner
-    QByteArray welcome = readAll();
-
-    // Send callsign login
-    sock.write((myCall + "\r\n").toLatin1());
-    sock.waitForBytesWritten(3000);
-
-    // Read login response (may have multiple lines, prompts like "dxspider >")
-    QByteArray loginResp = readAll();
-
-    // Send the DX spot
-    sock.write((spotCmd + "\r\n").toLatin1());
-    sock.waitForBytesWritten(3000);
-
-    // Read spot confirmation
-    QByteArray spotResp;
-    sock.waitForReadyRead(3000);
-    spotResp = sock.readAll();
-
-    // Disconnect
-    sock.write("bye\r\n");
-    sock.waitForBytesWritten(2000);
-    sock.waitForReadyRead(1000);
-    sock.disconnectFromHost();
-
-    // Log result back on main thread
-    QString welcomeStr = QString::fromLatin1(welcome).trimmed().left(200);
-    QString loginStr = QString::fromLatin1(loginResp).trimmed().left(200);
-    QString spotStr = QString::fromLatin1(spotResp).trimmed().left(200);
-    QMetaObject::invokeMethod(this, [this, welcomeStr, loginStr, spotStr]() {
-      debugToFile("DxSpot       welcome='" + welcomeStr + "'");
-      debugToFile("DxSpot       login='" + loginStr + "'");
-      debugToFile("DxSpot       spotResp='" + spotStr + "'");
-      debugToFile("DxSpot       DONE");
-    }, Qt::QueuedConnection);
+  connect(sock, &QTcpSocket::connected, this, [=]() {
+    // Connected — wait a moment for banner then send login
+    QTimer::singleShot(1500, this, [=]() {
+      sock->readAll();  // consume welcome banner
+      sock->write((myCall + "\r\n").toLatin1());
+      *state = 1;
+      // Wait for login response then send spot
+      QTimer::singleShot(2000, this, [=]() {
+        sock->readAll();  // consume login response
+        sock->write((spotCmd + "\r\n").toLatin1());
+        *state = 2;
+        // Wait for spot confirmation then disconnect
+        QTimer::singleShot(2000, this, [=]() {
+          sock->write("bye\r\n");
+          QTimer::singleShot(1000, this, [=]() {
+            sock->disconnectFromHost();
+            sock->deleteLater();
+            delete state;
+          });
+        });
+      });
+    });
   });
+
+  connect(sock, &QTcpSocket::errorOccurred, this, [=](QAbstractSocket::SocketError err) {
+    Q_UNUSED(err);
+    sock->deleteLater();
+    delete state;
+  });
+
+  sock->connectToHost(clusterHost, clusterPort);
 }
 
