@@ -8211,10 +8211,15 @@ void MainWindow::guiUpdate()
   }
   if(m_tune) m_bTxTime=true;                 //"Tune" takes precedence
 
-  // Async TX: bypass period timing — transmit immediately when armed
+  // Async TX: only arm TX if we are already inside the TX window (respect period boundaries)
   if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && m_bAsyncTxArmed && m_auto) {
-    m_bTxTime = true;
-    m_bAsyncTxArmed = false;  // one-shot
+    if (m_bTxTime) {
+      // Already in TX window — confirm armed, TX will proceed normally
+    } else {
+      // Not in TX window — wait for next TX window (don't force TX during RX)
+      // m_bAsyncTxArmed stays true, will be consumed when m_bTxTime becomes true
+    }
+    if (m_bTxTime) m_bAsyncTxArmed = false;  // consume only when in TX window
   }
 
   if(m_transmitting or m_auto or m_tune) {
@@ -8314,7 +8319,7 @@ void MainWindow::guiUpdate()
       ui->txrb5->setChecked(true);
     }
 
-    // Async FT2: no period gate (fTR < 0.75) — TX starts immediately
+    // Async FT2: relax fTR gate (allow TX start anywhere in TX window)
     bool asyncBypass = (m_mode == "FT2" && ui->cbAsyncDecode->isChecked());
     if(g_iptt==0 and ((m_bTxTime and (asyncBypass || fTR < 0.75) and txReady) or m_tune)) {
       //### Allow late starts
