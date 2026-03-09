@@ -9520,7 +9520,10 @@ void MainWindow::doubleClickOnCall(Qt::KeyboardModifiers modifiers)
   } else {
     cursor=ui->decodedTextBrowser2->textCursor();
   }
-  DecodedText message {cursor.block().text().trimmed().left(61).remove("TU; ")};
+  DecodedText message {cursor.block().text().trimmed().left(80).remove("TU; ")};
+  debugToFile("dblClick msg='" + message.string() + "' call='" + message.call()
+              + "' freq=" + QString::number(message.frequencyOffset())
+              + " time=" + QString::number(message.timeInSeconds()));
   if(m_mode=="FT8" && SpecOp::HOUND==m_specOp && (message.string().mid(4,2).contains("15") or message.string().mid(4,2).contains("45"))) return;  // ignore stations calling in the wrong time slot
 //  if(message.string().contains(";") && message.string().contains("<")) {
 //    QVector<qint32> Freq = {1840000,3573000,7074000,10136000,14074000,18100000,21074000,24915000,28074000,50313000,70154000,3575000,7047500,10140000,14080000,18104000,21140000,24919000,28180000,50318000};
@@ -9584,7 +9587,10 @@ void MainWindow::doubleClickOnCall(Qt::KeyboardModifiers modifiers)
           auto looked_up = m_logBook.countries()->lookup(dxCall);
           m_logBook.match(dxCall, m_mode, dxGrid, looked_up,
                           callB4, cB4, gB4, contB4, cqzB4, ituzB4, m_currentBand);
-          if (callB4) return;
+          if (callB4) {
+            debugToFile("dblClick BLOCKED by NoBefore filter, call=" + dxCall);
+            return;
+          }
         }
       }
       // Auto CQ: double-click enqueues instead of interrupting current QSO
@@ -9728,7 +9734,10 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
   auto auto_seq = ui->cbAutoSeq->isVisible () && (ui->cbAutoSeq->isEnabled () or is_externalCtrlMode()) && ui->cbAutoSeq->isChecked ();  //avt
   // basic mode sanity checks
   auto const& parts = message.clean_string ().split (' ', SkipEmptyParts);
-  if (parts.size () < 5) return;
+  if (parts.size () < 5) {
+    debugToFile("processMess  REJECTED parts.size()=" + QString::number(parts.size()) + " clean='" + message.clean_string() + "'");
+    return;
+  }
 
   auto const& mode = parts.at (4).left (1);
   if (("JT65" == m_mode && mode != "#")
@@ -9778,19 +9787,28 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
   ui->txFirstCheckBox->setChecked(m_txFirst);
 
   auto const& message_words = message.messageWords ();
-  if (message_words.size () < 3) return;
+  if (message_words.size () < 3) {
+    debugToFile("processMess  REJECTED message_words.size()=" + QString::number(message_words.size()));
+    return;
+  }
 
   QString hiscall;
   QString hisgrid;
   message.deCallAndGrid(/*out*/hiscall,hisgrid);
-  //debugToFile("             hiscall:'" + hiscall + "' hisgrid:'" + hisgrid + "'");     //avt 10/2/25
+  debugToFile("processMess  hiscall='" + hiscall + "' hisgrid='" + hisgrid + "'");
 
   // prevent starting a QSO with yourself
-  if (m_bDoubleClicked && hiscall==m_baseCall) return;
+  if (m_bDoubleClicked && hiscall==m_baseCall) {
+    debugToFile("processMess  REJECTED self-QSO call=" + hiscall);
+    return;
+  }
 
   // don't call CQ when double-clicking on the final "73" message of your QSO
   if (m_bDoubleClicked && message.clean_string().remove("<").remove(">").contains((" " + m_baseCall + " "))
-      && message.clean_string().remove("<").remove(">").contains(" " + hiscall + " ") && message.clean_string().mid(22).contains(" 73")) return;
+      && message.clean_string().remove("<").remove(">").contains(" " + hiscall + " ") && message.clean_string().mid(22).contains(" 73")) {
+    debugToFile("processMess  REJECTED 73 msg from own QSO");
+    return;
+  }
 
   if(message.clean_string ().contains(hiscall+"/R")) {
     hiscall+="/R";
