@@ -12197,7 +12197,7 @@ void MainWindow::on_actionFT2_triggered()
   ui->cbAutoSeq->setChecked(true);
   m_fastGraph->hide();
   m_wideGraph->show();
-  ui->rh_decodes_headings_label->setText("  UTC   dB   DT Freq    " + tr ("Message"));
+  ui->rh_decodes_headings_label->setText("UTC   dB   DT Freq    " + tr ("Message"));
   m_wideGraph->setPeriod(m_TRperiod,m_nsps);
   if (m_tci_audio && ui->bandComboBox->currentText()!="OOB")
     Q_EMIT m_config.transceiver_period(m_TRperiod);
@@ -12207,7 +12207,7 @@ void MainWindow::on_actionFT2_triggered()
   }
   ui->rh_decodes_title_label->setText(tr ("Rx Frequency"));
   ui->lh_decodes_title_label->setText(tr ("Band Activity"));
-  ui->lh_decodes_headings_label->setText( "  UTC   dB   DT Freq    " + tr ("Message"));
+  ui->lh_decodes_headings_label->setText("UTC   dB   DT Freq    " + tr ("Message"));
 //                         01234567890123456789012345678901234567
   displayWidgets(nWidgets("11101000010011100001000000011000100000"));
   ui->txrb2->setEnabled(true);
@@ -12260,7 +12260,7 @@ void MainWindow::on_actionFT4_triggered()
   ui->cbAutoSeq->setChecked(true);
   m_fastGraph->hide();
   m_wideGraph->show();
-  ui->rh_decodes_headings_label->setText("  UTC   dB   DT Freq    " + tr ("Message"));
+  ui->rh_decodes_headings_label->setText("UTC   dB   DT Freq    " + tr ("Message"));
   m_wideGraph->setPeriod(m_TRperiod,m_nsps);
   if (m_tci_audio && ui->bandComboBox->currentText()!="OOB")
     Q_EMIT m_config.transceiver_period(m_TRperiod);
@@ -12270,7 +12270,7 @@ void MainWindow::on_actionFT4_triggered()
   }
   ui->rh_decodes_title_label->setText(tr ("Rx Frequency"));
   ui->lh_decodes_title_label->setText(tr ("Band Activity"));
-  ui->lh_decodes_headings_label->setText( "  UTC   dB   DT Freq    " + tr ("Message"));
+  ui->lh_decodes_headings_label->setText("UTC   dB   DT Freq    " + tr ("Message"));
 //                         01234567890123456789012345678901234567
   displayWidgets(nWidgets("11101000010011100001000000011000100000"));
   ui->txrb2->setEnabled(true);
