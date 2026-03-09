@@ -743,6 +743,7 @@ void DisplayText::displayTransmittedText(QString text, QString modeTx, qint32 tx
     QString t1=" @  ";
     if(modeTx=="FT4") t1=" +  ";
     if(modeTx.contains("FT8")) t1=" ~  ";
+    if(modeTx=="FT2") t1=" +  ";
     if(modeTx=="JT4") t1=" $  ";
     if(modeTx=="Q65") t1=" :  ";
     if(modeTx=="JT65") t1=" #  ";
@@ -751,7 +752,7 @@ void DisplayText::displayTransmittedText(QString text, QString modeTx, qint32 tx
     QString t2;
     t2 = t2.asprintf("%4d",txFreq);
     QString t;
-    if(bFastMode or modeTx=="FT8" or modeTx=="FT4" or (TRperiod<60) or
+    if(bFastMode or modeTx=="FT8" or modeTx=="FT4" or modeTx=="FT2" or (TRperiod<60) or
        (modeTx=="Q65" and TRperiod==60)) {
       t = QDateTime::currentDateTimeUtc().toString("hhmmss") + \
         "  Tx      " + t2 + t1 + text;
