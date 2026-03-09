@@ -211,6 +211,8 @@ private slots:
   void on_cbDualCarrier_toggled (bool checked);
   void on_cbAsyncDecode_toggled (bool checked);
   void asyncDecodeDone ();
+  bool isDuplicateDecode (QString const& message);
+  QStringList splitPackedDecodes (QString const& raw);
   void on_ft8Button_clicked();
   void on_ft4Button_clicked();
   void on_ft2Button_clicked();
@@ -259,7 +261,7 @@ private slots:
   void on_actionDecode_remaining_files_in_directory_triggered();
   void on_actionDelete_all_wav_files_in_SaveDir_triggered();
   void on_actionOpen_log_directory_triggered ();
-  void on_actionLaunchChronoGPS_triggered ();
+
   void on_actionNone_triggered();
   void on_actionSave_all_triggered();
   void on_actionDefault_event_logging_triggered();
@@ -892,8 +894,10 @@ private:
   int m_asyncAudioPos {0};           // write position in ring buffer
   bool m_bAsyncDecoding {false};     // async decode in progress
   char m_asyncMsg[100][80];          // async decode results
-  QSet<QString> m_asyncDedupeSet;    // deduplication within sliding window
-  QDateTime m_asyncDedupeLastCleared;
+  // Unified dedup: key → (best SNR, timestamp) — 5s sliding window
+  struct DedupeEntry { int snr; qint64 msec; };
+  QMap<QString, DedupeEntry> m_decodeDedup;
+  qint64 m_decodeDedupLastPurge {0};
   bool m_bAsyncTxArmed {false};       // async TX ready after guard timer
   QTimer m_asyncTxGuardTimer;         // 300ms guard between RX decode and TX start
   QFutureWatcher<QString> m_saveWAVWatcher;

@@ -36,12 +36,6 @@
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
          <widget class="QLabel" name="lh_decodes_title_label">
-          <property name="maximumSize">
-           <size>
-            <width>500</width>
-            <height>16777215</height>
-           </size>
-          </property>
           <property name="font">
            <font>
             <pointsize>10</pointsize>
@@ -5148,7 +5142,6 @@ QPushButton[state=&quot;ok&quot;] {
     <addaction name="actionFrequency_calibration"/>
     <addaction name="actionSolve_FreqCal"/>
     <addaction name="separator"/>
-    <addaction name="actionLaunchChronoGPS"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuConfig"/>
@@ -5370,14 +5363,6 @@ QPushButton[state=&quot;ok&quot;] {
   <action name="actionOpen_log_directory">
    <property name="text">
     <string>Open log directory</string>
-   </property>
-  </action>
-  <action name="actionLaunchChronoGPS">
-   <property name="text">
-    <string>Launch ChronoGPS (GPS/NTP Sync)</string>
-   </property>
-   <property name="toolTip">
-    <string>Launch ChronoGPS time synchronization tool by JP1LRT</string>
    </property>
   </action>
   <action name="actionJT4">

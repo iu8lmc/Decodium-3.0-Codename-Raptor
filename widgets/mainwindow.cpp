@@ -589,11 +589,17 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->decodedTextBrowser->set_configuration (&m_config, true);
   ui->decodedTextBrowser2->set_configuration (&m_config);
 
-  // ASYMX: hide right decode panel — single unified Band Activity
+  // ASYMX: single unified Band Activity — hide right panel, expand left to full width
   ui->rh_decodes_widget->hide();
+  ui->decodes_splitter->setSizes({1, 0});
+  ui->decodes_splitter->setHandleWidth(0);
 
   // ASYMX: hide period 1/2 selector — async mode has no period concept
   ui->txFirstCheckBox->hide();
+
+  // ASYMX: Async L2 on by default, visible only in FT2
+  ui->cbAsyncDecode->setChecked(true);
+  ui->cbAsyncDecode->setVisible(false);  // will be shown by on_actionFT2_triggered
 
   m_optimizingProgress.setWindowModality (Qt::WindowModal);
   m_optimizingProgress.setAutoReset (false);
@@ -1283,16 +1289,9 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->rh_decodes_headings_label->setText(t);
   readSettings();            //Restore user's setup parameters
 
-  // Auto-launch ChronoGPS if enabled in settings
   {
     QSettings s;
     s.beginGroup("TimeSyncPanel");
-    if (s.value("chronoAutoLaunch", false).toBool()) {
-      QString chronoPath = QCoreApplication::applicationDirPath() + "/ChronoGPS.exe";
-      if (QFile::exists(chronoPath)) {
-        QProcess::startDetached(chronoPath, QStringList{});
-      }
-    }
     s.endGroup();
   }
 
@@ -1392,12 +1391,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
       asyncBuf[i] = m_asyncAudio[(start + i) % 90000];
     }
 
-    // Clear dedup set every 10 seconds
-    auto now = QDateTime::currentDateTimeUtc();
-    if (m_asyncDedupeLastCleared.isNull() || m_asyncDedupeLastCleared.secsTo(now) > 10) {
-      m_asyncDedupeSet.clear();
-      m_asyncDedupeLastCleared = now;
-    }
+    // Dedup purge is handled inside isDuplicateDecode()
 
     // Set up decode parameters
     int nqsoprogress = m_QSOProgress;
@@ -2270,6 +2264,9 @@ void MainWindow::readSettings()
   ui->actionAuto_Clear_Avg->setChecked (m_settings->value ("AutoClearAvg", false).toBool());
   ui->actionDisable_clicks_on_waterfall->setChecked (m_settings->value ("DisableClicksOnWaterfall", false).toBool());
   ui->decodes_splitter->restoreState(m_settings->value("SplitterState").toByteArray());
+  // ASYMX: override saved splitter state — force full-width Band Activity
+  ui->rh_decodes_widget->hide();
+  ui->decodes_splitter->setSizes({1, 0});
   ui->sbNB->setValue(m_settings->value("Blanker",0).toInt());
   ui->sbEchoAvg->setValue(m_settings->value("EchoAvg",10).toInt());
   {
@@ -5040,7 +5037,7 @@ void MainWindow::on_actionQuick_Start_Guide_to_WSJT_X_2_7_and_QMAP_triggered()
 
 void MainWindow::on_actionWSJT_X_improved_Home_Page_triggered()
 {
-  QDesktopServices::openUrl (QUrl {"https://wsjt-x-improved.sourceforge.io/"});
+  QDesktopServices::openUrl (QUrl {"http://ft2.it"});
 }
 
 void MainWindow::on_actionThe_additional_features_of_wsjt_x_improved_triggered()
@@ -6078,6 +6075,62 @@ void MainWindow::decode()                                       //decode()
   }
 }
 
+// ── ASYMX unified dedup: 5s window, best SNR wins ──────────────────────
+bool MainWindow::isDuplicateDecode(QString const& message)
+{
+  qint64 now = QDateTime::currentMSecsSinceEpoch();
+
+  // Purge expired entries every 2s
+  if (now - m_decodeDedupLastPurge > 2000) {
+    for (auto it = m_decodeDedup.begin(); it != m_decodeDedup.end(); ) {
+      if (now - it.value().msec > 5000) it = m_decodeDedup.erase(it);
+      else ++it;
+    }
+    m_decodeDedupLastPurge = now;
+  }
+
+  // Key = message text after freq field (skip timestamp+dB+DT+freq ≈ first 22 chars)
+  QString key = message.mid(22).trimmed();
+  if (key.isEmpty()) return false;
+
+  // Extract SNR from standard decode format (chars 7-9)
+  int snr = message.mid(7, 3).trimmed().toInt();
+
+  auto it = m_decodeDedup.find(key);
+  if (it != m_decodeDedup.end()) {
+    if (snr > it.value().snr) {
+      // Better SNR — update entry but still skip display (already shown)
+      it.value().snr = snr;
+      it.value().msec = now;
+    }
+    return true;  // duplicate
+  }
+
+  m_decodeDedup.insert(key, {snr, now});
+  return false;  // new decode
+}
+
+// ── ASYMX split packed lines (multiple decodes fused on one line) ──────
+QStringList MainWindow::splitPackedDecodes(QString const& raw)
+{
+  QStringList result;
+  // FT2 decode lines start with 6-char timestamp (HHMMSS) followed by space+digits
+  // If a line contains multiple timestamps, split at each one
+  // Standard decode: "HHMMSSsssdB  DT  Freq  Message"
+  // Pattern: 6 digits at positions that look like timestamps
+  static QRegularExpression re("(?=\\d{6}\\s+[+-]?\\d)");
+  if (raw.length() > 80) {
+    // Likely packed — try to split
+    auto parts = raw.split(re);
+    for (auto& p : parts) {
+      p = p.trimmed();
+      if (p.length() >= 20) result.append(p);
+    }
+  }
+  if (result.isEmpty()) result.append(raw);
+  return result;
+}
+
 void::MainWindow::fast_decode_done()
 {
   float t,tmax=-99.0;
@@ -6085,13 +6138,18 @@ void::MainWindow::fast_decode_done()
   dec_data.params.ndiskdat=false;
 //  if(m_msg[0][0]==0) m_bDecoded=false;
   for(int i=0; m_msg[i][0] && i<100; i++) {
-    QString message=QString::fromLatin1(m_msg[i]);
+    QString rawMsg=QString::fromLatin1(m_msg[i]);
     m_msg[i][0]=0;
-    if(message.length()>80) message=message.left (80);
-    if(narg[13]/8==narg[12]) message=message.trimmed().replace("<...>",m_calls);
+    if(rawMsg.length()>80) rawMsg=rawMsg.left (80);
+    if(narg[13]/8==narg[12]) rawMsg=rawMsg.trimmed().replace("<...>",m_calls);
+
+    // ASYMX: split packed lines and deduplicate
+    auto lines = splitPackedDecodes(rawMsg);
+    for (auto const& message : lines) {
 
 //Left (Band activity) window
-    DecodedText decodedtext {message.replace (QChar::LineFeed, "")};
+    DecodedText decodedtext {QString(message).replace (QChar::LineFeed, "")};
+    if (isDuplicateDecode(message)) continue;  // 5s dedup, best SNR
     if(!m_bFastDone) {
       ui->decodedTextBrowser->displayDecodedText (decodedtext, m_config.my_callsign (), m_mode, m_config.DXCC (),
          m_logBook, m_currentBandPeriod, m_config.ppfx (), false, false, 0.0, false, -99, "", m_muted);
@@ -6115,6 +6173,7 @@ void::MainWindow::fast_decode_done()
       if (stdMsg) pskPost (decodedtext);
     }
     if (tmax >= 0.0) auto_sequence (decodedtext, ui->sbFtol->value (), ui->sbFtol->value ());
+    } // end splitPackedDecodes loop
   }
   m_startAnother=m_loopall;
   m_nPick=0;
@@ -8946,7 +9005,37 @@ void MainWindow::guiUpdate()
     }
 
     progressBar.setVisible(true);
-    // turn the progressbar red during transmission
+
+    // ASYMX: async progress bar — shows TX/RX/IDLE state
+    if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
+      progressBar.setMaximum(100);
+      if (m_transmitting) {
+        // TX: red bar, fills based on waveform progress (~2.8s total)
+        progressBar.setStyleSheet(QString("QProgressBar {color: #ffffff; text-align: center; font-weight: bold;} QProgressBar::chunk {background-color: #ff0000;}"));
+        progressBar.setFormat("TX");
+        // Estimate TX progress from PTT assertion time
+        static qint64 txStartMs = 0;
+        if (!m_btxok0 && m_btxok) txStartMs = QDateTime::currentMSecsSinceEpoch();
+        if (txStartMs > 0) {
+          int elapsed = int(QDateTime::currentMSecsSinceEpoch() - txStartMs);
+          progressBar.setValue(qMin(100, elapsed * 100 / 2800));
+        } else {
+          progressBar.setValue(50);
+        }
+      } else if (m_monitoring) {
+        // RX: green bar, cycles with async decode timer (750ms)
+        progressBar.setStyleSheet(QString("QProgressBar {color: #ffffff; text-align: center; font-weight: bold;} QProgressBar::chunk {background-color: #00aa00;}"));
+        progressBar.setFormat("RX");
+        int cycle = int(QDateTime::currentMSecsSinceEpoch() % 750) * 100 / 750;
+        progressBar.setValue(cycle);
+      } else {
+        // IDLE
+        progressBar.setStyleSheet(QString("QProgressBar {color: #888888; text-align: center; font-weight: bold;} QProgressBar::chunk {background-color: #444444;}"));
+        progressBar.setFormat("IDLE");
+        progressBar.setValue(0);
+      }
+    } else {
+    // Legacy period-based progress bar
     if(m_config.progressBar_red()) {
       if(m_transmitting) {
         if (m_useDarkStyle) {
@@ -8968,7 +9057,7 @@ void MainWindow::guiUpdate()
           }
       } else {
           progressBar.setStyleSheet("");
-          progressBar.setFormat ("%v/%m");			  
+          progressBar.setFormat ("%v/%m");
       }
     } else {
       progressBar.setStyleSheet("");
@@ -8994,6 +9083,7 @@ void MainWindow::guiUpdate()
         progressBar.setValue(0);
       }
     }
+    } // end legacy progress bar
 
     astroUpdate ();
 
@@ -11894,11 +11984,18 @@ qint64 MainWindow::nWidgets(QString t)
 void MainWindow::displayWidgets(qint64 n)
 {
   /* See text file "displayWidgets.txt" for widget numbers */
+  // ASYMX: Async L2 visible only in FT2; auto-disable when leaving FT2
+  bool isFT2 = (m_mode == "FT2");
+  ui->cbAsyncDecode->setVisible(isFT2);
+  if (!isFT2 && ui->cbAsyncDecode->isChecked()) {
+    ui->cbAsyncDecode->setChecked(false);  // triggers on_cbAsyncDecode_toggled → stops timer
+  }
+
   qint64 j=qint64(1)<<(N_WIDGETS-1);
   bool b;
   for(int i=0; i<N_WIDGETS; i++) {
     b=(n&j) != 0;
-    if(i==0) ui->txFirstCheckBox->setVisible(b);
+    if(i==0) ui->txFirstCheckBox->setVisible(false);  // ASYMX: always hidden
     if(i==1) ui->TxFreqSpinBox->setVisible(b);
     if(i==2) ui->RxFreqSpinBox->setVisible(b);
     if(i==3) ui->sbFtol->setVisible(b);
@@ -12113,6 +12210,9 @@ void MainWindow::on_actionFT2_triggered()
   ui->txb6->setEnabled(true);
   ui->txFirstCheckBox->setEnabled(true);
   ui->cbAutoSeq->setEnabled(true);
+  // ASYMX: show Async L2 controls in FT2 mode
+  ui->cbAsyncDecode->setVisible(true);
+  ui->labelAsyncL2Active->setVisible(ui->cbAsyncDecode->isChecked());
   initExternalCtrl();
   statusChanged();
 }
@@ -13220,17 +13320,6 @@ void MainWindow::on_actionOpen_log_directory_triggered ()
   QDesktopServices::openUrl (QUrl::fromLocalFile (m_config.writeable_data_dir ().absolutePath ()));
 }
 
-void MainWindow::on_actionLaunchChronoGPS_triggered ()
-{
-  QString chronoPath = QCoreApplication::applicationDirPath () + "/ChronoGPS.exe";
-  if (QFile::exists (chronoPath)) {
-    QProcess::startDetached (chronoPath, QStringList{});
-  } else {
-    MessageBox::warning_message (this, tr ("ChronoGPS not found"),
-      tr ("ChronoGPS.exe was not found in the application directory.\n"
-          "Please ensure ChronoGPS.exe is in the same folder as Decodium."));
-  }
-}
 
 void MainWindow::on_bandComboBox_currentIndexChanged (int index)
 {
@@ -16869,8 +16958,7 @@ void MainWindow::on_cbAsyncDecode_toggled (bool checked)
 {
     if (checked && m_mode == "FT2") {
       m_asyncAudioPos = 0;
-      m_asyncDedupeSet.clear();
-      m_asyncDedupeLastCleared = QDateTime::currentDateTimeUtc();
+      m_decodeDedup.clear();
       m_asyncDecodeTimer.start(750);  // Level 2: sync-triggered every 750ms
       ui->labelAsyncL2Active->setVisible(true);
     } else {
@@ -16891,25 +16979,26 @@ void MainWindow::asyncDecodeDone()
       m_asyncMsg[i][0] = 0;
       if (raw.trimmed().isEmpty()) continue;
 
-      // Deduplication: skip if same message decoded within last 10s
-      QString msgKey = raw.mid(14).trimmed();  // message text after freq
-      if (m_asyncDedupeSet.contains(msgKey)) continue;
-      m_asyncDedupeSet.insert(msgKey);
+      // Split packed lines and prepend timestamp
+      auto lines = splitPackedDecodes(raw);
+      for (auto const& line : lines) {
+        QString message = hhmmss + line;
 
-      // Format: prepend UTC timestamp to match standard decode format
-      QString message = hhmmss + raw;
+        // Unified dedup: 5s window, best SNR wins
+        if (isDuplicateDecode(message)) continue;
 
-      // Display in left (Band Activity) window
-      DecodedText decodedtext {message.replace(QChar::LineFeed, "")};
-      ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
-          m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
-          false, false, 0.0, false, -99, "", m_muted);
+        // Display in left (Band Activity) window
+        DecodedText decodedtext {QString(message).replace(QChar::LineFeed, "")};
+        ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
+            m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
+            false, false, 0.0, false, -99, "", m_muted);
 
-      postDecode(true, decodedtext);
-      write_all("Rx", message);
+        postDecode(true, decodedtext);
+        write_all("Rx", message);
 
-      // Auto-sequence — works normally with L2 decodes
-      auto_sequence(decodedtext, ui->sbFtol->value(), ui->sbFtol->value());
+        // Auto-sequence — works normally with L2 decodes
+        auto_sequence(decodedtext, ui->sbFtol->value(), ui->sbFtol->value());
+      }
     }
 }
 

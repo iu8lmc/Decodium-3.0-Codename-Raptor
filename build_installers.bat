@@ -6,7 +6,7 @@ set ISCC="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 set PFX=C:\Users\IU8LMC\decodium_codesign.pfx
 set PASS=Dec2026sign
 set SRC=C:\Users\IU8LMC\Downloads\WSJTX_3.0_Source
-set BUILD=2603080008
+set BUILD=2603090009
 
 echo ============================================
 echo  Decodium 3.0 ASYMX %BUILD% - Build Installers
@@ -14,7 +14,7 @@ echo ============================================
 echo.
 
 echo === Step 1: Signing x64 executables ===
-for %%f in (decodium.exe jt9.exe message_aggregator.exe wsprd.exe udp_daemon.exe rigctl-decodium.exe rigctld-decodium.exe rigctlcom-decodium.exe ChronoGPS.exe) do (
+for %%f in (decodium.exe jt9.exe message_aggregator.exe wsprd.exe udp_daemon.exe rigctl-decodium.exe rigctld-decodium.exe rigctlcom-decodium.exe) do (
     if exist "%SRC%\dist_64bit\%%f" (
         echo   Signing x64\%%f...
         %SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /d "Decodium 3.0 ASYMX" /tr http://timestamp.digicert.com /td SHA256 "%SRC%\dist_64bit\%%f"
@@ -26,7 +26,7 @@ for %%f in (decodium.exe jt9.exe message_aggregator.exe wsprd.exe udp_daemon.exe
 echo.
 
 echo === Step 2: Signing x86 executables ===
-for %%f in (decodium.exe jt9.exe message_aggregator.exe wsprd.exe udp_daemon.exe rigctl-decodium.exe rigctld-decodium.exe rigctlcom-decodium.exe ChronoGPS.exe) do (
+for %%f in (decodium.exe jt9.exe message_aggregator.exe wsprd.exe udp_daemon.exe rigctl-decodium.exe rigctld-decodium.exe rigctlcom-decodium.exe) do (
     if exist "%SRC%\dist_32bit\%%f" (
         echo   Signing x86\%%f...
         %SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /d "Decodium 3.0 ASYMX" /tr http://timestamp.digicert.com /td SHA256 "%SRC%\dist_32bit\%%f"
