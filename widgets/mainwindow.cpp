@@ -12005,7 +12005,7 @@ void MainWindow::displayWidgets(qint64 n)
   bool b;
   for(int i=0; i<N_WIDGETS; i++) {
     b=(n&j) != 0;
-    if(i==0) ui->txFirstCheckBox->setVisible(false);  // ASYMX: always hidden
+    if(i==0) ui->txFirstCheckBox->setVisible(b && (m_mode=="FT8" || m_mode=="FT4"));
     if(i==1) ui->TxFreqSpinBox->setVisible(b);
     if(i==2) ui->RxFreqSpinBox->setVisible(b);
     if(i==3) ui->sbFtol->setVisible(b);
