@@ -393,6 +393,7 @@ private slots:
                   , QString const& propmode, QString const& satellite
                   , QString const& sat_mode
                   , QString const& freqRx, QByteArray const& ADIF);
+  void sendDxSpot (QString const& call, Frequency dial_freq, QString const& mode);
   void on_bandComboBox_currentIndexChanged (int index);
   void on_bandComboBox_editTextChanged (QString const& text);
   void on_bandComboBox_activated (int index);

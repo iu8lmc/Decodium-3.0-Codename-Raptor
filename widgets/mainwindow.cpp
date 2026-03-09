@@ -48,6 +48,7 @@
 #include <QActionGroup>
 #include <QSplashScreen>
 #include <QUdpSocket>
+#include <QTcpSocket>
 #include <QAbstractItemView>
 #include <QInputDialog>
 #include <QSound> // TCI
@@ -11923,6 +11924,9 @@ void MainWindow::acceptQSO (QDateTime const& QSO_date_off, QString const& call, 
     m_cloudlog.logQso(ADIF);
   }
 
+  // Send DX spot to cluster
+  sendDxSpot(call, dial_freq, mode);
+
   blocked=true;                                      // needed to clear DXgrid only optionally
   if (m_config.clear_DXcall ()) clearDX ();
   if (m_config.clear_DXgrid ()) ui->dxGridEntry->clear ();
@@ -19668,5 +19672,40 @@ void MainWindow::setIncrLogCount()
   }
 }
 
+void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString const& mode)
+{
+  if (call.isEmpty() || m_config.my_callsign().isEmpty()) return;
 
+  QString clusterHost = "iq8do.aricaserta.it";
+  int clusterPort = 7300;
+  QString myCall = m_config.my_callsign();
+  double freqMHz = dial_freq / 1e6;
+
+  // Run in background to avoid blocking the UI
+  QtConcurrent::run([=]() {
+    QTcpSocket sock;
+    sock.connectToHost(clusterHost, clusterPort);
+    if (!sock.waitForConnected(5000)) return;
+
+    // Wait for login prompt and send callsign
+    sock.waitForReadyRead(3000);
+    sock.readAll();  // consume welcome/prompt
+    sock.write((myCall + "\r\n").toLatin1());
+    sock.waitForReadyRead(3000);
+    sock.readAll();  // consume login response
+
+    // Send DX spot: "DX <freq_kHz> <call> <comment>"
+    QString spotCmd = QString("DX %1 %2 73 Tnx %3\r\n")
+        .arg(freqMHz * 1000.0, 0, 'f', 1)
+        .arg(call)
+        .arg(mode);
+    sock.write(spotCmd.toLatin1());
+    sock.waitForBytesWritten(3000);
+
+    // Disconnect
+    sock.write("bye\r\n");
+    sock.waitForBytesWritten(2000);
+    sock.disconnectFromHost();
+  });
+}
 
