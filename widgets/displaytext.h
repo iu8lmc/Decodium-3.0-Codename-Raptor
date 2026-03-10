@@ -8,6 +8,7 @@
 #include <QPair>
 #include <QString>
 #include <QTimer>
+#include <QSet>
 
 class QAction;
 class Configuration;
@@ -36,6 +37,7 @@ public:
   void displayTransmittedText(QString text, QString modeTx, qint32 txFreq, bool bFastMode,
                               double TRperiod, bool bSuperfox);
   void displayQSY(QString text);
+  void setVerifiedCalls (QSet<QString> const& calls) { m_verifiedDxpedCalls = calls; }
   void displayHoundToBeCalled(QString t, bool bAtTop=false, QColor bg = QColor {}, QColor fg = QColor {});
   void setHighlightedHoundText(QString text);
   void new_period ();
@@ -71,6 +73,7 @@ private:
   QAction * erase_action_;
 
   QHash<QString, QPair<QColor, QColor>> highlighted_calls_;
+  QSet<QString> m_verifiedDxpedCalls;
   bool high_volume_;
   QMetaObject::Connection vertical_scroll_connection_;
   long long modified_vertical_scrollbar_max_;

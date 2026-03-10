@@ -28,6 +28,7 @@
 #include "Logger.hpp"
 
 #include "qt_helpers.hpp"
+#include "Radio.hpp"
 #include "moc_displaytext.cpp"
 
 bool play_CQ = false;
@@ -524,6 +525,10 @@ void DisplayText::displayDecodedText(DecodedText const& decodedText, QString con
   if(!dxGrid.contains(grid_regexp)) dxGrid="";
   message = message.left (message.indexOf (QChar::Nbsp)).trimmed (); // strip appended info
   QString extra;
+  // DXpedition verified badge
+  if (!dxCall.isEmpty () && m_verifiedDxpedCalls.contains (Radio::base_callsign (dxCall))) {
+    extra += QString::fromUtf8 ("\xe2\x9c\x93 VERIFIED ");   // ✓ VERIFIED
+  }
   QString state;    // NJ0A
 
   if (displayDXCCEntity && dxGrid.length() > 0  && logBook.countries ()->lookup (dxCall).primary_prefix  == "K") {

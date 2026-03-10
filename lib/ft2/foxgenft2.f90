@@ -22,19 +22,20 @@ subroutine foxgenft2()
   integer*1, target:: mycall
   real waveslot(NWAVEFT2)
   complex cwaveslot(NWAVEFT2)
-  real*8 fstep
+  real*8 fstep_hz
   logical*1 bMoreCQs,bSendMsg
+  integer ifstep
   common/foxcom/wave(NWAVE),nslots,nfreq,i3bit(5),cmsg(5),mycall(12), &
-       textMsg,bMoreCQs,bSendMsg
+       textMsg,bMoreCQs,bSendMsg,ifstep
 
-  fstep=500.d0
+  fstep_hz=max(200.d0, dble(ifstep))
   wave=0.
 
   do n=1,nslots
      msg=cmsg(n)(1:37)
      ichk=0
      call genft2(msg,ichk,msgsent,msgbits,itone)
-     f0=nfreq + fstep*(n-1)
+     f0=nfreq + fstep_hz*(n-1)
      nsym=103
      fsample=48000.0
      nwave1=NWAVEFT2
@@ -48,7 +49,7 @@ subroutine foxgenft2()
   peak=maxval(abs(wave(1:NWAVEFT2)))
   if(peak.gt.0.0) wave(1:NWAVEFT2)=wave(1:NWAVEFT2)/peak
   width=50.0
-  call foxfiltft2(nslots,nfreq,width,wave)
+  call foxfiltft2(nslots,nfreq,width,wave,ifstep)
   peak=maxval(abs(wave(1:NWAVEFT2)))
   if(peak.gt.0.0) wave(1:NWAVEFT2)=wave(1:NWAVEFT2)/peak
 
