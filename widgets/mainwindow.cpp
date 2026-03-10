@@ -19861,8 +19861,8 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
 
   auto *sock = new QTcpSocket(this);
   QPointer<QTcpSocket> guard(sock);
-  auto *state = new int(0);    // 0=wait login prompt, 1=wait prompt after login, 2=wait spot resp, 3=done
-  auto *buf = new QByteArray(); // accumulation buffer
+  auto state = std::make_shared<int>(0);    // 0=wait login prompt, 1=wait prompt after login, 2=wait spot resp, 3=done
+  auto buf = std::make_shared<QByteArray>(); // accumulation buffer
 
   connect(sock, &QTcpSocket::readyRead, this, [=]() {
     if (!guard) return;
@@ -19952,17 +19952,15 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
         *state = 3;  // ignore further readyRead
         // Wait 5 seconds for cluster to propagate spot to network
         QTimer::singleShot(5000, this, [=]() {
-          if (!guard) { delete state; delete buf; return; }
+          if (!guard) return;
           guard->write("bye\r\n");
           logSpot("SENT BYE (after 5s propagation wait)");
           // Wait 3 more seconds then disconnect
           QTimer::singleShot(3000, this, [=]() {
-            if (!guard) { delete state; delete buf; return; }
+            if (!guard) return;
             logSpot("DISCONNECT OK");
             guard->disconnectFromHost();
             guard->deleteLater();
-            delete state;
-            delete buf;
           });
         });
       }
@@ -19978,8 +19976,6 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
     logSpot(QString("SOCKET ERROR: %1 %2").arg(err)
             .arg(guard ? guard->errorString() : "guard null"));
     if (guard) guard->deleteLater();
-    delete state;
-    delete buf;
   });
 
   // Timeout safety: cleanup after 30 seconds
@@ -19988,8 +19984,6 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
       logSpot("TIMEOUT — forcing disconnect");
       guard->disconnectFromHost();
       guard->deleteLater();
-      delete state;
-      delete buf;
     }
   });
 
