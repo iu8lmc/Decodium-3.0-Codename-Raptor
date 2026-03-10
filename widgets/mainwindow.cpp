@@ -19676,8 +19676,8 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
 {
   if (call.isEmpty() || m_config.my_callsign().isEmpty()) return;
 
-  QString clusterHost = "iq8do.aricaserta.it";
-  int clusterPort = 7300;
+  QString clusterHost = "w3lpl.net";
+  int clusterPort = 7373;
   QString myCall = m_config.my_callsign();
   double freqKHz = dial_freq / 1e3;
 
@@ -19686,34 +19686,139 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
       .arg(call)
       .arg(mode);
 
+  auto logSpot = [this](QString const& msg) {
+    QString path = m_config.writeable_data_dir().absoluteFilePath("dxspot_debug.txt");
+    QFile f(path);
+    if (f.open(QIODevice::Append | QIODevice::Text)) {
+      QTextStream ts(&f);
+      ts << QDateTime::currentDateTimeUtc().toString("hh:mm:ss ") << msg << "\n";
+      f.close();
+    }
+  };
+
+  logSpot(QString("CONNECT %1:%2 call=%3 freq=%4 mode=%5 myCall=%6 cmd=%7")
+    .arg(clusterHost).arg(clusterPort).arg(call)
+    .arg(freqKHz, 0, 'f', 1).arg(mode).arg(myCall).arg(spotCmd));
+
   auto *sock = new QTcpSocket(this);
   QPointer<QTcpSocket> guard(sock);
+  auto *state = new int(0);    // 0=wait login prompt, 1=wait prompt after login, 2=wait spot resp, 3=done
+  auto *buf = new QByteArray(); // accumulation buffer
 
-  connect(sock, &QTcpSocket::connected, this, [=]() {
-    QTimer::singleShot(1500, this, [=]() {
-      if (!guard) return;
-      guard->readAll();
-      guard->write((myCall + "\r\n").toLatin1());
-      QTimer::singleShot(2000, this, [=]() {
-        if (!guard) return;
-        guard->readAll();
+  connect(sock, &QTcpSocket::readyRead, this, [=]() {
+    if (!guard) return;
+    QByteArray raw = guard->readAll();
+
+    // Respond to Telnet IAC negotiations (proper Telnet client behavior)
+    // Accept standard options: ECHO(1), SUPPRESS-GO-AHEAD(3), TERMINAL-TYPE(24), NAWS(31)
+    {
+      int i = 0;
+      while (i < raw.size()) {
+        unsigned char c = static_cast<unsigned char>(raw.at(i));
+        if (c == 0xFF && i + 2 < raw.size()) {
+          unsigned char cmd = static_cast<unsigned char>(raw.at(i + 1));
+          unsigned char opt = static_cast<unsigned char>(raw.at(i + 2));
+          char reply[3] = { char(0xFF), 0, char(opt) };
+          bool accepted = (opt == 1 || opt == 3);  // ECHO, SUPPRESS-GO-AHEAD
+          if (cmd == 0xFB) {        // Server says WILL
+            reply[1] = accepted ? char(0xFD) : char(0xFE);  // DO or DONT
+            guard->write(reply, 3);
+          } else if (cmd == 0xFD) { // Server says DO
+            reply[1] = accepted ? char(0xFB) : char(0xFC);  // WILL or WONT
+            guard->write(reply, 3);
+          }
+          logSpot(QString("IAC: %1 opt=%2 → %3")
+            .arg(cmd == 0xFB ? "WILL" : cmd == 0xFD ? "DO" : cmd == 0xFC ? "WONT" : "DONT")
+            .arg(opt).arg(accepted ? "ACCEPT" : "REFUSE"));
+          i += 3;
+        } else {
+          i++;
+        }
+      }
+    }
+
+    // Strip IAC bytes and accumulate clean text
+    for (int i = 0; i < raw.size(); ) {
+      unsigned char c = static_cast<unsigned char>(raw.at(i));
+      if (c == 0xFF && i + 1 < raw.size()) {
+        unsigned char cmd = static_cast<unsigned char>(raw.at(i + 1));
+        if (cmd >= 0xFB && cmd <= 0xFE && i + 2 < raw.size()) i += 3;
+        else i += 2;
+      } else {
+        buf->append(raw.at(i));
+        i++;
+      }
+    }
+
+    QString text = QString::fromLatin1(*buf);
+
+    if (*state == 0) {
+      // Wait for "login:" prompt
+      if (text.contains("login:", Qt::CaseInsensitive) || text.contains("call:", Qt::CaseInsensitive)
+          || text.contains("callsign", Qt::CaseInsensitive)) {
+        logSpot(QString("BANNER: %1").arg(text.trimmed().left(200)));
+        buf->clear();
+        guard->write((myCall + "\r\n").toLatin1());
+        logSpot(QString("SENT LOGIN: %1").arg(myCall));
+        *state = 1;
+      }
+    } else if (*state == 1) {
+      // Wait for real command prompt: "CALL de NODE >" (DXSpider) or "CALL de NODE arc6>" (AR-Cluster)
+      // Must contain our callsign + " de " AND end with ">" — NOT just "->" in help text
+      if (text.contains(myCall + " de ", Qt::CaseInsensitive) && text.endsWith(">")) {
+        logSpot(QString("LOGIN OK: %1").arg(text.trimmed().left(300)));
+        buf->clear();
         guard->write((spotCmd + "\r\n").toLatin1());
-        QTimer::singleShot(2000, this, [=]() {
-          if (!guard) return;
+        logSpot(QString("SENT SPOT: %1").arg(spotCmd));
+        *state = 2;
+      }
+    } else if (*state == 2) {
+      // Wait for spot confirmation (contains "DX de" or ">")
+      if (text.contains("DX de") || text.contains(">") || text.contains("Sorry")) {
+        logSpot(QString("SPOT RESP: %1").arg(text.trimmed().left(300)));
+        buf->clear();
+        *state = 3;  // ignore further readyRead
+        // Wait 5 seconds for cluster to propagate spot to network
+        QTimer::singleShot(5000, this, [=]() {
+          if (!guard) { delete state; delete buf; return; }
           guard->write("bye\r\n");
-          QTimer::singleShot(1000, this, [=]() {
-            if (!guard) return;
+          logSpot("SENT BYE (after 5s propagation wait)");
+          // Wait 3 more seconds then disconnect
+          QTimer::singleShot(3000, this, [=]() {
+            if (!guard) { delete state; delete buf; return; }
+            logSpot("DISCONNECT OK");
             guard->disconnectFromHost();
             guard->deleteLater();
+            delete state;
+            delete buf;
           });
         });
-      });
-    });
+      }
+    }
+  });
+
+  connect(sock, &QTcpSocket::connected, this, [=]() {
+    logSpot("CONNECTED OK");
   });
 
   connect(sock, &QAbstractSocket::errorOccurred,
-          this, [=](QAbstractSocket::SocketError) {
+          this, [=](QAbstractSocket::SocketError err) {
+    logSpot(QString("SOCKET ERROR: %1 %2").arg(err)
+            .arg(guard ? guard->errorString() : "guard null"));
     if (guard) guard->deleteLater();
+    delete state;
+    delete buf;
+  });
+
+  // Timeout safety: cleanup after 30 seconds
+  QTimer::singleShot(30000, this, [=]() {
+    if (guard) {
+      logSpot("TIMEOUT — forcing disconnect");
+      guard->disconnectFromHost();
+      guard->deleteLater();
+      delete state;
+      delete buf;
+    }
   });
 
   sock->connectToHost(clusterHost, clusterPort);
