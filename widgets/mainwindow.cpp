@@ -1561,23 +1561,22 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   // Show startup banner
   showStartupBanner ();
 
-  // Load verified DXpedition callsigns for VERIFIED badge display
-  {
-    QString vpath = m_config.writeable_data_dir ().absoluteFilePath ("verified_dxpeds.txt");
-    QFile vf (vpath);
-    if (vf.open (QIODevice::ReadOnly | QIODevice::Text)) {
-      while (!vf.atEnd ()) {
-        QString line = QString::fromLatin1 (vf.readLine ()).trimmed ().toUpper ();
-        if (!line.isEmpty () && !line.startsWith ('#'))
-          m_verifiedDxpedCalls.insert (line);
-      }
-      vf.close ();
-    }
-    if (!m_verifiedDxpedCalls.isEmpty ()) {
+  // Load verified DXpedition callsigns (Ed25519-signed list from server + cache)
+  m_verifiedListMgr = new VerifiedDxpedListManager (
+    m_config.writeable_data_dir (), "https://ft2.it/verified_dxpeds.json", this);
+  connect (m_verifiedListMgr, &VerifiedDxpedListManager::callsignsUpdated,
+    this, [this] (QSet<QString> const& calls) {
+      m_verifiedDxpedCalls = calls;
       ui->decodedTextBrowser->setVerifiedCalls (m_verifiedDxpedCalls);
       ui->decodedTextBrowser2->setVerifiedCalls (m_verifiedDxpedCalls);
-    }
+    });
+  // Load cached list immediately, then fetch fresh copy from server
+  m_verifiedDxpedCalls = m_verifiedListMgr->callsigns ();
+  if (!m_verifiedDxpedCalls.isEmpty ()) {
+    ui->decodedTextBrowser->setVerifiedCalls (m_verifiedDxpedCalls);
+    ui->decodedTextBrowser2->setVerifiedCalls (m_verifiedDxpedCalls);
   }
+  m_verifiedListMgr->refresh ();  // async download
 
   if(QCoreApplication::applicationVersion().contains("-devel") or
      QCoreApplication::applicationVersion().contains("-rc")) {
@@ -11294,6 +11293,11 @@ void MainWindow::dxpedLoadCertificate ()
   if (path.isEmpty ()) return;
 
   if (m_dxpedCert.loadFromFile (path)) {
+    debugToFile (QString ("DXpedCert loaded: call=%1 sigValid=%2 hash=%3 operators=%4")
+      .arg (m_dxpedCert.callsign ())
+      .arg (m_dxpedCert.signatureValid () ? "YES" : "NO")
+      .arg (m_dxpedCert.certHash ())
+      .arg (m_dxpedCert.operators ().join (",")));
     if (!m_dxpedCert.isValid ()) {
       QMessageBox::warning (this, tr ("Certificate Expired"),
         tr ("The certificate for %1 is expired or not yet valid.\n"
@@ -11315,10 +11319,14 @@ void MainWindow::dxpedLoadCertificate ()
     m_bDXpedCertified = true;
     m_dxpedNumSlots = qBound (1, m_dxpedCert.maxSlots (), 4);
 
-    // Propaga il callsign verificato ai display
-    m_verifiedDxpedCalls.insert (m_dxpedCert.callsign ());
-    ui->decodedTextBrowser->setVerifiedCalls (m_verifiedDxpedCalls);
-    ui->decodedTextBrowser2->setVerifiedCalls (m_verifiedDxpedCalls);
+    // Propaga il callsign verificato ai display (via manager + local add)
+    if (m_verifiedListMgr) {
+      m_verifiedListMgr->addLocal (m_dxpedCert.callsign ());
+    } else {
+      m_verifiedDxpedCalls.insert (m_dxpedCert.callsign ());
+      ui->decodedTextBrowser->setVerifiedCalls (m_verifiedDxpedCalls);
+      ui->decodedTextBrowser2->setVerifiedCalls (m_verifiedDxpedCalls);
+    }
 
     dxpedUpdateControlPanel ();
 
