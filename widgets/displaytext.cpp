@@ -525,9 +525,25 @@ void DisplayText::displayDecodedText(DecodedText const& decodedText, QString con
   if(!dxGrid.contains(grid_regexp)) dxGrid="";
   message = message.left (message.indexOf (QChar::Nbsp)).trimmed (); // strip appended info
   QString extra;
-  // DXpedition verified badge
-  if (!dxCall.isEmpty () && m_verifiedDxpedCalls.contains (Radio::base_callsign (dxCall))) {
-    extra += QString::fromUtf8 ("\xe2\x9c\x93 VERIFIED ");   // ✓ VERIFIED
+  // DXpedition verified badge — check both word1 (call()) and word2 (dxCall)
+  {
+    auto w1 = decodedText.call ();   // first callsign (destination or CQ)
+    bool verified = false;
+    if (!dxCall.isEmpty () && m_verifiedDxpedCalls.contains (Radio::base_callsign (dxCall)))
+      verified = true;
+    if (!verified && !w1.isEmpty ()
+        && w1 != "CQ" && w1 != "DE" && w1 != "QRZ"
+        && !w1.startsWith ("CQ")
+        && m_verifiedDxpedCalls.contains (Radio::base_callsign (w1)))
+      verified = true;
+    if (verified) {
+      extra += QString::fromUtf8 ("\xe2\x9c\x93 VERIFIED ");   // ✓ VERIFIED
+    }
+    if (!m_verifiedDxpedCalls.isEmpty ()) {
+      qDebug () << "VERIFIED check: w1=" << w1 << "dxCall=" << dxCall
+                 << "setSize=" << m_verifiedDxpedCalls.size ()
+                 << "verified=" << verified;
+    }
   }
   QString state;    // NJ0A
 

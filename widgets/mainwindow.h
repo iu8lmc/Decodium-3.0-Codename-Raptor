@@ -29,6 +29,7 @@
 #include <QQueue>
 #include <QFuture>
 #include "DXpedCertificate.hpp"
+#include "VerifiedDxpedListManager.hpp"
 #include <QFutureWatcher>
 #include <QDateTime>
 #include <QSaveFile>
@@ -821,6 +822,7 @@ private:
   DXpedCertificate m_dxpedCert;
   bool      m_bDXpedCertified {false};
   QSet<QString> m_verifiedDxpedCalls;   // for receiving side display
+  VerifiedDxpedListManager * m_verifiedListMgr {nullptr};
 
   void dxpedFillEmptySlots ();
   void dxpedLoadSlot   (int slot);

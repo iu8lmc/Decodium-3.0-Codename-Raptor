@@ -280,6 +280,7 @@ set (decodium_CXXSRCS
   Audio/soundout.cpp
   Audio/soundin.cpp
   UpdateChecker.cpp
+  VerifiedDxpedListManager.cpp
   widgets/meterwidget.cpp
   widgets/signalmeter.cpp
   widgets/plotter.cpp
@@ -1049,6 +1050,7 @@ endif ()
 
 # Widgets finds its own dependencies.
 find_package (Qt5 COMPONENTS Widgets SerialPort Multimedia PrintSupport Sql LinguistTools WebSockets REQUIRED)
+find_package (OpenSSL REQUIRED)
 
 if (WIN32)
   add_definitions (-DQT_NEEDS_QTMAIN)
@@ -1648,7 +1650,7 @@ else ()
       )
   endif ()
 endif ()
-target_link_libraries (decodium Qt5::SerialPort wsjt_cxx wsjt_qt wsjt_qtmm ${FFTW3_LIBRARIES} ${LIBM_LIBRARIES})
+target_link_libraries (decodium Qt5::SerialPort wsjt_cxx wsjt_qt wsjt_qtmm ${FFTW3_LIBRARIES} ${LIBM_LIBRARIES} OpenSSL::Crypto)
 
 # make a library for Decodium UDP servers
 # add_library (decodium_udp SHARED ${UDP_library_CXXSRCS})
