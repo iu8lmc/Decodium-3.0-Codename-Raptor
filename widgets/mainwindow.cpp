@@ -19912,19 +19912,32 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
     QString text = QString::fromLatin1(*buf);
 
     if (*state == 0) {
-      // Wait for "login:" prompt
+      // Wait for login prompt — various cluster formats:
+      // "login:" / "call:" / "callsign" / "enter your call" / "Please enter your call:"
+      // Some clusters just show a banner ending with ">" as the prompt
       if (text.contains("login:", Qt::CaseInsensitive) || text.contains("call:", Qt::CaseInsensitive)
-          || text.contains("callsign", Qt::CaseInsensitive)) {
+          || text.contains("callsign", Qt::CaseInsensitive) || text.contains("enter your", Qt::CaseInsensitive)
+          || text.contains("please enter", Qt::CaseInsensitive) || text.trimmed().endsWith(":")) {
         logSpot(QString("BANNER: %1").arg(text.trimmed().left(200)));
         buf->clear();
         guard->write((myCall + "\r\n").toLatin1());
         logSpot(QString("SENT LOGIN: %1").arg(myCall));
         *state = 1;
+      } else if (text.trimmed().endsWith(">")) {
+        // Some clusters show banner then prompt ">" without asking for call
+        // Send callsign anyway
+        logSpot(QString("BANNER-PROMPT: %1").arg(text.trimmed().left(200)));
+        buf->clear();
+        guard->write((myCall + "\r\n").toLatin1());
+        logSpot(QString("SENT LOGIN (prompt>): %1").arg(myCall));
+        *state = 1;
       }
     } else if (*state == 1) {
       // Wait for real command prompt: "CALL de NODE >" (DXSpider) or "CALL de NODE arc6>" (AR-Cluster)
       // Must contain our callsign + " de " AND end with ">" — NOT just "->" in help text
-      if (text.contains(myCall + " de ", Qt::CaseInsensitive) && text.endsWith(">")) {
+      // Also accept just ending with ">" after a delay (some clusters don't echo callsign)
+      if ((text.contains(myCall + " de ", Qt::CaseInsensitive) || text.contains(" de ", Qt::CaseInsensitive))
+          && text.trimmed().endsWith(">")) {
         logSpot(QString("LOGIN OK: %1").arg(text.trimmed().left(300)));
         buf->clear();
         guard->write((spotCmd + "\r\n").toLatin1());
