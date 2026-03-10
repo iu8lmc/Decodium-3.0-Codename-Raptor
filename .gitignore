@@ -50,3 +50,18 @@ tmpclaude-*
 
 # Temporary scripts
 sign_all.bat
+
+# DXped certificate manager — sensitive files
+tools/dxped_private.pem
+tools/dxped_config.json
+tools/dxped_database.json
+tools/*.dxcert
+tools/*.dll
+tools/callsigns.txt
+tools/verified_dxpeds.json
+*.dxcert
+
+# Misc temp
+aqtinstall.log
+chronogps_tmp/
+community_post_*.txt
