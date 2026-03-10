@@ -28,8 +28,9 @@ subroutine foxgen(bSuperFox,fname)
   real x(NFFT)
   real*8 dt,twopi,f0,fstep,dfreq,phi,dphi
   complex cx(0:NH)
+  integer ifstep_com
   common/foxcom/wave(NWAVE),nslots,nfreq,i3bit(5),cmsg(5),mycall(12),  &
-       textMsg,bMoreCQs,bSendMsg
+       textMsg,bMoreCQs,bSendMsg,ifstep_com
   common/foxcom2/itone2(NN),msgbits2(77)
   common/foxcom3/nslots2,cmsg2(5),itone3(151)
   equivalence (x,cx),(y,cy)

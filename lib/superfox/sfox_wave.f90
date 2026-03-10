@@ -9,7 +9,13 @@ subroutine sfox_wave(fname)
   integer itone(151)
   real*8 dt,twopi,f0,baud,phi,dphi
 
-  common/foxcom/wave(NWAVE)
+  character*40 cmsg
+  character*26 textMsg
+  logical*1 bMoreCQs,bSendMsg
+  integer*1, target:: mycall
+  integer ifstep_com
+  common/foxcom/wave(NWAVE),nslots,nfreq,i3bit(5),cmsg(5),mycall(12), &
+       textMsg,bMoreCQs,bSendMsg,ifstep_com
 
   wave=0.
   open(25,file=trim(fname),status='unknown',err=999)

@@ -2,12 +2,15 @@ subroutine foxgen_wrap(msg40,msgbits,itone)
 
   parameter (NN=79,ND=58,KK=77,NSPS=4*1920)
   parameter (NWAVE=(160+2)*134400*4) !the biggest waveform we generate (FST4-1800)
-  logical*1 bMoreCQs
+  logical*1 bMoreCQs,bSendMsg
   character*40 msg40,cmsg
+  character*26 textMsg
   character*12 mycall12
   integer*1 msgbits(KK),msgbits2
   integer itone(NN)
-  common/foxcom/wave(NWAVE),nslots,nfreq,i3bit(5),cmsg(5),mycall12,bMoreCQs
+  integer ifstep_com
+  common/foxcom/wave(NWAVE),nslots,nfreq,i3bit(5),cmsg(5),mycall12, &
+       textMsg,bMoreCQs,bSendMsg,ifstep_com
   common/foxcom2/itone2(NN),msgbits2(KK)
 
   nslots=1

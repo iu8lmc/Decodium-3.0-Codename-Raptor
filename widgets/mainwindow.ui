@@ -705,7 +705,7 @@
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,2,2,2,2,2,0,2,2,2,2,1">
+        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,2,2,2,2,2,0,2,2,2,2,1">
          <item>
           <widget class="QCheckBox" name="cbCQonly">
            <property name="toolTip">
@@ -723,6 +723,19 @@
            </property>
            <property name="text">
             <string>BP</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="cbSpotting">
+           <property name="toolTip">
+            <string>Enable/disable automatic spotting to PSK Reporter.</string>
+           </property>
+           <property name="text">
+            <string>Spot</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
            </property>
           </widget>
          </item>

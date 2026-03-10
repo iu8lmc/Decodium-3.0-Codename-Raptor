@@ -28,6 +28,7 @@
 #include <QScrollBar>
 #include <QQueue>
 #include <QFuture>
+#include "DXpedCertificate.hpp"
 #include <QFutureWatcher>
 #include <QDateTime>
 #include <QSaveFile>
@@ -792,7 +793,7 @@ private:
   void processNextInQueue ();
   void refreshCallerQueueDisplay ();
 
-  // DX-pedition 2-slot
+  // DX-pedition multi-slot certified mode
   struct DXpedSlot {
     QString   call;
     int       freq          {0};
@@ -809,13 +810,26 @@ private:
   };
   bool      m_bDXpedMode      {false};
   int       m_dxpedCQcounter  {0};   // piggyback CQ ogni N periodi TX
-  DXpedSlot m_dxpedSlots[3];
+  DXpedSlot m_dxpedSlots[4];         // max 4 slots
+  int       m_dxpedNumSlots   {2};   // active slots (1-4)
+  int       m_dxpedFreqStep   {500}; // Hz between sub-carriers
+  int       m_dxpedMaxQueue   {20};  // max caller queue size
+  int       m_dxpedMissedThresh {4}; // missed periods before skip
+  int       m_dxpedCQInterval {4};   // piggyback CQ every N TX periods
+
+  // Certificate
+  DXpedCertificate m_dxpedCert;
+  bool      m_bDXpedCertified {false};
+  QSet<QString> m_verifiedDxpedCalls;   // for receiving side display
+
   void dxpedFillEmptySlots ();
   void dxpedLoadSlot   (int slot);
   int  dxpedTxSequencer();
   void dxpedRxProcess  (QString const& call, QString const& rptRcvd = QString());
   void dxpedAutoSequence (DecodedText const& msg);
   void dxpedLogQSO       (int slot);
+  void dxpedLoadCertificate ();
+  void dxpedUpdateControlPanel ();
 
   bool    m_bAutoReply;
   QString m_lastloggedcall; //ft8md

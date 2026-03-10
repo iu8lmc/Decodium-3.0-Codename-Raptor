@@ -1561,6 +1561,24 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   // Show startup banner
   showStartupBanner ();
 
+  // Load verified DXpedition callsigns for VERIFIED badge display
+  {
+    QString vpath = m_config.writeable_data_dir ().absoluteFilePath ("verified_dxpeds.txt");
+    QFile vf (vpath);
+    if (vf.open (QIODevice::ReadOnly | QIODevice::Text)) {
+      while (!vf.atEnd ()) {
+        QString line = QString::fromLatin1 (vf.readLine ()).trimmed ().toUpper ();
+        if (!line.isEmpty () && !line.startsWith ('#'))
+          m_verifiedDxpedCalls.insert (line);
+      }
+      vf.close ();
+    }
+    if (!m_verifiedDxpedCalls.isEmpty ()) {
+      ui->decodedTextBrowser->setVerifiedCalls (m_verifiedDxpedCalls);
+      ui->decodedTextBrowser2->setVerifiedCalls (m_verifiedDxpedCalls);
+    }
+  }
+
   if(QCoreApplication::applicationVersion().contains("-devel") or
      QCoreApplication::applicationVersion().contains("-rc")) {
     QTimer::singleShot (0, this, SLOT (not_GA_warning_message ()));
@@ -1824,6 +1842,7 @@ void MainWindow::writeSettings()
   m_settings->setValue("OutBufSize",outBufSize);
   m_settings->setValue ("HoldTxFreq", ui->cbHoldTxFreq->isChecked ());
   m_settings->setValue ("CQonly", ui->cbCQonly->isChecked ());
+  m_settings->setValue ("Spotting", ui->cbSpotting->isChecked ());
   m_settings->setValue ("BypassFilters", ui->cbBypass->isChecked ());
   m_settings->setValue("PctTx", ui->sbTxPercent->value ());
   m_settings->setValue("RoundRobin",ui->RoundRobin->currentText());
@@ -2258,6 +2277,7 @@ void MainWindow::readSettings()
   ui->cbHoldTxFreq->setChecked (m_settings->value ("HoldTxFreq", false).toBool ());
   HoldTxFreqStatus = m_settings->value ("HoldTxFreq", false).toBool ();
   ui->cbCQonly->setChecked (m_settings->value ("CQonly", false).toBool ());
+  ui->cbSpotting->setChecked (m_settings->value ("Spotting", true).toBool ());
   ui->cbBypass->setChecked (m_settings->value ("BypassFilters", false).toBool ());
   m_pwrBandTxMemory=m_settings->value("pwrBandTxMemory").toHash();
   m_pwrBandTuneMemory=m_settings->value("pwrBandTuneMemory").toHash();
@@ -4180,7 +4200,7 @@ void MainWindow::on_sbTxPercent_valueChanged (int n)
 
 void MainWindow::auto_tx_mode (bool state)
 {
-  debugToFile(QString{"auto_tx_mode state:%1"}.arg(state));    //avt 10/2/25
+  debugToFile(QString{"auto_tx_mode state:%1 m_bDXpedMode=%2 m_autoCQ=%3"}.arg(state).arg(m_bDXpedMode).arg(m_autoCQ));    //avt 10/2/25
   ui->autoButton->setChecked (state);
   m_autoButtonState = state;   //avt 10/2/25
   //debugToFile(QString{"autoTxMode   m_autoButtonState:%1"}.arg(m_autoButtonState));   //avt 2/2/24
@@ -6168,7 +6188,10 @@ void::MainWindow::fast_decode_done()
 // extract details and send to PSKreporter
       if (stdMsg) pskPost (decodedtext);
     }
-    if (tmax >= 0.0) auto_sequence (decodedtext, ui->sbFtol->value (), ui->sbFtol->value ());
+    if (tmax >= 0.0) {
+      if (m_bDXpedMode) dxpedAutoSequence(decodedtext);
+      auto_sequence (decodedtext, ui->sbFtol->value (), ui->sbFtol->value ());
+    }
   }
   m_startAnother=m_loopall;
   m_nPick=0;
@@ -7887,6 +7910,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
       if((m_mode!="FT8" and m_mode!="FT2") or (SpecOp::HOUND != m_specOp) or (SpecOp::HOUND == m_specOp and m_config.superFox())) {
         if(m_mode=="FT8" or m_mode=="FT2" or m_mode=="FT4" or m_mode=="Q65"
            or m_mode=="JT4" or m_mode=="JT65" or m_mode=="JT9" or m_mode=="FST4") {
+          if (m_bDXpedMode) dxpedAutoSequence(decodedtext);
           auto_sequence (decodedtext, 25, 50);
         }
 
@@ -8060,7 +8084,8 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
 
 void MainWindow::pskPost (DecodedText const& decodedtext)
 {
-  if (m_diskData || !m_config.spot_to_psk_reporter() || decodedtext.isLowConfidence ()
+  if (m_diskData || !m_config.spot_to_psk_reporter() || !ui->cbSpotting->isChecked()
+      || decodedtext.isLowConfidence ()
       || (decodedtext.string().contains(m_baseCall) && decodedtext.string().contains(m_config.my_grid().left(4)))) return; // prevent self-spotting when running multiple instances
 
   QString msgmode=m_mode;
@@ -8310,10 +8335,16 @@ void MainWindow::guiUpdate()
     if(msgLength==0 and !m_tune and !m_bDXpedMode) on_stopTxButton_clicked();
 
     // DXped mode: non alzare il PTT se la coda caller è vuota e gli slot sono vuoti
-    bool dxpedSilent = m_bDXpedMode && m_callerQueue.isEmpty()
-        && m_dxpedSlots[0].call.isEmpty() && m_dxpedSlots[1].call.isEmpty() && m_dxpedSlots[2].call.isEmpty();
-    // CQ mode: coda vuota ma tx5 disponibile → trasmetti CQ singolo (come MSHV)
-    bool dxpedCQmode = dxpedSilent && !ui->tx5->currentText().trimmed().isEmpty();
+    bool dxpedSilent = m_bDXpedMode && m_callerQueue.isEmpty();
+    if (dxpedSilent) { for (int i = 0; i < m_dxpedNumSlots; i++) { if (!m_dxpedSlots[i].call.isEmpty()) { dxpedSilent = false; break; } } }
+    // CQ mode: coda vuota ma tx5 o tx6 disponibile → trasmetti CQ singolo (come MSHV)
+    bool dxpedCQmode = dxpedSilent && (!ui->tx5->currentText().trimmed().isEmpty() || !ui->tx6->text().trimmed().isEmpty());
+    if (m_bDXpedMode) {
+      debugToFile(QString("guiUpd DXped: silent=%1 CQmode=%2 queueSz=%3 slot0='%4' slot1='%5' m_auto=%6 m_btxok=%7 m_bTxTime=%8 g_iptt=%9 m_restart=%10 m_ntx=%11")
+        .arg(dxpedSilent).arg(dxpedCQmode).arg(m_callerQueue.size())
+        .arg(m_dxpedSlots[0].call).arg(m_dxpedNumSlots>1?m_dxpedSlots[1].call:"n/a")
+        .arg(m_auto).arg(m_btxok).arg(m_bTxTime).arg(g_iptt).arg(m_restart).arg(m_ntx));
+    }
     if(dxpedSilent && !dxpedCQmode && g_iptt==1) stopTx(); // abbassa PTT solo se silenzio totale
     if(dxpedSilent && !dxpedCQmode) m_restart = false;     // blocca restart solo se nessun CQ
 
@@ -8321,9 +8352,12 @@ void MainWindow::guiUpdate()
     bool txReady = m_bDXpedMode ? (!dxpedSilent || dxpedCQmode) : (msgLength > 0);
 
     // DXped CQ mode: forza m_ntx=5 affinché il blocco waveform legga il messaggio CQ da tx5
-    if(m_bDXpedMode && dxpedCQmode && m_ntx != 5) {
-      m_ntx = 5;
-      ui->txrb5->setChecked(true);
+    if(m_bDXpedMode && dxpedCQmode) {
+      // Ensure tx5 has CQ text (may be in tx6 only)
+      if(ui->tx5->currentText().trimmed().isEmpty() && !ui->tx6->text().trimmed().isEmpty()) {
+        ui->tx5->setCurrentText(ui->tx6->text().trimmed());
+      }
+      if(m_ntx != 5) { m_ntx = 5; ui->txrb5->setChecked(true); }
     }
 
     // Async FT2: relax fTR gate (allow TX start anywhere in TX window)
@@ -8409,12 +8443,12 @@ void MainWindow::guiUpdate()
   if((g_iptt==1 && m_iptt0==0) || m_restart) {
 //----------------------------------------------------------------------
     // Re-compute dxpedCQmode (originally declared in outer block, not visible here)
-    bool dxpedCQmode = m_bDXpedMode
-        && m_callerQueue.isEmpty()
-        && m_dxpedSlots[0].call.isEmpty()
-        && m_dxpedSlots[1].call.isEmpty()
-        && m_dxpedSlots[2].call.isEmpty()
-        && !ui->tx5->currentText().trimmed().isEmpty();
+    bool dxpedCQmode = false;
+    if (m_bDXpedMode && m_callerQueue.isEmpty()
+        && (!ui->tx5->currentText().trimmed().isEmpty() || !ui->tx6->text().trimmed().isEmpty())) {
+      dxpedCQmode = true;
+      for (int i = 0; i < m_dxpedNumSlots; i++) { if (!m_dxpedSlots[i].call.isEmpty()) { dxpedCQmode = false; break; } }
+    }
     QByteArray ba;
     QByteArray ba0;
 
@@ -8496,7 +8530,31 @@ void MainWindow::guiUpdate()
             gen_ft8wave_(const_cast<int *>(itone),&nsym,&nsps,&bt,&fsample,&f0,foxcom_.wave,
                          foxcom_.wave,&icmplx,&nwave);
           } else if(m_bDXpedMode) {
-            if(!dxpedTxSequencer()) m_btxok=false;
+            debugToFile("guiUpd FT8-DXped: calling dxpedTxSequencer()");
+            { int n=dxpedTxSequencer(); debugToFile(QString("guiUpd FT8-DXped: returned %1").arg(n)); if(!n) m_btxok=false; }
+            // Update msgsent with DXped slot message for correct m_currentMessage display
+            {
+              QString dxpMsg;
+              for (int i = 0; i < m_dxpedNumSlots; i++) {
+                if (!m_dxpedSlots[i].call.isEmpty()) {
+                  QString myBase = Radio::base_callsign(m_config.my_callsign());
+                  QString hisBase = Radio::base_callsign(m_dxpedSlots[i].call);
+                  if (m_dxpedSlots[i].txStep == 2) {
+                    int rsnr = qBound(-20, m_dxpedSlots[i].snr, 40);
+                    QString rpt = (rsnr >= 0 ? "+" : "") + QString("%1").arg(rsnr, 2, 10, QChar{'0'});
+                    dxpMsg = QString("%1 %2 %3").arg(hisBase, myBase, rpt);
+                  } else {
+                    dxpMsg = QString("%1 %2 RR73").arg(hisBase, myBase);
+                  }
+                  break;
+                }
+              }
+              if (!dxpMsg.isEmpty()) {
+                QByteArray tmp = dxpMsg.leftJustified(37, ' ').left(37).toLatin1();
+                memcpy(msgsent, tmp.constData(), 37);
+                msgsent[37] = 0;
+              }
+            }
           } else if(SpecOp::FOX==m_specOp and ui->tabWidget->currentIndex()==1) {
             foxTxSequencer();
           } else {
@@ -8563,7 +8621,31 @@ void MainWindow::guiUpdate()
             gen_ft2wave_(const_cast<int *>(itone),&nsym,&nsps,&fsample,&f0,foxcom_.wave,
                          foxcom_.wave,&icmplx,&nwave);
           } else if(m_bDXpedMode) {
-            if(!dxpedTxSequencer()) m_btxok=false;
+            debugToFile("guiUpd FT2-DXped: calling dxpedTxSequencer()");
+            { int n=dxpedTxSequencer(); debugToFile(QString("guiUpd FT2-DXped: returned %1").arg(n)); if(!n) m_btxok=false; }
+            // Update msgsent with DXped slot message for correct m_currentMessage display
+            {
+              QString dxpMsg;
+              for (int i = 0; i < m_dxpedNumSlots; i++) {
+                if (!m_dxpedSlots[i].call.isEmpty()) {
+                  QString myBase = Radio::base_callsign(m_config.my_callsign());
+                  QString hisBase = Radio::base_callsign(m_dxpedSlots[i].call);
+                  if (m_dxpedSlots[i].txStep == 2) {
+                    int rsnr = qBound(-20, m_dxpedSlots[i].snr, 40);
+                    QString rpt = (rsnr >= 0 ? "+" : "") + QString("%1").arg(rsnr, 2, 10, QChar{'0'});
+                    dxpMsg = QString("%1 %2 %3").arg(hisBase, myBase, rpt);
+                  } else {
+                    dxpMsg = QString("%1 %2 RR73").arg(hisBase, myBase);
+                  }
+                  break;
+                }
+              }
+              if (!dxpMsg.isEmpty()) {
+                QByteArray tmp = dxpMsg.leftJustified(37, ' ').left(37).toLatin1();
+                memcpy(msgsent, tmp.constData(), 37);
+                msgsent[37] = 0;
+              }
+            }
           } else if(SpecOp::FOX==m_specOp and ui->tabWidget->currentIndex()==1) {
             foxTxSequencer();
           } else {
@@ -8712,7 +8794,8 @@ void MainWindow::guiUpdate()
           statusUpdate ();
         }
     }
-    m_bCallingCQ = 6 == m_ntx
+    m_bCallingCQ = m_bDXpedMode   // DXped: always "calling CQ" for auto-reply logic
+      || 6 == m_ntx
       || m_currentMessage.contains (QRegularExpression {"^(CQ|QRZ) "});
     m_maxPoints=-1;
 
@@ -8739,6 +8822,7 @@ void MainWindow::guiUpdate()
       msg_parts[1].remove (QChar {'>'});
     }
     auto is_73 = message_is_73 (m_currentMessageType, msg_parts);
+    if (m_bDXpedMode) is_73 = false;  // DXped: logging handled by dxpedLogQSO, skip standard 73 handling
     m_sentFirst73 = is_73
       && !message_is_73 (m_lastMessageType, m_lastMessageSent.split (' ', SkipEmptyParts));
     if (m_sentFirst73 || (is_73 && CALLING == m_QSOProgress)) {
@@ -9730,7 +9814,12 @@ void MainWindow::doubleClickOnCall(Qt::KeyboardModifiers modifiers)
 
 void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifiers modifiers)
 {
-  debugToFile("processMess  message:" + message.string()); 
+  debugToFile("processMess  message:" + message.string());
+  // In DXped mode all TX is managed by dxpedTxSequencer/dxpedAutoSequence
+  if (m_bDXpedMode) {
+    debugToFile("processMess  BLOCKED — DXped mode active");
+    return;
+  }
   // decode keyboard modifiers we are interested in
   auto shift = modifiers.testFlag (Qt::ShiftModifier);
   auto ctrl = modifiers.testFlag (Qt::ControlModifier);
@@ -10646,10 +10735,11 @@ void MainWindow::TxAgain()
 
 void MainWindow::enqueueCaller (QString const& call, int freq, int snr)
 {
+  debugToFile(QString("enqueue: call='%1' freq=%2 snr=%3 queueSz=%4").arg(call).arg(freq).arg(snr).arg(m_callerQueue.size()));
   // Niente duplicati
   for (auto const& e : m_callerQueue)
-    if (e.startsWith (call + " ")) return;
-  if (m_callerQueue.size () >= 20) return;
+    if (e.startsWith (call + " ")) { debugToFile("enqueue: DUPLICATE, skip"); return; }
+  if (m_callerQueue.size () >= m_dxpedMaxQueue) { debugToFile("enqueue: QUEUE FULL, skip"); return; }
 
   QString entry = call + " " + QString::number(freq) + " " +
                   QString::number(snr);
@@ -10662,6 +10752,7 @@ void MainWindow::enqueueCaller (QString const& call, int freq, int snr)
     if (snr > eSnr) { insertPos = j; break; }
   }
   m_callerQueue.insert(insertPos, entry);
+  debugToFile(QString("enqueue: ADDED at pos %1, new queueSz=%2").arg(insertPos).arg(m_callerQueue.size()));
   refreshCallerQueueDisplay();
 }
 
@@ -10689,8 +10780,30 @@ void MainWindow::processNextInQueue ()
 void MainWindow::refreshCallerQueueDisplay ()
 {
   if (!m_autoCQ && !m_bDXpedMode) return;
-  ui->callerQueueTitleLabel->setText(
-    tr("Caller Queue (%1)").arg(m_callerQueue.size()));
+  // In DXped mode, show slot info + queue count; otherwise just queue count
+  if (m_bDXpedMode) {
+    // Build slot status line
+    QString slotInfo;
+    for (int i = 0; i < m_dxpedNumSlots; i++) {
+      auto const& sl = m_dxpedSlots[i];
+      if (sl.call.isEmpty ()) {
+        slotInfo += QString ("S%1:--- ").arg (i + 1);
+      } else {
+        QString step = sl.txStep == 2 ? "RPT" : sl.txStep == 3 ? "RR73" : "?";
+        slotInfo += QString ("S%1:%2(%3) ").arg (i + 1).arg (sl.call, step);
+      }
+    }
+    QString certTag = (m_bDXpedCertified && m_dxpedCert.isValid ()) ? " [VERIFIED]" : "";
+    ui->callerQueueTitleLabel->setText (
+      QString ("%1%2 — Queue(%3) — %4")
+        .arg (m_bDXpedCertified ? m_dxpedCert.callsign () : "DXped")
+        .arg (certTag)
+        .arg (m_callerQueue.size ())
+        .arg (slotInfo.trimmed ()));
+  } else {
+    ui->callerQueueTitleLabel->setText(
+      tr("Caller Queue (%1)").arg(m_callerQueue.size()));
+  }
   ui->callerQueueTextBrowser->erase();
   int n = 0;
   for (auto const& entry : m_callerQueue) {
@@ -10762,52 +10875,146 @@ void MainWindow::clearDX ()
 
 void MainWindow::on_dxpedButton_clicked(bool checked)
 {
-  m_bDXpedMode = checked;
   if (checked) {
-    m_dxpedSlots[0] = DXpedSlot{"", 0, 0, 0, -99};
-    m_dxpedSlots[1] = DXpedSlot{"", 0, 0, 0, -99};
-    m_dxpedSlots[2] = DXpedSlot{"", 0, 0, 0, -99};
+    // ─── DXped Settings Dialog ─────────────────────────────────────────
+    QDialog dlg (this);
+    dlg.setWindowTitle (tr ("DXpedition Mode Settings"));
+    dlg.setFixedWidth (420);
+    auto *vl = new QVBoxLayout (&dlg);
+    vl->setSpacing (8);
+
+    // Certificate section
+    auto *certGroup = new QGroupBox (tr ("Certificate"));
+    auto *certLay = new QVBoxLayout (certGroup);
+    auto *certStatus = new QLabel (m_bDXpedCertified && m_dxpedCert.isValid ()
+      ? QString ("<b style='color:#00cc00;'>VERIFIED: %1 — %2</b>")
+          .arg (m_dxpedCert.callsign (), m_dxpedCert.dxccName ())
+      : "<b style='color:#999;'>No certificate loaded</b>");
+    certLay->addWidget (certStatus);
+    auto *certBtn = new QPushButton (tr ("Load Certificate (.dxcert)..."));
+    certLay->addWidget (certBtn);
+    vl->addWidget (certGroup);
+
+    // Slot settings
+    auto *slotGroup = new QGroupBox (tr ("TX Slots"));
+    auto *slotGrid = new QGridLayout (slotGroup);
+    int maxAllowed = (m_bDXpedCertified && m_dxpedCert.isValid ()) ? m_dxpedCert.maxSlots () : 2;
+    slotGrid->addWidget (new QLabel (tr ("Number of slots:")), 0, 0);
+    auto *slotsSpn = new QSpinBox;
+    slotsSpn->setRange (1, maxAllowed);
+    slotsSpn->setValue (qBound (1, m_dxpedNumSlots, maxAllowed));
+    slotGrid->addWidget (slotsSpn, 0, 1);
+    if (maxAllowed <= 2) {
+      auto *hint = new QLabel (tr ("<i>Load a certificate for up to 4 slots</i>"));
+      hint->setStyleSheet ("color: #888;");
+      slotGrid->addWidget (hint, 0, 2);
+    }
+    slotGrid->addWidget (new QLabel (tr ("Freq step between slots (Hz):")), 1, 0);
+    auto *freqStepSpn = new QSpinBox;
+    freqStepSpn->setRange (200, 1000);
+    freqStepSpn->setSingleStep (50);
+    freqStepSpn->setValue (m_dxpedFreqStep);
+    slotGrid->addWidget (freqStepSpn, 1, 1);
+    vl->addWidget (slotGroup);
+
+    // Queue & retry settings
+    auto *queueGroup = new QGroupBox (tr ("Queue && Retry"));
+    auto *qGrid = new QGridLayout (queueGroup);
+    qGrid->addWidget (new QLabel (tr ("Max caller queue:")), 0, 0);
+    auto *maxQSpn = new QSpinBox;
+    maxQSpn->setRange (5, 100);
+    maxQSpn->setValue (m_dxpedMaxQueue);
+    qGrid->addWidget (maxQSpn, 0, 1);
+
+    qGrid->addWidget (new QLabel (tr ("Max retries (no reply):")), 1, 0);
+    auto *missedSpn = new QSpinBox;
+    missedSpn->setRange (1, 20);
+    missedSpn->setValue (m_dxpedMissedThresh);
+    missedSpn->setToolTip (tr ("How many TX periods to wait for a reply before skipping"));
+    qGrid->addWidget (missedSpn, 1, 1);
+
+    qGrid->addWidget (new QLabel (tr ("CQ piggyback every N TX:")), 2, 0);
+    auto *cqSpn = new QSpinBox;
+    cqSpn->setRange (1, 20);
+    cqSpn->setValue (m_dxpedCQInterval);
+    cqSpn->setToolTip (tr ("Send CQ every N TX periods when queue is empty"));
+    qGrid->addWidget (cqSpn, 2, 1);
+    vl->addWidget (queueGroup);
+
+    // OK / Cancel
+    auto *btnLay = new QHBoxLayout;
+    auto *okBtn = new QPushButton (tr ("Start DXped"));
+    okBtn->setStyleSheet ("background-color: #2a7a2a; color: white; font-weight: bold; padding: 8px 20px;");
+    auto *cancelBtn = new QPushButton (tr ("Cancel"));
+    btnLay->addStretch ();
+    btnLay->addWidget (cancelBtn);
+    btnLay->addWidget (okBtn);
+    vl->addLayout (btnLay);
+
+    // Certificate load handler
+    connect (certBtn, &QPushButton::clicked, &dlg, [&] () {
+      dxpedLoadCertificate ();
+      if (m_bDXpedCertified && m_dxpedCert.isValid ()) {
+        certStatus->setText (QString ("<b style='color:#00cc00;'>VERIFIED: %1 — %2</b>")
+          .arg (m_dxpedCert.callsign (), m_dxpedCert.dxccName ()));
+        int newMax = m_dxpedCert.maxSlots ();
+        slotsSpn->setMaximum (newMax);
+        slotsSpn->setValue (qBound (1, newMax, 4));
+      }
+    });
+    connect (okBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
+    connect (cancelBtn, &QPushButton::clicked, &dlg, &QDialog::reject);
+
+    if (dlg.exec () != QDialog::Accepted) {
+      ui->dxpedButton->setChecked (false);
+      return;
+    }
+
+    // Apply settings from dialog
+    m_dxpedNumSlots = slotsSpn->value ();
+    m_dxpedFreqStep = freqStepSpn->value ();
+    m_dxpedMaxQueue = maxQSpn->value ();
+    m_dxpedMissedThresh = missedSpn->value ();
+    m_dxpedCQInterval = cqSpn->value ();
+
+    // ─── Activate DXped mode ───────────────────────────────────────────
+    m_bDXpedMode = true;
+    m_debugLog = true;   // Force debug log in DXped mode
+    for (int i = 0; i < 4; i++) m_dxpedSlots[i] = DXpedSlot{"", 0, 0, 0, -99};
     m_autoCQ = true;
     m_bCallingCQ = true;
     ui->cbAutoSeq->setChecked(true);
-    dxpedFillEmptySlots();   // frequency-diverse selection all'avvio
-    // Fox usa sempre il primo semiciclo (periodo fisso, come MSHV)
+    dxpedFillEmptySlots();
     if(!m_txFirst) {
       m_txFirst = true;
       ui->txFirstCheckBox->setChecked(true);
     }
-    // Coda vuota all'avvio: prepara CQ da tx5
-    if(m_callerQueue.isEmpty() && m_dxpedSlots[0].call.isEmpty() && m_dxpedSlots[1].call.isEmpty() && m_dxpedSlots[2].call.isEmpty()) {
+    // Coda vuota: prepara CQ da tx5
+    bool allEmpty = true;
+    for (int i = 0; i < m_dxpedNumSlots; i++) { if (!m_dxpedSlots[i].call.isEmpty()) { allEmpty = false; break; } }
+    if(m_callerQueue.isEmpty() && allEmpty) {
       m_ntx = 5;
       ui->txrb5->setChecked(true);
-      // Se tx5 è vuoto, auto-popola dal messaggio CQ (tx6)
       if(ui->tx5->currentText().trimmed().isEmpty()) {
-        genCQMsg();  // assicura tx6 aggiornato
+        genCQMsg();
         QString cq = ui->tx6->text().trimmed();
         if(!cq.isEmpty()) ui->tx5->setCurrentText(cq);
       }
-      // Fallback: se tx5 è ancora vuoto, costruisci CQ manuale per garantire la TX
       if(ui->tx5->currentText().trimmed().isEmpty() && !m_config.my_callsign().isEmpty()) {
         QString grid = m_config.my_grid().left(4);
-        QString cqFallback = "CQ " + m_config.my_callsign() + (grid.isEmpty() ? "" : " " + grid);
-        ui->tx5->setCurrentText(cqFallback);
+        ui->tx5->setCurrentText("CQ " + m_config.my_callsign() + (grid.isEmpty() ? "" : " " + grid));
       }
     }
     if (!m_auto) auto_tx_mode(true);
-    // Se auto_tx_mode è stato bloccato dal logbook-loading check, forza m_auto=true per DXped
     if (!m_auto) { m_auto = true; ui->autoButton->setChecked(true); }
-    // Fix: DXped usa Fox/Hound controls — assicura stacked widget su page 0
     ui->tab2StackedWidget->setCurrentIndex(0);
-    refreshCallerQueueDisplay();
-    // Porta al tab CallerQueue/DXped (index 1) per mostrare la coda subito
+    dxpedUpdateControlPanel ();
     ui->tabWidget->setCurrentIndex(1);
   } else {
+    // ─── Deactivate DXped mode ─────────────────────────────────────────
     m_bDXpedMode = false;
-    m_dxpedSlots[0] = DXpedSlot{"", 0, 0, 0, -99};
-    m_dxpedSlots[1] = DXpedSlot{"", 0, 0, 0, -99};
-    m_dxpedSlots[2] = DXpedSlot{"", 0, 0, 0, -99};
+    for (int i = 0; i < 4; i++) m_dxpedSlots[i] = DXpedSlot{"", 0, 0, 0, -99};
     auto_tx_mode(false);
-    // Fix: resetta m_autoCQ che DXped aveva impostato a true
     m_autoCQ = false;
     m_callerQueue.clear();
     ui->autoCQButton->setChecked(false);
@@ -10815,6 +11022,7 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
     ui->tabWidget->setCurrentIndex(0);
     ui->callerQueueTextBrowser->erase();
     ui->callerQueueTitleLabel->setText(tr("Caller Queue (0)"));
+    ui->callerQueueTitleLabel->setStyleSheet("");
   }
 }
 
@@ -10826,9 +11034,9 @@ void MainWindow::dxpedFillEmptySlots()
   if (m_callerQueue.isEmpty()) return;
 
   // Individua quali slot sono vuoti
-  bool slotEmpty[3];
+  bool slotEmpty[4] = {};
   int  nEmpty = 0;
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < m_dxpedNumSlots; i++) {
     slotEmpty[i] = m_dxpedSlots[i].call.isEmpty();
     if (slotEmpty[i]) nEmpty++;
   }
@@ -10840,7 +11048,7 @@ void MainWindow::dxpedFillEmptySlots()
 
   QVector<int> selFreqs;  // frequenze già assegnate in questo round
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < m_dxpedNumSlots; i++) {
     if (!slotEmpty[i] || pool.isEmpty()) continue;
 
     float bestScore = -1e9f;
@@ -10904,16 +11112,17 @@ int MainWindow::dxpedTxSequencer()
 {
   int nActiveSlots = 0;
   QString myBase = Radio::base_callsign(m_config.my_callsign());
+  debugToFile(QString("TxSeq: numSlots=%1 queueSz=%2").arg(m_dxpedNumSlots).arg(m_callerQueue.size()));
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < m_dxpedNumSlots; i++) {
     DXpedSlot &sl = m_dxpedSlots[i];
+    debugToFile(QString("TxSeq slot[%1]: call='%2' txStep=%3 missed=%4").arg(i).arg(sl.call).arg(sl.txStep).arg(sl.missedPeriods));
 
     // Non skippare mai un caller che ha già risposto (txStep=3 = attende RR73)
-    // Threshold 4: dà al caller 4 TX periods per rispondere (8 sec FT2, 60 sec FT8)
     bool canSkip = (sl.txStep != 3);
     bool justLoaded = false;
-    if ((sl.call.isEmpty() || sl.missedPeriods >= 4) && canSkip) {
-      if (sl.missedPeriods >= 4)
+    if ((sl.call.isEmpty() || sl.missedPeriods >= m_dxpedMissedThresh) && canSkip) {
+      if (sl.missedPeriods >= m_dxpedMissedThresh)
         writeFoxQSO(QString(" Skip: %1 (no reply)").arg(sl.call));
       dxpedLoadSlot(i);
       if (sl.call.isEmpty()) continue;
@@ -10947,10 +11156,10 @@ int MainWindow::dxpedTxSequencer()
     }
   }
 
-  // Piggyback CQ: ogni 4 periodi TX, se coda vuota e tx5 ha CQ, aggiunge 3° segnale
+  // Piggyback CQ: ogni N periodi TX, se coda vuota e tx5 ha CQ, aggiunge segnale extra
   QString cqPiggy = ui->tx5->currentText().trimmed();
   if (nActiveSlots > 0 && m_callerQueue.isEmpty() && !cqPiggy.isEmpty()) {
-    if (++m_dxpedCQcounter >= 4) {
+    if (++m_dxpedCQcounter >= m_dxpedCQInterval) {
       m_dxpedCQcounter = 0;
       foxGenWaveform(nActiveSlots, cqPiggy);
       nActiveSlots++;
@@ -10968,6 +11177,7 @@ int MainWindow::dxpedTxSequencer()
     bool bSuperFox = false;
     foxcom_.bMoreCQs = false;
     foxcom_.bSendMsg = false;
+    foxcom_.fstep = m_dxpedFreqStep;
     if (m_mode == "FT2") {
       foxgenft2_();
     } else {
@@ -10981,33 +11191,34 @@ int MainWindow::dxpedTxSequencer()
 
 void MainWindow::dxpedRxProcess(QString const& call, QString const& rptRcvd)
 {
-  for (int i = 0; i < 3; i++) {
+  debugToFile(QString("dxpedRxProc: call='%1' rpt='%2'").arg(call, rptRcvd));
+  for (int i = 0; i < m_dxpedNumSlots; i++) {
     DXpedSlot &sl = m_dxpedSlots[i];
     if (sl.call.isEmpty()) continue;
     if (Radio::base_callsign(sl.call) == Radio::base_callsign(call)) {
+      debugToFile(QString("dxpedRxProc: MATCH slot[%1] txStep=%2→").arg(i).arg(sl.txStep));
       sl.missedPeriods = 0;
       switch (sl.txStep) {
         case 2:
           if (!rptRcvd.isEmpty()) sl.rptRcvd = rptRcvd;
           sl.txStep = 3;   // ricevuto R+rpt → manda RR73
+          debugToFile("dxpedRxProc: advanced to txStep=3 (RR73)");
           break;
-        case 3: break;   // già in attesa di inviare RR73; isFinalAck filtrato in dxpedAutoSequence
-        case 5:
-          dxpedLogQSO(i);      // ADIF log prima di scaricare lo slot
-          dxpedLoadSlot(i);    // ricevuto 73 → prossimo caller (fallback 3-period)
-          break;
+        case 3: debugToFile("dxpedRxProc: already txStep=3, no change"); break;
       }
       return;
     }
   }
+  debugToFile("dxpedRxProc: no slot match found");
 }
 
 void MainWindow::dxpedAutoSequence (DecodedText const& msg)
 {
-  if (!m_auto || !msg.isStandardMessage ()) return;
+  debugToFile("dxpedAutoSeq msg=" + msg.string().trimmed() + " m_auto=" + QString::number(m_auto) + " std=" + QString::number(msg.isStandardMessage()));
+  if (!m_auto || !msg.isStandardMessage ()) { debugToFile("dxpedAutoSeq: SKIP (auto=0 or !std)"); return; }
 
   auto const& words = msg.messageWords ();
-  if (words.size () < 4) return;
+  if (words.size () < 4) { debugToFile(QString("dxpedAutoSeq: SKIP words.size=%1 < 4").arg(words.size())); return; }
 
   // tokens_re capturedTexts():
   //   [1]=dual  [2]=word1(destinatario)  [3]=word2(mittente)  [4]=word3(report)
@@ -11016,17 +11227,18 @@ void MainWindow::dxpedAutoSequence (DecodedText const& msg)
 
   // Processa solo messaggi indirizzati a noi
   QString myBase = Radio::base_callsign (m_config.my_callsign ());
-  if (word1 != myBase && word1 != m_config.my_callsign ()) return;
+  if (word1 != myBase && word1 != m_config.my_callsign ()) { debugToFile(QString("dxpedAutoSeq: SKIP not_for_us word1='%1' myBase='%2'").arg(word1, myBase)); return; }
 
   QString callerCall = word2;
-  if (callerCall.isEmpty () || callerCall == "DE" || callerCall == "CQ") return;
+  if (callerCall.isEmpty () || callerCall == "DE" || callerCall == "CQ") { debugToFile("dxpedAutoSeq: SKIP caller empty/DE/CQ"); return; }
 
   // Estrai il report/conferma (es. "R-05", "RR73", "73")
   QString rptRcvd = words.size () > 4 ? words.at (4) : QString ();
   bool isFinalAck = (rptRcvd == "73" || rptRcvd == "RR73");
+  debugToFile(QString("dxpedAutoSeq: caller='%1' rpt='%2' isFinal=%3").arg(callerCall, rptRcvd).arg(isFinalAck));
 
   // Cerca il caller negli slot attivi
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < m_dxpedNumSlots; i++) {
     if (!m_dxpedSlots[i].call.isEmpty () &&
         Radio::base_callsign (m_dxpedSlots[i].call) == Radio::base_callsign (callerCall)) {
       // Early-exit: se già avanzati (txStep>=3) e arriva 73/RR73, chiudi subito
@@ -11073,6 +11285,82 @@ void MainWindow::dxpedLogQSO (int slot)
 
   writeFoxQSO (QString (" Log:  %1 %2 %3").arg (sl.call, m_rptSent, m_rptRcvd));
   on_logQSOButton_clicked ();
+}
+
+void MainWindow::dxpedLoadCertificate ()
+{
+  QString path = QFileDialog::getOpenFileName (this,
+    tr ("Load DXpedition Certificate"), QString (), tr ("DXped Certificate (*.dxcert)"));
+  if (path.isEmpty ()) return;
+
+  if (m_dxpedCert.loadFromFile (path)) {
+    if (!m_dxpedCert.isValid ()) {
+      QMessageBox::warning (this, tr ("Certificate Expired"),
+        tr ("The certificate for %1 is expired or not yet valid.\n"
+            "Valid: %2 to %3")
+        .arg (m_dxpedCert.callsign ())
+        .arg (m_dxpedCert.activationStart ().toString ("yyyy-MM-dd"))
+        .arg (m_dxpedCert.activationEnd ().toString ("yyyy-MM-dd")));
+      m_bDXpedCertified = false;
+      return;
+    }
+    // Verifica che l'operatore corrente sia nella lista
+    if (!m_dxpedCert.isOperator (m_config.my_callsign ())) {
+      QMessageBox::warning (this, tr ("Operator Not Authorized"),
+        tr ("Your callsign %1 is not in the operator list for %2.")
+        .arg (m_config.my_callsign (), m_dxpedCert.callsign ()));
+      m_bDXpedCertified = false;
+      return;
+    }
+    m_bDXpedCertified = true;
+    m_dxpedNumSlots = qBound (1, m_dxpedCert.maxSlots (), 4);
+
+    // Propaga il callsign verificato ai display
+    m_verifiedDxpedCalls.insert (m_dxpedCert.callsign ());
+    ui->decodedTextBrowser->setVerifiedCalls (m_verifiedDxpedCalls);
+    ui->decodedTextBrowser2->setVerifiedCalls (m_verifiedDxpedCalls);
+
+    dxpedUpdateControlPanel ();
+
+    QMessageBox::information (this, tr ("Certificate Loaded"),
+      tr ("DXpedition: %1 (%2)\n"
+          "DXCC: %3\n"
+          "Operators: %4\n"
+          "Max Slots: %5\n"
+          "Valid: %6 to %7\n"
+          "Hash: %8")
+      .arg (m_dxpedCert.callsign (), m_dxpedCert.dxccName ())
+      .arg (m_dxpedCert.dxccEntity ())
+      .arg (m_dxpedCert.operators ().join (", "))
+      .arg (m_dxpedCert.maxSlots ())
+      .arg (m_dxpedCert.activationStart ().toString ("yyyy-MM-dd"))
+      .arg (m_dxpedCert.activationEnd ().toString ("yyyy-MM-dd"))
+      .arg (m_dxpedCert.certHash ()));
+  } else {
+    QMessageBox::critical (this, tr ("Invalid Certificate"),
+      tr ("The certificate file is invalid or the signature verification failed."));
+    m_bDXpedCertified = false;
+  }
+}
+
+void MainWindow::dxpedUpdateControlPanel ()
+{
+  // Update the caller queue title with certificate info
+  if (m_bDXpedCertified && m_dxpedCert.isValid ()) {
+    QString info = QString ("DXped: %1 [%2] — %3 slots — VERIFIED")
+      .arg (m_dxpedCert.callsign ())
+      .arg (m_dxpedCert.dxccName ())
+      .arg (m_dxpedNumSlots);
+    ui->callerQueueTitleLabel->setText (info);
+    ui->callerQueueTitleLabel->setStyleSheet (
+      "color: #00cc00; font-weight: bold; font-size: 12px;");
+  } else {
+    ui->callerQueueTitleLabel->setText (
+      QString ("DXped Mode — %1 slots").arg (m_dxpedNumSlots));
+    ui->callerQueueTitleLabel->setStyleSheet (
+      "color: #cccc00; font-weight: bold; font-size: 12px;");
+  }
+  refreshCallerQueueDisplay ();
 }
 
 void MainWindow::lookup()
@@ -11757,6 +12045,9 @@ void MainWindow::on_genStdMsgsPushButton_clicked()          //genStdMsgs button
 void MainWindow::cease_auto_Tx_after_QSO ()
 {
   if (is_externalCtrlMode()) return;     //avt 3/26/24
+
+  // DXped mode: TX is managed by dxpedTxSequencer, never disable auto here
+  if (m_bDXpedMode) return;
 
   // Auto CQ: don't disable auto TX here.
   // Logging and CQ restart are handled in on_logQSOButton_clicked()
@@ -16495,7 +16786,7 @@ void MainWindow::foxGenWaveform(int i,QString fm)
   if(fm.mid(0,3)=="CQ ") m_tFoxTxSinceCQ=-1;
 
   QString txModeArg;
-  int fstep = (m_mode=="FT2") ? 500 : 60;
+  int fstep = (m_mode=="FT2") ? m_dxpedFreqStep : 60;
   txModeArg = txModeArg.asprintf("%sfox %d", m_mode.toStdString().c_str(), i+1);
   int nfreq=ui->TxFreqSpinBox->value()+fstep*i;
 
@@ -17013,6 +17304,7 @@ void MainWindow::asyncDecodeDone()
       write_all("Rx", message);
 
       // Auto-sequence — works normally with L2 decodes
+      if (m_bDXpedMode) dxpedAutoSequence(decodedtext);
       auto_sequence(decodedtext, ui->sbFtol->value(), ui->sbFtol->value());
     }
 }

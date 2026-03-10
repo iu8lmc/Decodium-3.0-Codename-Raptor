@@ -137,6 +137,7 @@ extern struct {
   char  textMsg[26];
   bool  bMoreCQs;
   bool  bSendMsg;
+  int   fstep;            /* Hz between DXped sub-carriers (default 500) */
 } foxcom_;
 
 #ifdef __cplusplus
