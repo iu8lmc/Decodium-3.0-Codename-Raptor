@@ -16,7 +16,13 @@ subroutine sfox_wave_gfsk()
   real*8 pulse(3*NSPS)
   logical first/.true./
 
-  common/foxcom/wave(NWAVE)
+  character*40 cmsg_fc
+  character*26 textMsg_fc
+  logical*1 bMoreCQs_fc,bSendMsg_fc
+  integer*1, target:: mycall_fc
+  integer ifstep_fc
+  common/foxcom/wave(NWAVE),nslots_fc,nfreq_fc,i3bit_fc(5),cmsg_fc(5), &
+       mycall_fc(12),textMsg_fc,bMoreCQs_fc,bSendMsg_fc,ifstep_fc
   common/foxcom3/nslots2,cmsg2(5),itone3(151)
   save first,twopi,dt,hmod,dphi_peak,pulse
 

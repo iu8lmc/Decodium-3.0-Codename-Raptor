@@ -1,4 +1,4 @@
-subroutine foxfiltft2(nslots,nfreq,width,wave)
+subroutine foxfiltft2(nslots,nfreq,width,wave,ifstep)
 
 ! Spectral filtering for FT2 Fox multi-slot signals.
 ! Analogous to foxfilt.f90 for FT8.
@@ -9,11 +9,14 @@ subroutine foxfiltft2(nslots,nfreq,width,wave)
   parameter (NN2=105,NSPS=4*288)
   parameter (NWAVEFT2=NN2*NSPS)
   parameter (NFFT=614400,NH=NFFT/2)
+  integer ifstep
   real wave(NWAVEFT2)
   real x(NFFT)
   complex cx(0:NH)
   equivalence (x,cx)
+  real fstep_val
 
+  fstep_val=max(200.0, real(ifstep))
   x(1:NWAVEFT2)=wave
   x(NWAVEFT2+1:)=0.
   call four2a(cx,NFFT,1,-1,0)              !r2c
@@ -24,7 +27,7 @@ subroutine foxfiltft2(nslots,nfreq,width,wave)
 ! With GFSK spreading, effective BW ~167 Hz
   baud=48000.0/NSPS
   fa=nfreq - 0.5*baud
-  fb=nfreq + 3.5*baud + (nslots-1)*500.0
+  fb=nfreq + 3.5*baud + (nslots-1)*fstep_val
   ia2=nint(fa/df)
   ib1=nint(fb/df)
   ia1=nint(ia2-width/df)
