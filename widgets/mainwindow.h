@@ -466,6 +466,7 @@ private slots:
   void on_actionQ65_triggered();
   void on_actionFreqCal_triggered();
   void splash_done ();
+  void showStartupBanner ();
   void on_measure_check_box_stateChanged (int);
   void on_sbNlist_valueChanged(int n);
   void on_sbNslots_valueChanged(int n);
