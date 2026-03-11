@@ -54,6 +54,12 @@
 #include <QTcpSocket>
 #include <QAbstractItemView>
 #include <QInputDialog>
+#include <QHeaderView>
+#include <QDockWidget>
+#include <QTableWidget>
+#include <QGridLayout>
+#include <QGroupBox>
+#include <QSpinBox>
 #include <QSound> // TCI
 #include <QtMath> // TCI
 #if QT_VERSION >= QT_VERSION_CHECK (5, 15, 0)
@@ -569,11 +575,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_optimizingProgress {"Optimizing decoder FFTs for your CPU.\n"
       "Please be patient,\n"
       "this may take a few minutes", QString {}, 0, 1, this},
-  m_messageClient {new MessageClient {
-      QCoreApplication::applicationName ().contains (" - ")
-        ? QString {"Decodium"} + QCoreApplication::applicationName ().mid (
-            QCoreApplication::applicationName ().indexOf (" - "))
-        : QString {"Decodium"},
+  m_messageClient {new MessageClient {m_multiple ? QCoreApplication::applicationName () : QString {"Decodium"},
         version (), revision (),
         m_config.udp_server_name (), m_config.udp_server_port (),
         m_config.udp_interface_names (), m_config.udp_TTL (),
@@ -603,6 +605,113 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   // ASYMX: Async L2 on by default, visible only in FT2
   ui->cbAsyncDecode->setChecked(true);
   ui->cbAsyncDecode->setVisible(false);  // will be shown by on_actionFT2_triggered
+
+  // ASYMX badge pulse animation
+  m_labelAsymxBadge = ui->labelAsymxBadge;
+  m_asymxOpacity = new QGraphicsOpacityEffect (m_labelAsymxBadge);
+  m_labelAsymxBadge->setGraphicsEffect (m_asymxOpacity);
+  m_asymxPulse = new QPropertyAnimation (m_asymxOpacity, "opacity", this);
+  m_asymxPulse->setDuration (1500);
+  m_asymxPulse->setStartValue (0.4);
+  m_asymxPulse->setEndValue (1.0);
+  m_asymxPulse->setEasingCurve (QEasingCurve::InOutSine);
+  m_asymxPulse->setLoopCount (-1);  // infinite
+  m_asymxPulse->start ();
+
+  // DX Cluster menu & dock
+  {
+    m_clusterHost = m_settings->value ("ClusterHost", "dx.dx-world.net").toString ();
+    m_clusterPort = m_settings->value ("ClusterPort", 7300).toInt ();
+    m_clusterAutoConnect = m_settings->value ("ClusterAutoConnect", false).toBool ();
+
+    m_actionClusterEnable = new QAction (tr ("Enable Cluster"), this);
+    m_actionClusterEnable->setCheckable (true);
+    m_actionClusterEnable->setChecked (m_clusterAutoConnect);
+
+    m_actionClusterSettings = new QAction (tr ("Settings..."), this);
+    m_actionClusterConnect = new QAction (tr ("Connect"), this);
+
+    ui->menuCluster->addAction (m_actionClusterEnable);
+    ui->menuCluster->addAction (m_actionClusterSettings);
+    ui->menuCluster->addSeparator ();
+    ui->menuCluster->addAction (m_actionClusterConnect);
+
+    // Cluster spots dock
+    m_clusterDock = new QDockWidget (tr ("DX Cluster Spots"), this);
+    m_clusterDock->setObjectName ("clusterDock");
+    m_clusterTable = new QTableWidget (0, 5, m_clusterDock);
+    m_clusterTable->setHorizontalHeaderLabels ({tr("TIME"), tr("DX"), tr("FREQ"), tr("SPOTTER"), tr("COMMENT")});
+    m_clusterTable->horizontalHeader()->setStretchLastSection (true);
+    m_clusterTable->setEditTriggers (QAbstractItemView::NoEditTriggers);
+    m_clusterTable->setSelectionBehavior (QAbstractItemView::SelectRows);
+    m_clusterTable->verticalHeader()->setVisible (false);
+    m_clusterDock->setWidget (m_clusterTable);
+    addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
+    m_clusterDock->setVisible (false);
+
+    m_clusterSocket = new QTcpSocket (this);
+    connect (m_clusterSocket, &QTcpSocket::readyRead, this, [this] () {
+      m_clusterBuf.append (m_clusterSocket->readAll ());
+      while (m_clusterBuf.contains ('\n')) {
+        int idx = m_clusterBuf.indexOf ('\n');
+        QString line = QString::fromLatin1 (m_clusterBuf.left (idx)).trimmed ();
+        m_clusterBuf.remove (0, idx + 1);
+        clusterProcessLine (line);
+      }
+    });
+    connect (m_clusterSocket, &QTcpSocket::connected, this, [this] () {
+      m_clusterConnected = true;
+      m_actionClusterConnect->setText (tr ("Disconnect"));
+      // Login
+      QString myCall = m_config.my_callsign ();
+      if (myCall.isEmpty ()) myCall = "NOCALL";
+      m_clusterSocket->write ((myCall + "\r\n").toLatin1 ());
+    });
+    connect (m_clusterSocket, &QTcpSocket::disconnected, this, [this] () {
+      m_clusterConnected = false;
+      m_clusterBuf.clear ();
+      m_actionClusterConnect->setText (tr ("Connect"));
+    });
+
+    connect (m_actionClusterEnable, &QAction::toggled, this, [this] (bool on) {
+      m_clusterAutoConnect = on;
+      m_settings->setValue ("ClusterAutoConnect", on);
+      m_clusterDock->setVisible (on);
+      if (on && !m_clusterConnected) clusterConnect ();
+      if (!on && m_clusterConnected) clusterDisconnect ();
+    });
+    connect (m_actionClusterConnect, &QAction::triggered, this, [this] () {
+      if (m_clusterConnected) clusterDisconnect ();
+      else clusterConnect ();
+    });
+    connect (m_actionClusterSettings, &QAction::triggered, this, [this] () {
+      clusterShowSettings ();
+    });
+
+    // Double-click on spot → set freq and DX call
+    connect (m_clusterTable, &QTableWidget::cellDoubleClicked, this, [this] (int row, int) {
+      if (row >= m_clusterTable->rowCount ()) return;
+      QString dxCall = m_clusterTable->item (row, 1)->text ();
+      QString freqStr = m_clusterTable->item (row, 2)->text ();
+      double freqKHz = freqStr.toDouble ();
+      if (!dxCall.isEmpty ()) {
+        ui->dxCallEntry->setText (dxCall);
+        genStdMsgs (dxCall);
+      }
+      if (freqKHz > 0) {
+        // Set dial frequency (kHz to Hz)
+        setRig (static_cast<Frequency>(freqKHz * 1000.0));
+      }
+    });
+
+    // Auto-connect on startup
+    if (m_clusterAutoConnect) {
+      QTimer::singleShot (3000, this, [this] () {
+        if (!m_clusterConnected) clusterConnect ();
+        m_clusterDock->setVisible (true);
+      });
+    }
+  }
 
   m_optimizingProgress.setWindowModality (Qt::WindowModal);
   m_optimizingProgress.setAutoReset (false);
@@ -9090,27 +9199,36 @@ void MainWindow::guiUpdate()
 
     progressBar.setVisible(true);
 
-    // ASYMX: async progress bar — shows TX/RX/IDLE state
+    // ASYMX: track TX/RX transitions
+    qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+    if (m_transmitting && !m_wasTransmitting) { m_asyncTxStartMs = nowMs; }
+    if (!m_transmitting && m_wasTransmitting) { m_asyncRxStartMs = nowMs; }
+    m_wasTransmitting = m_transmitting;
+
+    // ASYMX: async progress bar — shows GUARD/TX/RX/IDLE with real seconds
     if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
       progressBar.setMaximum(100);
-      if (m_transmitting) {
-        // TX: red bar, fills based on waveform progress (~2.8s total)
+      int guardRemain = m_asyncTxGuardTimer.isActive() ? m_asyncTxGuardTimer.remainingTime() : 0;
+      if (guardRemain > 0) {
+        // GUARD state (yellow)
+        progressBar.setStyleSheet(QString("QProgressBar {color: #000000; text-align: center; font-weight: bold;} QProgressBar::chunk {background-color: #ffaa00;}"));
+        double secs = guardRemain / 1000.0;
+        progressBar.setFormat(QString("GUARD %1s").arg(secs, 0, 'f', 1));
+        progressBar.setValue(100 - (guardRemain * 100 / 300));
+      } else if (m_transmitting) {
+        // TX state (red) with real elapsed seconds, progress 0-100% over 2800ms
         progressBar.setStyleSheet(QString("QProgressBar {color: #ffffff; text-align: center; font-weight: bold;} QProgressBar::chunk {background-color: #ff0000;}"));
-        progressBar.setFormat("TX");
-        // Estimate TX progress from PTT assertion time
-        static qint64 txStartMs = 0;
-        if (!m_btxok0 && m_btxok) txStartMs = QDateTime::currentMSecsSinceEpoch();
-        if (txStartMs > 0) {
-          int elapsed = int(QDateTime::currentMSecsSinceEpoch() - txStartMs);
-          progressBar.setValue(qMin(100, elapsed * 100 / 2800));
-        } else {
-          progressBar.setValue(50);
-        }
+        int elapsed = (m_asyncTxStartMs > 0) ? int(nowMs - m_asyncTxStartMs) : 0;
+        double secs = elapsed / 1000.0;
+        progressBar.setFormat(QString("TX %1s").arg(secs, 0, 'f', 1));
+        progressBar.setValue(qMin(100, elapsed * 100 / 2800));
       } else if (m_monitoring) {
-        // RX: green bar, cycles with async decode timer (750ms)
+        // RX state (green) with real elapsed seconds, cycles over 750ms
         progressBar.setStyleSheet(QString("QProgressBar {color: #ffffff; text-align: center; font-weight: bold;} QProgressBar::chunk {background-color: #00aa00;}"));
-        progressBar.setFormat("RX");
-        int cycle = int(QDateTime::currentMSecsSinceEpoch() % 750) * 100 / 750;
+        int elapsed = (m_asyncRxStartMs > 0) ? int(nowMs - m_asyncRxStartMs) : 0;
+        double secs = elapsed / 1000.0;
+        progressBar.setFormat(QString("RX %1s").arg(secs, 0, 'f', 1));
+        int cycle = int(nowMs % 750) * 100 / 750;
         progressBar.setValue(cycle);
       } else {
         // IDLE
@@ -10825,6 +10943,15 @@ void MainWindow::refreshCallerQueueDisplay ()
   }
 }
 
+void MainWindow::on_callerQueueAddBtn_clicked ()
+{
+  QString call = ui->callerQueueInput->text().trimmed().toUpper();
+  if (call.isEmpty()) return;
+  enqueueCaller (call, ui->TxFreqSpinBox->value(), 0);
+  ui->callerQueueInput->clear();
+  refreshCallerQueueDisplay();
+}
+
 void MainWindow::clearDX ()
 {
   set_dateTimeQSO (-1);
@@ -10901,7 +11028,7 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
     // Slot settings
     auto *slotGroup = new QGroupBox (tr ("TX Slots"));
     auto *slotGrid = new QGridLayout (slotGroup);
-    int maxAllowed = (m_bDXpedCertified && m_dxpedCert.isValid ()) ? m_dxpedCert.maxSlots () : 2;
+    int maxAllowed = (m_bDXpedCertified && m_dxpedCert.isValid ()) ? m_dxpedCert.maxSlots () : 0;
     slotGrid->addWidget (new QLabel (tr ("Number of slots:")), 0, 0);
     auto *slotsSpn = new QSpinBox;
     slotsSpn->setRange (1, maxAllowed);
@@ -10944,10 +11071,16 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
     qGrid->addWidget (cqSpn, 2, 1);
     vl->addWidget (queueGroup);
 
+    // Certificate required warning
+    auto *certWarn = new QLabel (tr ("<b style='color:#cc0000;'>Certificate required to activate DXpedition mode</b>"));
+    certWarn->setVisible (!(m_bDXpedCertified && m_dxpedCert.isValid ()));
+    vl->addWidget (certWarn);
+
     // OK / Cancel
     auto *btnLay = new QHBoxLayout;
     auto *okBtn = new QPushButton (tr ("Start DXped"));
     okBtn->setStyleSheet ("background-color: #2a7a2a; color: white; font-weight: bold; padding: 8px 20px;");
+    okBtn->setEnabled (m_bDXpedCertified && m_dxpedCert.isValid ());
     auto *cancelBtn = new QPushButton (tr ("Cancel"));
     btnLay->addStretch ();
     btnLay->addWidget (cancelBtn);
@@ -10963,6 +11096,8 @@ void MainWindow::on_dxpedButton_clicked(bool checked)
         int newMax = m_dxpedCert.maxSlots ();
         slotsSpn->setMaximum (newMax);
         slotsSpn->setValue (qBound (1, newMax, 4));
+        okBtn->setEnabled (true);
+        certWarn->setVisible (false);
       }
     });
     connect (okBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
@@ -12307,7 +12442,8 @@ void MainWindow::displayWidgets(qint64 n)
   /* See text file "displayWidgets.txt" for widget numbers */
   // ASYMX: Async L2 visible only in FT2; auto-disable when leaving FT2
   bool isFT2 = (m_mode == "FT2");
-  ui->cbAsyncDecode->setVisible(isFT2);
+  ui->cbAsyncDecode->setVisible(false);  // always hidden: forced on in FT2, off elsewhere
+  ui->labelAsymxBadge->setVisible(isFT2);
   if (!isFT2 && ui->cbAsyncDecode->isChecked()) {
     ui->cbAsyncDecode->setChecked(false);  // triggers on_cbAsyncDecode_toggled → stops timer
   }
@@ -12531,9 +12667,11 @@ void MainWindow::on_actionFT2_triggered()
   ui->txb6->setEnabled(true);
   ui->txFirstCheckBox->setEnabled(true);
   ui->cbAutoSeq->setEnabled(true);
-  // ASYMX: show Async L2 controls in FT2 mode
-  ui->cbAsyncDecode->setVisible(true);
-  ui->labelAsyncL2Active->setVisible(ui->cbAsyncDecode->isChecked());
+  // ASYMX: force Async L2 in FT2, hide checkbox (always on), show ASYMX badge
+  ui->cbAsyncDecode->setChecked(true);
+  ui->cbAsyncDecode->setVisible(false);   // always on in FT2, no user toggle
+  ui->labelAsyncL2Active->setVisible(false);
+  ui->labelAsymxBadge->setVisible(true);
   initExternalCtrl();
   statusChanged();
 }
@@ -17274,15 +17412,22 @@ void MainWindow::on_cbDualCarrier_toggled (bool checked)
 
 void MainWindow::on_cbAsyncDecode_toggled (bool checked)
 {
+    // In FT2, Async L2 is mandatory — re-check if user tries to uncheck
+    if (!checked && m_mode == "FT2") {
+      ui->cbAsyncDecode->setChecked (true);
+      return;
+    }
     if (checked && m_mode == "FT2") {
       m_asyncAudioPos = 0;
       m_decodeDedup.clear();
       m_asyncDecodeTimer.start(750);  // Level 2: sync-triggered every 750ms
-      ui->labelAsyncL2Active->setVisible(true);
+      ui->labelAsyncL2Active->setVisible(false);  // replaced by ASYMX badge
+      ui->labelAsymxBadge->setVisible(true);
     } else {
       m_asyncDecodeTimer.stop();
       m_bAsyncDecoding = false;
       ui->labelAsyncL2Active->setVisible(false);
+      ui->labelAsymxBadge->setVisible(false);
     }
 }
 
@@ -20292,5 +20437,104 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
   });
 
   sock->connectToHost(clusterHost, clusterPort);
+}
+
+// ─── DX Cluster ───────────────────────────────────────────────────────────
+
+void MainWindow::clusterConnect ()
+{
+  if (m_clusterConnected) return;
+  m_clusterBuf.clear ();
+  m_clusterSocket->connectToHost (m_clusterHost, m_clusterPort);
+}
+
+void MainWindow::clusterDisconnect ()
+{
+  if (!m_clusterConnected) return;
+  m_clusterSocket->write ("bye\r\n");
+  QTimer::singleShot (2000, this, [this] () {
+    if (m_clusterSocket->state () != QAbstractSocket::UnconnectedState)
+      m_clusterSocket->disconnectFromHost ();
+  });
+}
+
+void MainWindow::clusterProcessLine (QString const& line)
+{
+  // Parse DX spot: "DX de SPOTTER:   FREQ  DXCALL  comment  TIME"
+  // Example: "DX de W3LPL:      14025.0  5B4AQC     CW NA                          1823Z"
+  static QRegularExpression rx (
+    R"(DX de\s+(\S+?):\s+(\d+\.?\d*)\s+(\S+)\s+(.*?)\s+(\d{4}Z))",
+    QRegularExpression::CaseInsensitiveOption);
+
+  auto match = rx.match (line);
+  if (!match.hasMatch ()) return;
+
+  QString spotter  = match.captured (1);
+  QString freqStr  = match.captured (2);
+  QString dxCall   = match.captured (3);
+  QString comment  = match.captured (4).trimmed ();
+  QString timeStr  = match.captured (5);
+
+  // Insert at top of table, limit to 100 rows
+  m_clusterTable->insertRow (0);
+  m_clusterTable->setItem (0, 0, new QTableWidgetItem (timeStr));
+  m_clusterTable->setItem (0, 1, new QTableWidgetItem (dxCall));
+  m_clusterTable->setItem (0, 2, new QTableWidgetItem (freqStr));
+  m_clusterTable->setItem (0, 3, new QTableWidgetItem (spotter));
+  m_clusterTable->setItem (0, 4, new QTableWidgetItem (comment));
+
+  while (m_clusterTable->rowCount () > 100)
+    m_clusterTable->removeRow (m_clusterTable->rowCount () - 1);
+}
+
+void MainWindow::clusterShowSettings ()
+{
+  QDialog dlg (this);
+  dlg.setWindowTitle (tr ("DX Cluster Settings"));
+  dlg.setFixedWidth (350);
+  auto *vl = new QVBoxLayout (&dlg);
+
+  auto *grid = new QGridLayout;
+  grid->addWidget (new QLabel (tr ("Host:")), 0, 0);
+  auto *hostEdit = new QLineEdit (m_clusterHost);
+  grid->addWidget (hostEdit, 0, 1);
+
+  grid->addWidget (new QLabel (tr ("Port:")), 1, 0);
+  auto *portSpn = new QSpinBox;
+  portSpn->setRange (1, 65535);
+  portSpn->setValue (m_clusterPort);
+  grid->addWidget (portSpn, 1, 1);
+
+  grid->addWidget (new QLabel (tr ("Callsign:")), 2, 0);
+  auto *callLabel = new QLabel (m_config.my_callsign ());
+  callLabel->setStyleSheet ("font-weight: bold;");
+  grid->addWidget (callLabel, 2, 1);
+
+  auto *autoCheck = new QCheckBox (tr ("Enable on startup"));
+  autoCheck->setChecked (m_clusterAutoConnect);
+  grid->addWidget (autoCheck, 3, 0, 1, 2);
+
+  vl->addLayout (grid);
+
+  auto *btnLay = new QHBoxLayout;
+  auto *okBtn = new QPushButton (tr ("OK"));
+  auto *cancelBtn = new QPushButton (tr ("Cancel"));
+  btnLay->addStretch ();
+  btnLay->addWidget (cancelBtn);
+  btnLay->addWidget (okBtn);
+  vl->addLayout (btnLay);
+
+  connect (okBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
+  connect (cancelBtn, &QPushButton::clicked, &dlg, &QDialog::reject);
+
+  if (dlg.exec () == QDialog::Accepted) {
+    m_clusterHost = hostEdit->text ().trimmed ();
+    m_clusterPort = portSpn->value ();
+    m_clusterAutoConnect = autoCheck->isChecked ();
+    m_settings->setValue ("ClusterHost", m_clusterHost);
+    m_settings->setValue ("ClusterPort", m_clusterPort);
+    m_settings->setValue ("ClusterAutoConnect", m_clusterAutoConnect);
+    m_actionClusterEnable->setChecked (m_clusterAutoConnect);
+  }
 }
 
