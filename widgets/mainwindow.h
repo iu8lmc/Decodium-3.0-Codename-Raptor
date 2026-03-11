@@ -35,6 +35,10 @@
 #include <QSaveFile>
 #include <QUrl>
 #include <QNetworkReply>
+#include <QDockWidget>
+#include <QTableWidget>
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
 
 #include "MultiGeometryWidget.hpp"
 #include "NonInheritingProcess.hpp"
@@ -497,6 +501,7 @@ private slots:
   void showExternalCtrlDisconnect();     //avt 12/16/21
   void on_rbFixedTone_toggled(bool b);
   void on_rbEchoMessage_toggled(bool b);
+  void on_callerQueueAddBtn_clicked();
   void on_rbEchoCW_toggled(bool b);
   void on_leEchoMessage_textChanged();
   void downloadQsoComplete(bool result);  //avt 10/2/25
@@ -1219,6 +1224,33 @@ private:
   void updateLotwCtrls();      //avt 9/23/25
   void logIncremental(QString, QString);      //avt 9/25/25
   void setIncrLogCount();    //avt 9/25/25
+
+  // ASYMX timing bar
+  qint64 m_asyncTxStartMs {0};
+  qint64 m_asyncRxStartMs {0};
+  bool   m_wasTransmitting {false};
+
+  // ASYMX badge animation
+  QLabel *m_labelAsymxBadge {nullptr};
+  QGraphicsOpacityEffect *m_asymxOpacity {nullptr};
+  QPropertyAnimation *m_asymxPulse {nullptr};
+
+  // DX Cluster
+  QTcpSocket *m_clusterSocket {nullptr};
+  bool m_clusterConnected {false};
+  QString m_clusterHost;
+  int m_clusterPort {7300};
+  bool m_clusterAutoConnect {false};
+  QDockWidget *m_clusterDock {nullptr};
+  QTableWidget *m_clusterTable {nullptr};
+  QByteArray m_clusterBuf;
+  QAction *m_actionClusterEnable {nullptr};
+  QAction *m_actionClusterSettings {nullptr};
+  QAction *m_actionClusterConnect {nullptr};
+  void clusterConnect ();
+  void clusterDisconnect ();
+  void clusterProcessLine (QString const& line);
+  void clusterShowSettings ();
 };
 
 extern int killbyname(const char* progName);
