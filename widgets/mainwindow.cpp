@@ -6808,9 +6808,16 @@ void MainWindow::readFromStdout()                             //readFromStdout
         }
       }
 
-    QString message0 {QString::fromUtf8(line_read.constData())};
-    DecodedText decodedtext0 {QString::fromUtf8(line_read.constData())};
-    DecodedText decodedtext {QString::fromUtf8(line_read.constData()).remove("TU; ")};
+    // ASYMX: in FT2, replace DT field (cols 9-13) with TΔ = seconds since last TX ended
+    QString rawLine = QString::fromUtf8(line_read.constData());
+    if (m_mode == "FT2" && m_asyncRxStartMs > 0 && rawLine.length() >= 14) {
+      double tdelta = (QDateTime::currentMSecsSinceEpoch() - m_asyncRxStartMs) / 1000.0;
+      QString tdStr = QString("%1").arg(tdelta, 4, 'f', 1);
+      rawLine.replace(9, 4, tdStr.right(4));
+    }
+    QString message0 {rawLine};
+    DecodedText decodedtext0 {rawLine};
+    DecodedText decodedtext {QString(rawLine).remove("TU; ")};
 
   // Don't allow a7 decodes during the first period and for non-contest messages when in any contest mode
   if ((!((no_a7_decodes && line_read.contains("a7") && !m_diskData) or (line_read.contains("a7") && SpecOp::NONE!=m_specOp
@@ -12644,7 +12651,12 @@ void MainWindow::on_actionFT2_triggered()
   ui->cbAutoSeq->setChecked(true);
   m_fastGraph->hide();
   m_wideGraph->show();
-  ui->rh_decodes_headings_label->setText("UTC   dB   DT Freq    " + tr ("Message"));
+  // ASYMX: replace DT with TΔ (time since TX) in FT2 headings
+  {
+    QString ft2hdr = QString::fromUtf8("UTC   dB   T\xce\x94 Freq    ") + tr ("Message");
+    ui->rh_decodes_headings_label->setText(ft2hdr);
+    ui->lh_decodes_headings_label->setText(ft2hdr);
+  }
   m_wideGraph->setPeriod(m_TRperiod,m_nsps);
   if (m_tci_audio && ui->bandComboBox->currentText()!="OOB")
     Q_EMIT m_config.transceiver_period(m_TRperiod);
@@ -12654,7 +12666,6 @@ void MainWindow::on_actionFT2_triggered()
   }
   ui->rh_decodes_title_label->setText(tr ("Rx Frequency"));
   ui->lh_decodes_title_label->setText(tr ("Band Activity"));
-  ui->lh_decodes_headings_label->setText("UTC   dB   DT Freq    " + tr ("Message"));
 //                         01234567890123456789012345678901234567
   displayWidgets(nWidgets("11101000010011100001000000011000100000"));
   ui->txrb2->setEnabled(true);
@@ -17447,6 +17458,13 @@ void MainWindow::asyncDecodeDone()
       // Prepend timestamp to match normal format; replace " ~ " with " + " for consistency
       QString message = hhmmss + raw;
       message.replace(" ~ ", " + ");  // match FT2 marker used by jt9
+
+      // ASYMX: replace DT field (cols 9-13) with TΔ = seconds since last TX ended
+      if (m_asyncRxStartMs > 0 && message.length() >= 14) {
+        double tdelta = (QDateTime::currentMSecsSinceEpoch() - m_asyncRxStartMs) / 1000.0;
+        QString tdStr = QString("%1").arg(tdelta, 4, 'f', 1);
+        message.replace(9, 4, tdStr.right(4));  // overwrite DT field (4 chars at col 9)
+      }
 
       // Unified dedup: 5s window, best SNR wins
       if (isDuplicateDecode(message)) continue;
