@@ -6224,8 +6224,8 @@ bool MainWindow::isDuplicateDecode(QString const& message)
   QString key = message.mid(22).trimmed();
   if (key.isEmpty()) return false;
 
-  // Extract SNR from standard decode format (chars 7-9)
-  int snr = message.mid(7, 3).trimmed().toInt();
+  // Extract SNR from standard decode format (i4, pos 6-9)
+  int snr = message.mid(6, 4).trimmed().toInt();
 
   auto it = m_decodeDedup.find(key);
   if (it != m_decodeDedup.end()) {
@@ -6848,12 +6848,12 @@ void MainWindow::readFromStdout()                             //readFromStdout
         }
       }
 
-    // ASYMX: in FT2, replace DT field (cols 9-13) with TΔ = seconds since last TX ended
+    // ASYMX: in FT2, replace DT field (pos 10-14, f5.1) with TΔ = seconds since last TX ended
     QString rawLine = QString::fromUtf8(line_read.constData());
-    if (m_mode == "FT2" && m_asyncRxStartMs > 0 && rawLine.length() >= 14) {
+    if (m_mode == "FT2" && m_asyncRxStartMs > 0 && rawLine.length() >= 20) {
       double tdelta = (QDateTime::currentMSecsSinceEpoch() - m_asyncRxStartMs) / 1000.0;
-      QString tdStr = QString("%1").arg(tdelta, 4, 'f', 1);
-      rawLine.replace(9, 4, tdStr.right(4));
+      QString tdStr = QString("%1").arg(tdelta, 5, 'f', 1);
+      rawLine.replace(10, 5, tdStr.right(5));
     }
     QString message0 {rawLine};
     DecodedText decodedtext0 {rawLine};
@@ -17499,19 +17499,19 @@ void MainWindow::asyncDecodeDone()
       QString message = hhmmss + raw;
       message.replace(" ~ ", " + ");  // match FT2 marker used by jt9
 
-      // ASYMX: replace DT field (cols 9-13) with TΔ = seconds since last TX ended
-      if (m_asyncRxStartMs > 0 && message.length() >= 14) {
+      // ASYMX: replace DT field (pos 10-14, f5.1) with TΔ = seconds since last TX ended
+      if (m_asyncRxStartMs > 0 && message.length() >= 20) {
         double tdelta = (QDateTime::currentMSecsSinceEpoch() - m_asyncRxStartMs) / 1000.0;
-        QString tdStr = QString("%1").arg(tdelta, 4, 'f', 1);
-        message.replace(9, 4, tdStr.right(4));  // overwrite DT field (4 chars at col 9)
+        QString tdStr = QString("%1").arg(tdelta, 5, 'f', 1);
+        message.replace(10, 5, tdStr.right(5));  // overwrite DT field (5 chars at pos 10)
       }
 
       // Unified dedup: 5s window, best SNR wins
       if (isDuplicateDecode(message)) continue;
 
       // Async confirmation filter: weak decodes need 2x confirmation
-      int asyncFreq = message.mid(14, 4).trimmed().toInt();
-      int asyncSnr = message.mid(7, 3).trimmed().toInt();
+      int asyncFreq = message.mid(15, 5).trimmed().toInt();
+      int asyncSnr = message.mid(6, 4).trimmed().toInt();
       if (!asyncConfirmDecode(message, asyncFreq, asyncSnr)) continue;
 
       // Display in left (Band Activity) window

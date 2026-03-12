@@ -539,7 +539,7 @@ contains
                      nsnr=nint(max(-21.0,xsnr))
                      xdt=xibest/1333.33 - 0.5
                      qual=1.0-(nharderror+dmin)/60.0
-                     if(nharderror.gt.35) exit       ! too many hard errors
+                     if(nharderror.gt.48) exit       ! too many hard errors
                      if(qual.lt.0.25) exit            ! quality too low
                      call this%callback(smax,nsnr,xdt,f1,message,iaptype,qual)
                      exit
