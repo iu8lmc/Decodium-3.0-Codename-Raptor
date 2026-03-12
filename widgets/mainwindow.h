@@ -921,6 +921,11 @@ private:
   struct DedupeEntry { int snr; qint64 msec; };
   QMap<QString, DedupeEntry> m_decodeDedup;
   qint64 m_decodeDedupLastPurge {0};
+
+  // Async confirmation filter: weak decodes must be seen 2x before display
+  struct PendingDecode { QString msg; int freq; int snr; qint64 msec; int count; };
+  QList<PendingDecode> m_asyncPending;
+  bool asyncConfirmDecode(QString const& message, int freq, int snr);
   bool m_bAsyncTxArmed {false};       // async TX ready after guard timer
   QTimer m_asyncTxGuardTimer;         // 300ms guard between RX decode and TX start
   QFutureWatcher<QString> m_saveWAVWatcher;

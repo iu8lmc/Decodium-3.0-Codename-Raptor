@@ -6241,6 +6241,46 @@ bool MainWindow::isDuplicateDecode(QString const& message)
   return false;  // new decode
 }
 
+// ── ASYMX async confirmation filter ──────────────────────────────────
+// Weak signals (SNR < -17) must be decoded 2x within 4.5s at similar freq
+// to be displayed. Strong signals pass immediately. This eliminates
+// virtually all false decodes with only ~1.5s extra latency for weak ones.
+bool MainWindow::asyncConfirmDecode(QString const& message, int freq, int snr)
+{
+  qint64 now = QDateTime::currentMSecsSinceEpoch();
+
+  // Purge expired pending decodes (> 5s old)
+  for (auto it = m_asyncPending.begin(); it != m_asyncPending.end(); ) {
+    if (now - it->msec > 5000) it = m_asyncPending.erase(it);
+    else ++it;
+  }
+
+  // Strong signals: display immediately, no confirmation needed
+  if (snr >= -17) return true;
+
+  // Extract message key (skip timestamp+dB+DT+freq = first 22 chars)
+  QString key = message.mid(22).trimmed();
+  if (key.isEmpty()) return true;  // safety: let it through
+
+  // Check if this matches a pending decode
+  for (auto it = m_asyncPending.begin(); it != m_asyncPending.end(); ++it) {
+    if (it->msg == key && abs(it->freq - freq) <= 10
+        && (now - it->msec) <= 4500) {
+      it->count++;
+      if (it->count >= 2) {
+        m_asyncPending.erase(it);  // confirmed, remove from pending
+        return true;  // display it
+      }
+      it->msec = now;  // refresh timestamp
+      return false;    // not yet confirmed
+    }
+  }
+
+  // New weak decode: add to pending, don't display yet
+  m_asyncPending.append({key, freq, snr, now, 1});
+  return false;
+}
+
 // ── ASYMX split packed lines (multiple decodes fused on one line) ──────
 QStringList MainWindow::splitPackedDecodes(QString const& raw)
 {
@@ -17468,6 +17508,11 @@ void MainWindow::asyncDecodeDone()
 
       // Unified dedup: 5s window, best SNR wins
       if (isDuplicateDecode(message)) continue;
+
+      // Async confirmation filter: weak decodes need 2x confirmation
+      int asyncFreq = message.mid(14, 4).trimmed().toInt();
+      int asyncSnr = message.mid(7, 3).trimmed().toInt();
+      if (!asyncConfirmDecode(message, asyncFreq, asyncSnr)) continue;
 
       // Display in left (Band Activity) window
       DecodedText decodedtext {QString(message).replace(QChar::LineFeed, "")};

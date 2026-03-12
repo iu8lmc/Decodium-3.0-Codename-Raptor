@@ -211,8 +211,8 @@ contains
 
       max_iterations=40
       syncmin=0.80
-      if(ndepth0.ge.2) syncmin=0.75
-      if(ndepth0.ge.3) syncmin=0.70
+      if(ndepth0.ge.2) syncmin=0.78
+      if(ndepth0.ge.3) syncmin=0.75
       dosubtract=.true.
       doosd=.true.
       nsp=4        ! 4 subtraction passes: maggiore decode in scenari ad alta QRM
@@ -315,7 +315,7 @@ contains
                enddo
                if(iseg.eq.1) smax1=smax
                smaxthresh=0.80
-               if(ndepth0.ge.3) smaxthresh=0.65
+               if(ndepth0.ge.3) smaxthresh=0.72
                if(isp.ge.2) smaxthresh=smaxthresh*0.88  ! pass 2: ~15% più bassa
                if(isp.ge.3) smaxthresh=smaxthresh*0.76  ! pass 3+: ~25% più bassa
                if(smax.lt.smaxthresh) cycle
@@ -374,7 +374,7 @@ contains
                ns4=count(hbits(199:206).eq.(/1,0,1,1,0,0,0,1/))
                nsync_qual=ns1+ns2+ns3+ns4
                nsync_qual_min=13
-               if(ndepth0.ge.3) nsync_qual_min=10
+               if(ndepth0.ge.3) nsync_qual_min=12
                if(nsync_qual.lt.nsync_qual_min) cycle
 
                scalefac=2.83
@@ -539,6 +539,8 @@ contains
                      nsnr=nint(max(-21.0,xsnr))
                      xdt=xibest/1333.33 - 0.5
                      qual=1.0-(nharderror+dmin)/60.0
+                     if(nharderror.gt.35) exit       ! too many hard errors
+                     if(qual.lt.0.25) exit            ! quality too low
                      call this%callback(smax,nsnr,xdt,f1,message,iaptype,qual)
                      exit
                   endif
