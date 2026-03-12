@@ -216,6 +216,7 @@ private slots:
   void on_cbHoldTxFreq_clicked (bool);
   void on_cbDualCarrier_toggled (bool checked);
   void on_cbAsyncDecode_toggled (bool checked);
+  void on_cbManualTx_toggled (bool checked);
   void asyncDecodeDone ();
   bool isDuplicateDecode (QString const& message);
   QStringList splitPackedDecodes (QString const& raw);
@@ -928,6 +929,11 @@ private:
   bool asyncConfirmDecode(QString const& message, int freq, int snr);
   bool m_bAsyncTxArmed {false};       // async TX ready after guard timer
   QTimer m_asyncTxGuardTimer;         // 300ms guard between RX decode and TX start
+
+  // Manual TX Timing (contest skill mode)
+  bool m_bManualTxPending {false};    // decode received, waiting for operator TX
+  QTimer m_manualTxWindowTimer;       // countdown timer for TX window
+  qint64 m_manualTxWindowStartMs {0}; // when the TX window opened
   QFutureWatcher<QString> m_saveWAVWatcher;
 
   NonInheritingProcess proc_jt9;
