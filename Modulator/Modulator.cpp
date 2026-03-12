@@ -77,7 +77,7 @@ void Modulator::start (QString mode, unsigned symbolsLength, double framesPerSym
   if((mode=="FT8" and m_nsps==1024)) delay_ms=400;            //SuperFox Qary Polar Code transmission
   if(mode=="Q65" and m_nsps<=3600) delay_ms=500;              //Q65-15 and Q65-30
   if(mode=="FT4") delay_ms=300;                               //FT4
-  if(mode=="FT2") delay_ms=500;                               //FT2 (0.5s guard matches tx_duration)
+  if(mode=="FT2") delay_ms=100;                               //FT2 async: minimal delay
 
 // noise generator parameters
   if (m_addNoise) {
@@ -95,12 +95,12 @@ void Modulator::start (QString mode, unsigned symbolsLength, double framesPerSym
       if (synchronize)
         {
           if(delay_ms > mstr) m_silentFrames = (delay_ms - mstr) * m_frameRate / 1000;
-        }
- 
-      // adjust for late starts
-      if(!m_silentFrames && mstr >= delay_ms)
-        {
-          m_ic = (mstr - delay_ms) * m_frameRate / 1000;
+
+          // adjust for late starts (only when synchronized to period)
+          if(!m_silentFrames && mstr >= delay_ms)
+            {
+              m_ic = (mstr - delay_ms) * m_frameRate / 1000;
+            }
         }
     }
   if(mode=="Echo") m_ic=0;
@@ -276,6 +276,11 @@ qint64 Modulator::readData (char * data, qint64 maxSize)
         } else {
           i0=(m_symbolsLength - 0.017) * 4.0 * m_nsps;
           i1= m_symbolsLength * 4.0 * m_nsps;
+          // Precomputed wave (FT2/Fox): include ramp-up/down symbols (+2)
+          if (m_toneSpacing < 0 && itone[0] < 100) {
+            i1 = (m_symbolsLength + 2) * 4.0 * m_nsps;
+            i0 = i1;  // wave has built-in ramp, disable internal fade-out
+          }
         }
         if(m_bFastMode and !m_tuning) {
           i1=m_TRperiod*48000.0 - 24000.0;
@@ -342,6 +347,12 @@ qint64 Modulator::readData (char * data, qint64 maxSize)
         }
 
         if(m_TRperiod==3 and m_ic >i1) {
+          Q_EMIT stateChanged ((m_state = Idle));
+          return framesGenerated * bytesPerFrame ();
+        }
+
+        // Precomputed wave finished (FT2/Fox) — clean exit after ramp-down
+        if (!m_tuning && m_toneSpacing < 0 && itone[0] < 100 && m_ic > i1) {
           Q_EMIT stateChanged ((m_state = Idle));
           return framesGenerated * bytesPerFrame ();
         }

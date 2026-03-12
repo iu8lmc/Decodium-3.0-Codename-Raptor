@@ -1482,7 +1482,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   connect(&watcher3, SIGNAL(finished()),this,SLOT(fast_decode_done()));
   connect(&m_asyncDecodeWatcher, &QFutureWatcher<void>::finished, this, &MainWindow::asyncDecodeDone);
 
-  // Async TX guard timer: fires 300ms after decode to start TX immediately
+  // Async TX guard timer: fires 100ms after decode to start TX immediately
   m_asyncTxGuardTimer.setSingleShot(true);
   connect(&m_asyncTxGuardTimer, &QTimer::timeout, this, [this]() {
     if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && m_auto) {
@@ -4250,7 +4250,7 @@ void MainWindow::process_autoButton (bool checked)   //manually or by controller
     // Async FT2: arm guard timer for immediate TX start
     if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
       if (!m_asyncTxGuardTimer.isActive()) {
-        m_asyncTxGuardTimer.start(300);
+        m_asyncTxGuardTimer.start(100);
       }
     }
 
@@ -4321,7 +4321,7 @@ void MainWindow::auto_tx_mode (bool state)
   // Async FT2: arm guard timer for immediate TX (bypass period wait)
   if (state && m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
     if (!m_asyncTxGuardTimer.isActive()) {
-      m_asyncTxGuardTimer.start(300);  // 300ms guard before TX
+      m_asyncTxGuardTimer.start(100);  // 100ms guard before TX
     }
   }
 }
