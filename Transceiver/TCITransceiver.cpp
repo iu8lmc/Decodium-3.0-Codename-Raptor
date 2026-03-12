@@ -1481,6 +1481,7 @@ void TCITransceiver::do_modulator_start (QString mode, unsigned symbolsLength, d
   if((mode=="FT8" and m_nsps==1024)) delay_ms=400;            //SuperFox Qary Polar Code transmission
   if(mode=="Q65" and m_nsps<=3600) delay_ms=500;              //Q65-15 and Q65-30
   if(mode=="FT4") delay_ms=300;                               //FT4
+  if(mode=="FT2") delay_ms=100;                               //FT2 async: minimal delay
 
   // noise generator parameters
   if (m_addNoise) {
@@ -1490,21 +1491,21 @@ void TCITransceiver::do_modulator_start (QString mode, unsigned symbolsLength, d
   }
 
   // round up to an exact portion of a second that allows for startup delays
-  auto mstr2 = mstr - delay_ms;
-  if (mstr <= delay_ms) {
-    m_ic = 0;
-  } else {
-    m_ic = mstr2 * (audioSampleRate / 1000);
-  }
-
+  m_ic = 0;
   m_silentFrames = 0;
-  // calculate number of silent frames to send
-  if (m_ic == 0 && synchronize && !m_tuning)	{
-    m_silentFrames = audioSampleRate / (1000 / delay_ms) - (mstr * (audioSampleRate / 1000));
+  if (synchronize && !m_tuning) {
+    auto mstr2 = mstr - delay_ms;
+    if (mstr <= delay_ms) {
+      m_ic = 0;
+      // calculate number of silent frames to send
+      m_silentFrames = audioSampleRate / (1000 / delay_ms) - (mstr * (audioSampleRate / 1000));
+    } else {
+      m_ic = mstr2 * (audioSampleRate / 1000);
+    }
   }
   m_state = (synchronize && m_silentFrames) ?
                 Synchronizing : Active;
-  printf("%s TCI modulator startdelay_ms=%d ASR=%d mstr=%d mstr2=%d m_ic=%d s_Frames=%lld synchronize=%d m_tuning=%d State=%d\n",QDateTime::QDateTime::currentDateTimeUtc().toString("hh:mm:ss.zzz").toStdString().c_str(),delay_ms,audioSampleRate,mstr,mstr2,m_ic,m_silentFrames,synchronize,m_tuning,m_state);
+  printf("%s TCI modulator startdelay_ms=%d ASR=%d mstr=%d m_ic=%d s_Frames=%lld synchronize=%d m_tuning=%d State=%d\n",QDateTime::QDateTime::currentDateTimeUtc().toString("hh:mm:ss.zzz").toStdString().c_str(),delay_ms,audioSampleRate,mstr,m_ic,m_silentFrames,synchronize,m_tuning,m_state);
   Q_EMIT tci_mod_active(m_state != Idle);
 }
 
@@ -1617,6 +1618,11 @@ quint16 TCITransceiver::readAudioData (float * data, qint32 maxSize, qreal txAtt
       } else {
         i0=(m_symbolsLength - 0.017) * 4.0 * m_nsps;
         i1= m_symbolsLength * 4.0 * m_nsps;
+        // Precomputed wave (FT2/Fox): include ramp-up/down symbols (+2)
+        if (m_toneSpacing < 0) {
+          i1 = (m_symbolsLength + 2) * 4.0 * m_nsps;
+          i0 = i1;  // wave has built-in ramp, disable internal fade-out
+        }
       }
       if(m_bFastMode and !m_tuning) {
         i1=m_TRperiod*48000.0 - 24000.0;
@@ -1675,6 +1681,13 @@ quint16 TCITransceiver::readAudioData (float * data, qint32 maxSize, qreal txAtt
         samples = load (postProcessSample (sample), samples);
         ++framesGenerated;
         ++m_ic;
+      }
+
+      // Precomputed wave finished (FT2/Fox) — clean exit after ramp-down
+      if (!m_tuning && m_toneSpacing < 0 && m_ic > i1) {
+        m_state = Idle;
+        Q_EMIT tci_mod_active(m_state != Idle);
+        return framesGenerated * bytesPerFrame;
       }
 
       if (m_amp == 0.0) { // TODO G4WJS: compare double with zero might not be wise
