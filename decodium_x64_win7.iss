@@ -2,7 +2,7 @@
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
-#define MyBuildTag "2603132015"
+#define MyBuildTag "2603132056"
 #define DistDir "dist_64bit"
 
 [Setup]
@@ -48,8 +48,10 @@ Source: "{#DistDir}\rigctld-decodium.exe"; DestDir: "{app}"; Flags: ignoreversio
 Source: "{#DistDir}\rigctlcom-decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\udp_daemon.exe"; DestDir: "{app}"; Flags: ignoreversion
 
-; DLLs (includes api-ms-win-core-synch-l1-2-0.dll stub for Win7)
+; DLLs
 Source: "{#DistDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+; Win7 synch stub (WaitOnAddress/WakeByAddress* via CONDITION_VARIABLE)
+Source: "win7_compat\api-ms-win-core-synch-l1-2-0.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Data files
 Source: "{#DistDir}\cty.dat"; DestDir: "{app}"; Flags: ignoreversion
