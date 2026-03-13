@@ -603,7 +603,13 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->txFirstCheckBox->hide();
 
   // ASYMX: Async L2 on by default, visible only in FT2
-  if (ui->cbAsyncDecode) { ui->cbAsyncDecode->setChecked(true); ui->cbAsyncDecode->setVisible(false); }  // will be shown by on_actionFT2_triggered
+  // blockSignals prevents on_cbAsyncDecode_toggled from firing during construction
+  if (ui->cbAsyncDecode) {
+    ui->cbAsyncDecode->blockSignals(true);
+    ui->cbAsyncDecode->setChecked(true);
+    ui->cbAsyncDecode->setVisible(false);
+    ui->cbAsyncDecode->blockSignals(false);
+  }
 
   // ASYMX badge pulse animation
   m_labelAsymxBadge = ui->labelAsymxBadge;
@@ -12553,24 +12559,30 @@ qint64 MainWindow::nWidgets(QString t)
 void MainWindow::displayWidgets(qint64 n)
 {
   /* See text file "displayWidgets.txt" for widget numbers */
-  // ASYMX: Async L2 visible only in FT2; auto-disable when leaving FT2
+  // ASYMX: always stop async timers first, then set up for current mode
+  // This prevents race conditions during mode transitions
   bool isFT2 = (m_mode == "FT2");
   if (ui->cbAsyncDecode) ui->cbAsyncDecode->setVisible(false);
   if (ui->labelAsymxBadge) ui->labelAsymxBadge->setVisible(isFT2);
   if (ui->cbManualTx) ui->cbManualTx->setVisible(isFT2);
   if (ui->sbManualTxWindow) ui->sbManualTxWindow->setVisible(isFT2 && ui->cbManualTx && ui->cbManualTx->isChecked());
+  // Always clean up async/manual TX state — prevents stale timers from previous mode
+  m_asyncDecodeTimer.stop();
+  m_asyncTxGuardTimer.stop();
+  m_manualTxWindowTimer.stop();
+  m_bManualTxPending = false;
+  m_manualTxWindowStartMs = 0;
+  m_bAsyncTxArmed = false;
+  m_bAsyncDecoding = false;
   if (!isFT2) {
     if (ui->cbAsyncDecode && ui->cbAsyncDecode->isChecked()) {
+      ui->cbAsyncDecode->blockSignals(true);
       ui->cbAsyncDecode->setChecked(false);
+      ui->cbAsyncDecode->blockSignals(false);
     }
-    m_bManualTxPending = false;
-    m_manualTxWindowTimer.stop();
-    m_manualTxWindowStartMs = 0;
-    m_asyncTxGuardTimer.stop();
-    m_bAsyncTxArmed = false;
     if (ui->labelManualTxAlert) ui->labelManualTxAlert->setVisible(false);
     // Restore autoButton if it was in manual TX state
-    if (ui->autoButton->text().startsWith("TX?")) {
+    if (ui->autoButton && ui->autoButton->text().startsWith("TX?")) {
       ui->autoButton->setStyleSheet("QPushButton:checked { color: white; background-color: red; border-style: outset; border-width: 1px; border-radius: 5px; border-color: black; min-width: 5em; padding: 3px; }");
       ui->autoButton->setText("E&nable Tx");
     }
@@ -12746,6 +12758,7 @@ void MainWindow::on_actionFST4W_triggered()
 void MainWindow::on_actionFT2_triggered()
 {
   QTimer::singleShot (50, [=] {
+    if (m_mode != "FT2") return;  // guard: mode changed before timer fired
     ui->TxFreqSpinBox->setValue(m_settings->value("TxFreq_old",1500).toInt());
     ui->RxFreqSpinBox->setValue(m_settings->value("RxFreq_old",1500).toInt());
     on_sbSubmode_valueChanged(ui->sbSubmode->value());
@@ -12798,19 +12811,30 @@ void MainWindow::on_actionFT2_triggered()
   ui->txb6->setEnabled(true);
   ui->txFirstCheckBox->setEnabled(true);
   ui->cbAutoSeq->setEnabled(true);
-  // ASYMX: force Async L2 in FT2, hide checkbox (always on), show ASYMX badge
-  if (ui->cbAsyncDecode) { ui->cbAsyncDecode->setChecked(true); ui->cbAsyncDecode->setVisible(false); }
+  // ASYMX: force Async L2 in FT2 — block signals to prevent race condition
+  // (toggled signal would start async timer before mode setup is complete)
+  if (ui->cbAsyncDecode) {
+    ui->cbAsyncDecode->blockSignals(true);
+    ui->cbAsyncDecode->setChecked(true);
+    ui->cbAsyncDecode->setVisible(false);
+    ui->cbAsyncDecode->blockSignals(false);
+  }
   if (ui->labelAsyncL2Active) ui->labelAsyncL2Active->setVisible(false);
   if (ui->labelAsymxBadge) ui->labelAsymxBadge->setVisible(true);
   if (ui->cbManualTx) ui->cbManualTx->setVisible(true);
   if (ui->cbManualTx && ui->sbManualTxWindow) ui->sbManualTxWindow->setVisible(ui->cbManualTx->isChecked());
   initExternalCtrl();
   statusChanged();
+  // Start async decode timer AFTER full mode setup is complete
+  m_asyncAudioPos = 0;
+  m_decodeDedup.clear();
+  m_asyncDecodeTimer.start(750);
 }
 
 void MainWindow::on_actionFT4_triggered()
 {
   QTimer::singleShot (50, [=] {
+    if (m_mode != "FT4") return;  // guard: mode changed before timer fired
     ui->TxFreqSpinBox->setValue(m_settings->value("TxFreq_old",1500).toInt());
     ui->RxFreqSpinBox->setValue(m_settings->value("RxFreq_old",1500).toInt());
     on_sbSubmode_valueChanged(ui->sbSubmode->value());
