@@ -6,7 +6,7 @@ set ISCC="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 set PFX=C:\Users\IU8LMC\decodium_codesign.pfx
 set PASS=Dec2026sign
 set SRC=C:\Users\IU8LMC\Downloads\WSJTX_3.0_Source
-set BUILD=2603131035
+set BUILD=2603131621
 
 echo ============================================
 echo  Decodium 3.0 ASYMX %BUILD% - Build Installers
@@ -74,8 +74,18 @@ if errorlevel 1 (
 )
 echo.
 
-echo === Step 6: Signing installers ===
-for %%f in (Decodium_3.0_%BUILD%_ASYMX_x64_Setup.exe Decodium_3.0_%BUILD%_ASYMX_x86_Setup.exe Decodium_3.0_%BUILD%_ASYMX_x64_Win7_Setup.exe) do (
+echo === Step 6: Building x86 Win7 installer ===
+echo   Patching x86 decodium.exe for Win7 compatibility...
+python "%SRC%\win7_compat\patch_precise.py" "%SRC%\dist_32bit\decodium.exe"
+%ISCC% "%SRC%\decodium_x86_win7.iss"
+if errorlevel 1 (
+    echo ERROR: x86 Win7 installer build failed!
+    goto :error
+)
+echo.
+
+echo === Step 7: Signing installers ===
+for %%f in (Decodium_3.0_%BUILD%_ASYMX_x64_Setup.exe Decodium_3.0_%BUILD%_ASYMX_x86_Setup.exe Decodium_3.0_%BUILD%_ASYMX_x64_Win7_Setup.exe Decodium_3.0_%BUILD%_ASYMX_x86_Win7_Setup.exe) do (
     if exist "%SRC%\%%f" (
         echo   Signing %%f...
         %SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /d "Decodium 3.0 ASYMX Installer" /tr http://timestamp.digicert.com /td SHA256 "%SRC%\%%f"
@@ -92,6 +102,7 @@ echo  Installers:
 echo    %SRC%\Decodium_3.0_%BUILD%_ASYMX_x64_Setup.exe
 echo    %SRC%\Decodium_3.0_%BUILD%_ASYMX_x86_Setup.exe
 echo    %SRC%\Decodium_3.0_%BUILD%_ASYMX_x64_Win7_Setup.exe
+echo    %SRC%\Decodium_3.0_%BUILD%_ASYMX_x86_Win7_Setup.exe
 echo ============================================
 goto :end
 
