@@ -1731,7 +1731,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 
   ui->labDXped->setVisible(SpecOp::NONE != m_specOp);
   ui->labDXped->setStyleSheet("QLabel {background-color: red; color: white;}");
-  ui->pbBestSP->setVisible(m_mode=="FT2" or m_mode=="FT4");
+  if (ui->pbBestSP) ui->pbBestSP->setVisible(m_mode=="FT2" or m_mode=="FT4");
 
   update_foxLogWindow_rate(); // update the rate on the window
   check_button_color();
@@ -8657,7 +8657,7 @@ void MainWindow::guiUpdate()
       if((m_mode=="FT2" or m_mode=="FT4") and m_bBestSPArmed) {
         m_BestCQpriority="";
         m_bBestSPArmed=false;
-        ui->pbBestSP->setStyleSheet ("");
+        if (ui->pbBestSP) ui->pbBestSP->setStyleSheet ("");
       }
 
       if(m_ntx == 1) ba=ui->tx1->text().toLocal8Bit();
@@ -8868,7 +8868,7 @@ void MainWindow::guiUpdate()
               foxcom_.bSendMsg=ui->cbSendMsg->isChecked();
               memcpy(foxcom_.textMsg, m_freeTextMsg.leftJustified(26,' ').toLatin1(),26);
               foxgenft2_();
-            } else if (ui->cbDualCarrier->isChecked()) {
+            } else if (ui->cbDualCarrier && ui->cbDualCarrier->isChecked()) {
               // Dual-carrier: stesso messaggio su 2 sub-portanti a +500 Hz
               QString fm = QString::fromLatin1(msgsent).trimmed()
                            .leftJustified(40, ' ').left(40);
@@ -12632,7 +12632,7 @@ void MainWindow::displayWidgets(qint64 n)
     if(i==37) ui->sbMaxDrift->setVisible(b);
     j=j>>1;
   }
-  ui->pbBestSP->setVisible(m_mode=="FT2" or m_mode=="FT4");
+  if (ui->pbBestSP) ui->pbBestSP->setVisible(m_mode=="FT2" or m_mode=="FT4");
   b=false;
   if(m_mode=="FT2" or m_mode=="FT4" or m_mode=="FT8" || "Q65" == m_mode) {
   b=SpecOp::EU_VHF==m_specOp or
@@ -17364,8 +17364,8 @@ void MainWindow::on_pbBestSP_clicked()
 {
   if (is_externalCtrlMode()) return;       //could get here by special key avt 2/28/21
   m_bBestSPArmed = !m_bBestSPArmed;
-  if(m_bBestSPArmed and !m_transmitting) ui->pbBestSP->setStyleSheet ("QPushButton{color:red}");
-  if(!m_bBestSPArmed) ui->pbBestSP->setStyleSheet ("");
+  if(m_bBestSPArmed and !m_transmitting && ui->pbBestSP) ui->pbBestSP->setStyleSheet ("QPushButton{color:red}");
+  if(!m_bBestSPArmed && ui->pbBestSP) ui->pbBestSP->setStyleSheet ("");
   if(m_bBestSPArmed) m_dateTimeBestSP=QDateTime::currentDateTimeUtc();
 }
 
@@ -17539,7 +17539,7 @@ void MainWindow::on_cbHoldTxFreq_clicked (bool)
 
 void MainWindow::on_cbDualCarrier_toggled (bool checked)
 {
-    ui->labelDualCarrierWarning->setVisible (checked);
+    if (ui->labelDualCarrierWarning) ui->labelDualCarrierWarning->setVisible (checked);
 }
 
 void MainWindow::on_cbAsyncDecode_toggled (bool checked)
@@ -17819,13 +17819,13 @@ void MainWindow::initExternalCtrl()    //avt 12/5/20
     ui->genStdMsgsPushButton->setEnabled(!m_listenMode);   //avt 2/2/24
     ui->respondComboBox->setVisible(false); //avt
     ui->respondComboBox->setCurrentIndex(0); //avt
-    ui->pbBestSP->setEnabled(false);  //avt 2/28/21
+    if (ui->pbBestSP) ui->pbBestSP->setEnabled(false);  //avt 2/28/21
   } else {
     if (ui->cbAutoSeq->isVisible()) ui->cbAutoSeq->setEnabled(true); //avt 11/22/20
     if (ui->txFirstCheckBox->isVisible()) ui->txFirstCheckBox->setEnabled(true);  //avt 2/1/24
     if (ui->genStdMsgsPushButton->isVisible()) ui->genStdMsgsPushButton->setEnabled(true);   //avt 2/2/24
     ui->respondComboBox->setVisible(m_mode!="JT65" and m_mode!="JT9");  //avt
-    ui->pbBestSP->setEnabled(m_mode=="FT2" or m_mode=="FT4");  //avt 2/28/21
+    if (ui->pbBestSP) ui->pbBestSP->setEnabled(m_mode=="FT2" or m_mode=="FT4");  //avt 2/28/21
     m_dblClk = false; //avt 1/1/21
     m_checkCmd = "";  //avt 1/1/21
     m_dxCall = "";    //avt 11/12/21
