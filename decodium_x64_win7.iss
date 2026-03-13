@@ -1,30 +1,32 @@
-﻿#define MyAppName "Decodium 3.0 ASYMX x86"
+#define MyAppName "Decodium 3.0 ASYMX x64 (Win7+)"
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
 #define MyBuildTag "2603131035"
-#define DistDir "dist_32bit"
+#define DistDir "dist_64bit"
 
 [Setup]
-AppId={{F9B8D4E2-5C3E-4F7A-8B2C-4D6E8F9A1B3C}
+AppId={{E8A7C3F1-4B2D-4E6F-9A1B-3C5D7E8F0A2B}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyBuildTag}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL=https://www.qrz.com/db/IU8LMC
-DefaultDirName={autopf}\Decodium_3.0_ASYMX_x86
+DefaultDirName={pf}\Decodium_3.0_ASYMX_x64
 DefaultGroupName=Decodium 3.0 ASYMX
 DisableDirPage=no
 DisableProgramGroupPage=no
 OutputDir=.
-OutputBaseFilename=Decodium_3.0_{#MyBuildTag}_ASYMX_x86_Setup
+OutputBaseFilename=Decodium_3.0_{#MyBuildTag}_ASYMX_x64_Win7_Setup
 SetupIconFile=icons\windows-icons\decodium.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
+ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64
 UninstallDisplayIcon={app}\decodium.exe
 PrivilegesRequired=lowest
-; SignTool and SignedUninstaller require IDE config; exes are already signed
+MinVersion=6.1
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -44,7 +46,7 @@ Source: "{#DistDir}\rigctld-decodium.exe"; DestDir: "{app}"; Flags: ignoreversio
 Source: "{#DistDir}\rigctlcom-decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\udp_daemon.exe"; DestDir: "{app}"; Flags: ignoreversion
 
-; DLLs
+; DLLs (includes api-ms-win-core-synch-l1-2-0.dll stub for Win7)
 Source: "{#DistDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Data files
@@ -61,8 +63,7 @@ Source: "{#DistDir}\sqldrivers\*"; DestDir: "{app}\sqldrivers"; Flags: ignorever
 Source: "{#DistDir}\bearer\*"; DestDir: "{app}\bearer"; Flags: ignoreversion recursesubdirs
 Source: "{#DistDir}\styles\*"; DestDir: "{app}\styles"; Flags: ignoreversion recursesubdirs
 Source: "{#DistDir}\mediaservice\*"; DestDir: "{app}\mediaservice"; Flags: ignoreversion recursesubdirs
-
-; Note: printsupport not available on x86 build
+Source: "{#DistDir}\printsupport\*"; DestDir: "{app}\printsupport"; Flags: ignoreversion recursesubdirs
 
 ; Sounds and palettes
 Source: "{#DistDir}\sounds\*"; DestDir: "{app}\sounds"; Flags: ignoreversion recursesubdirs
@@ -71,10 +72,9 @@ Source: "{#DistDir}\Palettes\*"; DestDir: "{app}\Palettes"; Flags: ignoreversion
 [Icons]
 Name: "{group}\Decodium 3.0 ASYMX"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
 Name: "{group}\{cm:UninstallProgram,Decodium 3.0 ASYMX}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\Decodium 3.0 ASYMX x86"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\Decodium 3.0 ASYMX x64"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-; Aggiunge regola firewall Windows per UDP (necessario per JTAlert e altri programmi esterni)
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Decodium UDP Inbound"""; Flags: runhidden
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""Decodium UDP Inbound"" dir=in action=allow protocol=UDP program=""{app}\{#MyAppExeName}"" enable=yes profile=any"; Flags: runhidden; StatusMsg: "Configurazione regola firewall UDP..."
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Decodium UDP 2237"""; Flags: runhidden

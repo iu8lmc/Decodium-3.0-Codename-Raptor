@@ -603,20 +603,21 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->txFirstCheckBox->hide();
 
   // ASYMX: Async L2 on by default, visible only in FT2
-  ui->cbAsyncDecode->setChecked(true);
-  ui->cbAsyncDecode->setVisible(false);  // will be shown by on_actionFT2_triggered
+  if (ui->cbAsyncDecode) { ui->cbAsyncDecode->setChecked(true); ui->cbAsyncDecode->setVisible(false); }  // will be shown by on_actionFT2_triggered
 
   // ASYMX badge pulse animation
   m_labelAsymxBadge = ui->labelAsymxBadge;
-  m_asymxOpacity = new QGraphicsOpacityEffect (m_labelAsymxBadge);
-  m_labelAsymxBadge->setGraphicsEffect (m_asymxOpacity);
-  m_asymxPulse = new QPropertyAnimation (m_asymxOpacity, "opacity", this);
-  m_asymxPulse->setDuration (1500);
-  m_asymxPulse->setStartValue (0.4);
-  m_asymxPulse->setEndValue (1.0);
-  m_asymxPulse->setEasingCurve (QEasingCurve::InOutSine);
-  m_asymxPulse->setLoopCount (-1);  // infinite
-  m_asymxPulse->start ();
+  if (m_labelAsymxBadge) {
+    m_asymxOpacity = new QGraphicsOpacityEffect (m_labelAsymxBadge);
+    m_labelAsymxBadge->setGraphicsEffect (m_asymxOpacity);
+    m_asymxPulse = new QPropertyAnimation (m_asymxOpacity, "opacity", this);
+    m_asymxPulse->setDuration (1500);
+    m_asymxPulse->setStartValue (0.4);
+    m_asymxPulse->setEndValue (1.0);
+    m_asymxPulse->setEasingCurve (QEasingCurve::InOutSine);
+    m_asymxPulse->setLoopCount (-1);  // infinite
+    m_asymxPulse->start ();
+  }
 
   // DX Cluster menu & dock
   {
@@ -1485,14 +1486,14 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   // Async TX guard timer: fires 100ms after decode to start TX immediately
   m_asyncTxGuardTimer.setSingleShot(true);
   connect(&m_asyncTxGuardTimer, &QTimer::timeout, this, [this]() {
-    if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && m_auto) {
-      if (ui->cbManualTx->isChecked()) {
+    if (m_mode == "FT2" && ui->cbAsyncDecode && ui->cbAsyncDecode->isChecked() && m_auto) {
+      if (ui->cbManualTx && ui->cbManualTx->isChecked()) {
         // Manual TX mode: don't auto-arm, open TX window for operator
         m_bManualTxPending = true;
         m_manualTxWindowStartMs = QDateTime::currentMSecsSinceEpoch();
-        int windowMs = int(ui->sbManualTxWindow->value() * 1000);
+        int windowMs = ui->sbManualTxWindow ? int(ui->sbManualTxWindow->value() * 1000) : 3800;
         m_manualTxWindowTimer.start(windowMs);
-        ui->labelManualTxAlert->setVisible(true);
+        if (ui->labelManualTxAlert) ui->labelManualTxAlert->setVisible(true);
       } else {
         m_bAsyncTxArmed = true;  // guiUpdate() will pick this up and start TX
       }
@@ -1504,14 +1505,15 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   connect(&m_manualTxWindowTimer, &QTimer::timeout, this, [this]() {
     m_bManualTxPending = false;
     m_manualTxWindowStartMs = 0;
-    ui->labelManualTxAlert->setVisible(false);
-    // Restore autoButton
-    ui->autoButton->setStyleSheet("QPushButton:checked { color: white; background-color: red; border-style: outset; border-width: 1px; border-radius: 5px; border-color: black; min-width: 5em; padding: 3px; }");
-    ui->autoButton->setText("E&nable Tx");
+    if (ui->labelManualTxAlert) ui->labelManualTxAlert->setVisible(false);
+    if (ui->autoButton) {
+      ui->autoButton->setStyleSheet("QPushButton:checked { color: white; background-color: red; border-style: outset; border-width: 1px; border-radius: 5px; border-color: black; min-width: 5em; padding: 3px; }");
+      ui->autoButton->setText("E&nable Tx");
+    }
   });
 
   connect(&m_asyncDecodeTimer, &QTimer::timeout, this, [this]() {
-    if (m_mode != "FT2" || !ui->cbAsyncDecode->isChecked()) return;
+    if (m_mode != "FT2" || !ui->cbAsyncDecode || !ui->cbAsyncDecode->isChecked()) return;
     if (m_bAsyncDecoding) return;  // previous decode still running
     if (m_asyncAudioPos < 45000) return;  // not enough audio yet
 
@@ -1913,8 +1915,8 @@ void MainWindow::writeSettings()
   m_settings->setValue("WorkDupes", ui->cbWorkDupes->isChecked());
   m_settings->setValue("DebugLog", m_debugLog);    //avt 9/29/25
   m_settings->setValue("FirstLotwDl", m_firstLotwDl);    //avt 9/29/25
-  m_settings->setValue("ManualTxTiming", ui->cbManualTx->isChecked());
-  m_settings->setValue("ManualTxWindow", ui->sbManualTxWindow->value());
+  if (ui->cbManualTx) m_settings->setValue("ManualTxTiming", ui->cbManualTx->isChecked());
+  if (ui->sbManualTxWindow) m_settings->setValue("ManualTxWindow", ui->sbManualTxWindow->value());
   m_settings->endGroup();
 
   // do this in the General group because we save the parameters from various places
@@ -2160,8 +2162,8 @@ void MainWindow::readSettings()
   ui->cbWorkDupes->setChecked(m_settings->value("WorkDupes",false).toBool());
   m_firstLotwDl = m_settings->value("FirstLotwDl",true).toBool();    //avt 9/29/25
   m_debugLog = m_settings->value("DebugLog",false).toBool();    //avt 9/23/25
-  ui->cbManualTx->setChecked(m_settings->value("ManualTxTiming",false).toBool());
-  ui->sbManualTxWindow->setValue(m_settings->value("ManualTxWindow",3.8).toDouble());
+  if (ui->cbManualTx) ui->cbManualTx->setChecked(m_settings->value("ManualTxTiming",false).toBool());
+  if (ui->sbManualTxWindow) ui->sbManualTxWindow->setValue(m_settings->value("ManualTxWindow",3.8).toDouble());
   m_settings->endGroup();
 
   m_settings->beginGroup("Common");
@@ -2680,7 +2682,7 @@ void MainWindow::dataSink(qint64 frames)
   int k(frames);
 
   // Async FT2: fill ring buffer with latest audio
-  if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && k > 0) {
+  if (m_mode == "FT2" && ui->cbAsyncDecode && ui->cbAsyncDecode->isChecked() && k > 0) {
     int nsamples = qMin(k, 90000);
     int src_start = qMax(0, k - nsamples);
     for (int i = 0; i < nsamples; i++) {
@@ -4272,7 +4274,7 @@ void MainWindow::process_autoButton (bool checked)   //manually or by controller
     m_auto = checked;
 
     // Async FT2: arm guard timer for immediate TX start
-    if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
+    if (m_mode == "FT2" && ui->cbAsyncDecode && ui->cbAsyncDecode->isChecked()) {
       if (!m_asyncTxGuardTimer.isActive()) {
         m_asyncTxGuardTimer.start(100);
       }
@@ -4343,7 +4345,7 @@ void MainWindow::auto_tx_mode (bool state)
   on_autoButton_clicked (state);
 
   // Async FT2: arm guard timer for immediate TX (bypass period wait)
-  if (state && m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
+  if (state && m_mode == "FT2" && ui->cbAsyncDecode && ui->cbAsyncDecode->isChecked()) {
     if (!m_asyncTxGuardTimer.isActive()) {
       m_asyncTxGuardTimer.start(100);  // 100ms guard before TX
     }
@@ -4358,11 +4360,12 @@ void MainWindow::keyPressEvent (QKeyEvent * e)
     m_bManualTxPending = false;
     m_manualTxWindowTimer.stop();
     m_manualTxWindowStartMs = 0;
-    ui->labelManualTxAlert->setVisible(false);
-    // Restore autoButton
-    ui->autoButton->setStyleSheet("QPushButton:checked { color: white; background-color: red; border-style: outset; border-width: 1px; border-radius: 5px; border-color: black; min-width: 5em; padding: 3px; }");
-    ui->autoButton->setText("E&nable Tx");
-    m_bAsyncTxArmed = true;  // arm TX now — guiUpdate will start it
+    if (ui->labelManualTxAlert) ui->labelManualTxAlert->setVisible(false);
+    if (ui->autoButton) {
+      ui->autoButton->setStyleSheet("QPushButton:checked { color: white; background-color: red; border-style: outset; border-width: 1px; border-radius: 5px; border-color: black; min-width: 5em; padding: 3px; }");
+      ui->autoButton->setText("E&nable Tx");
+    }
+    m_bAsyncTxArmed = true;
     return;
   }
 
@@ -6886,13 +6889,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
         }
       }
 
-    // ASYMX: in FT2, replace DT field (pos 10-14, f5.1) with TΔ = seconds since last TX ended
     QString rawLine = QString::fromUtf8(line_read.constData());
-    if (m_mode == "FT2" && m_asyncRxStartMs > 0 && rawLine.length() >= 20) {
-      double tdelta = (QDateTime::currentMSecsSinceEpoch() - m_asyncRxStartMs) / 1000.0;
-      QString tdStr = QString("%1").arg(tdelta, 5, 'f', 1);
-      rawLine.replace(10, 5, tdStr.right(5));
-    }
     QString message0 {rawLine};
     DecodedText decodedtext0 {rawLine};
     DecodedText decodedtext {QString(rawLine).remove("TU; ")};
@@ -8441,7 +8438,7 @@ void MainWindow::guiUpdate()
   if(m_tune) m_bTxTime=true;                 //"Tune" takes precedence
 
   // Async TX: only arm TX if we are already inside the TX window (respect period boundaries)
-  if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && m_bAsyncTxArmed && m_auto) {
+  if (m_mode == "FT2" && ui->cbAsyncDecode && ui->cbAsyncDecode->isChecked() && m_bAsyncTxArmed && m_auto) {
     if (m_bTxTime) {
       // Already in TX window — confirm armed, TX will proceed normally
     } else {
@@ -8558,7 +8555,7 @@ void MainWindow::guiUpdate()
     }
 
     // Async FT2: relax fTR gate (allow TX start anywhere in TX window)
-    bool asyncBypass = (m_mode == "FT2" && ui->cbAsyncDecode->isChecked());
+    bool asyncBypass = (m_mode == "FT2" && ui->cbAsyncDecode && ui->cbAsyncDecode->isChecked());
     if(g_iptt==0 and ((m_bTxTime and (asyncBypass || fTR < 0.75) and txReady) or m_tune)) {
       //### Allow late starts
       icw[0]=m_ncw;
@@ -9291,12 +9288,12 @@ void MainWindow::guiUpdate()
     m_wasTransmitting = m_transmitting;
 
     // ASYMX: async progress bar — shows GUARD/TX/RX/IDLE with real seconds
-    if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
+    if (m_mode == "FT2" && ui->cbAsyncDecode && ui->cbAsyncDecode->isChecked()) {
       progressBar.setMaximum(100);
       int guardRemain = m_asyncTxGuardTimer.isActive() ? m_asyncTxGuardTimer.remainingTime() : 0;
       if (m_bManualTxPending && m_manualTxWindowStartMs > 0) {
         // MANUAL TX WINDOW — operator must press Enter/Space to TX
-        int windowMs = int(ui->sbManualTxWindow->value() * 1000);
+        int windowMs = ui->sbManualTxWindow ? int(ui->sbManualTxWindow->value() * 1000) : 3800;
         int elapsed = int(nowMs - m_manualTxWindowStartMs);
         double remain = qMax(0.0, (windowMs - elapsed) / 1000.0);
         int pct = qMin(100, elapsed * 100 / qMax(1, windowMs));
@@ -9304,27 +9301,28 @@ void MainWindow::guiUpdate()
         progressBar.setStyleSheet(QString("QProgressBar {color: #000000; text-align: center; font-weight: bold; font-size: 13px;} QProgressBar::chunk {background-color: #00e5ff;}"));
         progressBar.setFormat(QString("TX? %1s  ENTER").arg(remain, 0, 'f', 1));
         progressBar.setValue(100 - pct);
-        // Big blinking label
+        // Big blinking label + autoButton
         bool blink = (nowMs / 400) % 2 == 0;
-        ui->labelManualTxAlert->setVisible(true);
-        ui->labelManualTxAlert->setText(QString("  ENTER TX  %1s  ").arg(remain, 0, 'f', 1));
-        ui->labelManualTxAlert->setStyleSheet(blink
-          ? "background-color: #00e5ff; color: #000000; font-weight: bold; font-size: 16px; border-radius: 6px; padding: 6px 12px; border: 2px solid #00acc1;"
-          : "background-color: #ff6600; color: #ffffff; font-weight: bold; font-size: 16px; border-radius: 6px; padding: 6px 12px; border: 2px solid #cc5200;");
-        // Also change autoButton to blinking cyan
+        if (ui->labelManualTxAlert) {
+          ui->labelManualTxAlert->setVisible(true);
+          ui->labelManualTxAlert->setText(QString("  ENTER TX  %1s  ").arg(remain, 0, 'f', 1));
+          ui->labelManualTxAlert->setStyleSheet(blink
+            ? "background-color: #00e5ff; color: #000000; font-weight: bold; font-size: 16px; border-radius: 6px; padding: 6px 12px; border: 2px solid #00acc1;"
+            : "background-color: #ff6600; color: #ffffff; font-weight: bold; font-size: 16px; border-radius: 6px; padding: 6px 12px; border: 2px solid #cc5200;");
+        }
         ui->autoButton->setText(QString("TX? %1s").arg(remain, 0, 'f', 1));
         ui->autoButton->setStyleSheet(blink
           ? "QPushButton { color: #000000; background-color: #00e5ff; font-weight: bold; font-size: 16px; border: 3px solid #00acc1; border-radius: 5px; min-width: 5em; padding: 3px; }"
           : "QPushButton { color: #ffffff; background-color: #ff6600; font-weight: bold; font-size: 16px; border: 3px solid #cc5200; border-radius: 5px; min-width: 5em; padding: 3px; }");
       } else if (guardRemain > 0) {
-        ui->labelManualTxAlert->setVisible(false);
+        if (ui->labelManualTxAlert) ui->labelManualTxAlert->setVisible(false);
         // GUARD state (yellow)
         progressBar.setStyleSheet(QString("QProgressBar {color: #000000; text-align: center; font-weight: bold;} QProgressBar::chunk {background-color: #ffaa00;}"));
         double secs = guardRemain / 1000.0;
         progressBar.setFormat(QString("GUARD %1s").arg(secs, 0, 'f', 1));
         progressBar.setValue(100 - (guardRemain * 100 / 300));
       } else if (m_transmitting) {
-        ui->labelManualTxAlert->setVisible(false);
+        if (ui->labelManualTxAlert) ui->labelManualTxAlert->setVisible(false);
         if (ui->autoButton->text().startsWith("TX?")) {
           ui->autoButton->setStyleSheet("QPushButton:checked { color: white; background-color: red; border-style: outset; border-width: 1px; border-radius: 5px; border-color: black; min-width: 5em; padding: 3px; }");
           ui->autoButton->setText("E&nable Tx");
@@ -9336,7 +9334,7 @@ void MainWindow::guiUpdate()
         progressBar.setFormat(QString("TX %1s").arg(secs, 0, 'f', 1));
         progressBar.setValue(qMin(100, elapsed * 100 / 2800));
       } else if (m_monitoring) {
-        ui->labelManualTxAlert->setVisible(false);
+        if (ui->labelManualTxAlert) ui->labelManualTxAlert->setVisible(false);
         // RX state (green) with real elapsed seconds, cycles over 750ms
         progressBar.setStyleSheet(QString("QProgressBar {color: #ffffff; text-align: center; font-weight: bold;} QProgressBar::chunk {background-color: #00aa00;}"));
         int elapsed = (m_asyncRxStartMs > 0) ? int(nowMs - m_asyncRxStartMs) : 0;
@@ -9345,7 +9343,7 @@ void MainWindow::guiUpdate()
         int cycle = int(nowMs % 750) * 100 / 750;
         progressBar.setValue(cycle);
       } else {
-        ui->labelManualTxAlert->setVisible(false);
+        if (ui->labelManualTxAlert) ui->labelManualTxAlert->setVisible(false);
         // IDLE
         progressBar.setStyleSheet(QString("QProgressBar {color: #888888; text-align: center; font-weight: bold;} QProgressBar::chunk {background-color: #444444;}"));
         progressBar.setFormat("IDLE");
@@ -12557,16 +12555,25 @@ void MainWindow::displayWidgets(qint64 n)
   /* See text file "displayWidgets.txt" for widget numbers */
   // ASYMX: Async L2 visible only in FT2; auto-disable when leaving FT2
   bool isFT2 = (m_mode == "FT2");
-  ui->cbAsyncDecode->setVisible(false);  // always hidden: forced on in FT2, off elsewhere
-  ui->labelAsymxBadge->setVisible(isFT2);
-  ui->cbManualTx->setVisible(isFT2);
-  ui->sbManualTxWindow->setVisible(isFT2 && ui->cbManualTx->isChecked());
-  if (!isFT2 && ui->cbAsyncDecode->isChecked()) {
-    ui->cbAsyncDecode->setChecked(false);  // triggers on_cbAsyncDecode_toggled → stops timer
-  }
+  if (ui->cbAsyncDecode) ui->cbAsyncDecode->setVisible(false);
+  if (ui->labelAsymxBadge) ui->labelAsymxBadge->setVisible(isFT2);
+  if (ui->cbManualTx) ui->cbManualTx->setVisible(isFT2);
+  if (ui->sbManualTxWindow) ui->sbManualTxWindow->setVisible(isFT2 && ui->cbManualTx && ui->cbManualTx->isChecked());
   if (!isFT2) {
+    if (ui->cbAsyncDecode && ui->cbAsyncDecode->isChecked()) {
+      ui->cbAsyncDecode->setChecked(false);
+    }
     m_bManualTxPending = false;
     m_manualTxWindowTimer.stop();
+    m_manualTxWindowStartMs = 0;
+    m_asyncTxGuardTimer.stop();
+    m_bAsyncTxArmed = false;
+    if (ui->labelManualTxAlert) ui->labelManualTxAlert->setVisible(false);
+    // Restore autoButton if it was in manual TX state
+    if (ui->autoButton->text().startsWith("TX?")) {
+      ui->autoButton->setStyleSheet("QPushButton:checked { color: white; background-color: red; border-style: outset; border-width: 1px; border-radius: 5px; border-color: black; min-width: 5em; padding: 3px; }");
+      ui->autoButton->setText("E&nable Tx");
+    }
   }
 
   qint64 j=qint64(1)<<(N_WIDGETS-1);
@@ -12765,11 +12772,10 @@ void MainWindow::on_actionFT2_triggered()
   ui->cbAutoSeq->setChecked(true);
   m_fastGraph->hide();
   m_wideGraph->show();
-  // ASYMX: replace DT with TΔ (time since TX) in FT2 headings
   {
-    QString ft2hdr = QString::fromUtf8("UTC   dB   T\xce\x94 Freq    ") + tr ("Message");
-    ui->rh_decodes_headings_label->setText(ft2hdr);
-    ui->lh_decodes_headings_label->setText(ft2hdr);
+    auto t = "UTC   dB   DT Freq    " + tr ("Message");
+    ui->rh_decodes_headings_label->setText(t);
+    ui->lh_decodes_headings_label->setText(t);
   }
   m_wideGraph->setPeriod(m_TRperiod,m_nsps);
   if (m_tci_audio && ui->bandComboBox->currentText()!="OOB")
@@ -12793,12 +12799,11 @@ void MainWindow::on_actionFT2_triggered()
   ui->txFirstCheckBox->setEnabled(true);
   ui->cbAutoSeq->setEnabled(true);
   // ASYMX: force Async L2 in FT2, hide checkbox (always on), show ASYMX badge
-  ui->cbAsyncDecode->setChecked(true);
-  ui->cbAsyncDecode->setVisible(false);   // always on in FT2, no user toggle
-  ui->labelAsyncL2Active->setVisible(false);
-  ui->labelAsymxBadge->setVisible(true);
-  ui->cbManualTx->setVisible(true);
-  ui->sbManualTxWindow->setVisible(ui->cbManualTx->isChecked());
+  if (ui->cbAsyncDecode) { ui->cbAsyncDecode->setChecked(true); ui->cbAsyncDecode->setVisible(false); }
+  if (ui->labelAsyncL2Active) ui->labelAsyncL2Active->setVisible(false);
+  if (ui->labelAsymxBadge) ui->labelAsymxBadge->setVisible(true);
+  if (ui->cbManualTx) ui->cbManualTx->setVisible(true);
+  if (ui->cbManualTx && ui->sbManualTxWindow) ui->sbManualTxWindow->setVisible(ui->cbManualTx->isChecked());
   initExternalCtrl();
   statusChanged();
 }
@@ -14556,7 +14561,7 @@ void MainWindow::transmit (double snr)
   if (m_mode == "FT2") {
     m_dateTimeSentTx3=QDateTime::currentDateTimeUtc();
     toneSpacing=-2.0;                     //Transmit a pre-computed, filtered waveform.
-    bool syncTx = !(ui->cbAsyncDecode->isChecked());  // Async: no period sync
+    bool syncTx = !(ui->cbAsyncDecode && ui->cbAsyncDecode->isChecked());  // Async: no period sync
     if (m_tci_audio) {
       Q_EMIT m_config.transceiver_modulator_start(m_mode, NUM_FT2_SYMBOLS,
              288.0,ui->TxFreqSpinBox->value()-m_XIT,
@@ -17548,19 +17553,19 @@ void MainWindow::on_cbAsyncDecode_toggled (bool checked)
       m_asyncAudioPos = 0;
       m_decodeDedup.clear();
       m_asyncDecodeTimer.start(750);  // Level 2: sync-triggered every 750ms
-      ui->labelAsyncL2Active->setVisible(false);  // replaced by ASYMX badge
-      ui->labelAsymxBadge->setVisible(true);
+      if (ui->labelAsyncL2Active) ui->labelAsyncL2Active->setVisible(false);
+      if (ui->labelAsymxBadge) ui->labelAsymxBadge->setVisible(true);
     } else {
       m_asyncDecodeTimer.stop();
       m_bAsyncDecoding = false;
-      ui->labelAsyncL2Active->setVisible(false);
-      ui->labelAsymxBadge->setVisible(false);
+      if (ui->labelAsyncL2Active) ui->labelAsyncL2Active->setVisible(false);
+      if (ui->labelAsymxBadge) ui->labelAsymxBadge->setVisible(false);
     }
 }
 
 void MainWindow::on_cbManualTx_toggled (bool checked)
 {
-    ui->sbManualTxWindow->setVisible(checked && m_mode == "FT2");
+    if (ui->sbManualTxWindow) ui->sbManualTxWindow->setVisible(checked && m_mode == "FT2");
     if (!checked) {
       // Switching back to auto: cancel any pending manual window
       if (m_bManualTxPending) {
@@ -17568,10 +17573,12 @@ void MainWindow::on_cbManualTx_toggled (bool checked)
         m_manualTxWindowTimer.stop();
         m_manualTxWindowStartMs = 0;
       }
-      ui->labelManualTxAlert->setVisible(false);
+      if (ui->labelManualTxAlert) ui->labelManualTxAlert->setVisible(false);
       // Restore autoButton normal style
-      ui->autoButton->setStyleSheet("QPushButton:checked { color: white; background-color: red; border-style: outset; border-width: 1px; border-radius: 5px; border-color: black; min-width: 5em; padding: 3px; }");
-      ui->autoButton->setText("E&nable Tx");
+      if (ui->autoButton) {
+        ui->autoButton->setStyleSheet("QPushButton:checked { color: white; background-color: red; border-style: outset; border-width: 1px; border-radius: 5px; border-color: black; min-width: 5em; padding: 3px; }");
+        ui->autoButton->setText("E&nable Tx");
+      }
     }
 }
 
@@ -17591,13 +17598,6 @@ void MainWindow::asyncDecodeDone()
       // Prepend timestamp to match normal format; replace " ~ " with " + " for consistency
       QString message = hhmmss + raw;
       message.replace(" ~ ", " + ");  // match FT2 marker used by jt9
-
-      // ASYMX: replace DT field (pos 10-14, f5.1) with TΔ = seconds since last TX ended
-      if (m_asyncRxStartMs > 0 && message.length() >= 20) {
-        double tdelta = (QDateTime::currentMSecsSinceEpoch() - m_asyncRxStartMs) / 1000.0;
-        QString tdStr = QString("%1").arg(tdelta, 5, 'f', 1);
-        message.replace(10, 5, tdStr.right(5));  // overwrite DT field (5 chars at pos 10)
-      }
 
       // Unified dedup: 5s window, best SNR wins
       if (isDuplicateDecode(message)) continue;
