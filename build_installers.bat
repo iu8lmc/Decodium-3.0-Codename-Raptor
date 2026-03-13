@@ -64,8 +64,18 @@ if errorlevel 1 (
 )
 echo.
 
-echo === Step 5: Signing installers ===
-for %%f in (Decodium_3.0_%BUILD%_ASYMX_x64_Setup.exe Decodium_3.0_%BUILD%_ASYMX_x86_Setup.exe) do (
+echo === Step 5: Building x64 Win7 installer ===
+echo   Patching decodium.exe for Win7 compatibility...
+python "%SRC%\win7_compat\patch_precise.py" "%SRC%\dist_64bit\decodium.exe"
+%ISCC% "%SRC%\decodium_x64_win7.iss"
+if errorlevel 1 (
+    echo ERROR: x64 Win7 installer build failed!
+    goto :error
+)
+echo.
+
+echo === Step 6: Signing installers ===
+for %%f in (Decodium_3.0_%BUILD%_ASYMX_x64_Setup.exe Decodium_3.0_%BUILD%_ASYMX_x86_Setup.exe Decodium_3.0_%BUILD%_ASYMX_x64_Win7_Setup.exe) do (
     if exist "%SRC%\%%f" (
         echo   Signing %%f...
         %SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /d "Decodium 3.0 ASYMX Installer" /tr http://timestamp.digicert.com /td SHA256 "%SRC%\%%f"
@@ -81,6 +91,7 @@ echo  BUILD COMPLETE!
 echo  Installers:
 echo    %SRC%\Decodium_3.0_%BUILD%_ASYMX_x64_Setup.exe
 echo    %SRC%\Decodium_3.0_%BUILD%_ASYMX_x86_Setup.exe
+echo    %SRC%\Decodium_3.0_%BUILD%_ASYMX_x64_Win7_Setup.exe
 echo ============================================
 goto :end
 
