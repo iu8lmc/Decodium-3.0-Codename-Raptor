@@ -2,7 +2,7 @@
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
-#define MyBuildTag "2603131942"
+#define MyBuildTag "2603132015"
 #define DistDir "dist_64bit"
 
 [Setup]
@@ -37,6 +37,10 @@ Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
+[InstallDelete]
+; Remove Win7 synch stub if left over from build 2603131942 — causes crash on Win8+
+Type: files; Name: "{app}\api-ms-win-core-synch-l1-2-0.dll"
+
 [Files]
 ; Main executables
 Source: "{#DistDir}\decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -48,8 +52,8 @@ Source: "{#DistDir}\rigctld-decodium.exe"; DestDir: "{app}"; Flags: ignoreversio
 Source: "{#DistDir}\rigctlcom-decodium.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\udp_daemon.exe"; DestDir: "{app}"; Flags: ignoreversion
 
-; DLLs
-Source: "{#DistDir}\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+; DLLs (exclude Win7 synch stub — on Win8+ the system DLL must be used)
+Source: "{#DistDir}\*.dll"; Excludes: "api-ms-win-core-synch-l1-2-0.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Data files
 Source: "{#DistDir}\cty.dat"; DestDir: "{app}"; Flags: ignoreversion
