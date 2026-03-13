@@ -26,6 +26,8 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\decodium.exe
 PrivilegesRequired=lowest
+CloseApplications=force
+CloseApplicationsFilter=decodium.exe,jt9.exe,message_aggregator.exe,udp_daemon.exe,wsprd.exe
 ; SignTool and SignedUninstaller require IDE config; exes are already signed
 
 [Languages]
@@ -81,3 +83,25 @@ Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""D
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Decodium UDP 2237"""; Flags: runhidden
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""Decodium UDP 2237"" dir=in action=allow protocol=UDP localport=2237 enable=yes profile=any"; Flags: runhidden
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,Decodium 3.0 ASYMX}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+procedure KillProcess(Name: String);
+var
+  ResultCode: Integer;
+begin
+  Exec('taskkill.exe', '/F /IM ' + Name, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+function InitializeSetup(): Boolean;
+begin
+  KillProcess('decodium.exe');
+  KillProcess('jt9.exe');
+  KillProcess('message_aggregator.exe');
+  KillProcess('udp_daemon.exe');
+  KillProcess('wsprd.exe');
+  KillProcess('rigctl-decodium.exe');
+  KillProcess('rigctld-decodium.exe');
+  KillProcess('rigctlcom-decodium.exe');
+  Sleep(500);
+  Result := True;
+end;
