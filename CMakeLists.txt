@@ -334,10 +334,12 @@ if (WIN32)
     killbyname.cpp
     )
 
-  set (wsjt_qt_CXXSRCS
-    ${wsjt_qt_CXXSRCS}
-    Transceiver/OmniRigTransceiver.cpp
-    )
+  if (AXSERVERSRCS)
+    set (wsjt_qt_CXXSRCS
+      ${wsjt_qt_CXXSRCS}
+      Transceiver/OmniRigTransceiver.cpp
+      )
+  endif ()
 endif (WIN32)
 
 set (wsjt_FSRCS
@@ -943,6 +945,7 @@ if (WIN32 AND ENABLE_OMNIRIG)
     else ()
       string (REPLACE "\"" "" AXSERVER ${AXSERVER})
       file (TO_CMAKE_PATH ${AXSERVER} AXSERVERSRCS)
+      add_compile_definitions (HAVE_OMNIRIG)
     endif ()
   else ()
     message (WARNING "dumpcpp not found - OmniRig support disabled")
@@ -1252,6 +1255,7 @@ add_library (wsjt_fort STATIC ${wsjt_FSRCS})
 target_link_libraries (wsjt_fort  ${FFTW3_LIBRARIES})
 if (${OPENMP_FOUND} OR APPLE)
   add_library (wsjt_fort_omp STATIC ${wsjt_FSRCS})
+  target_include_directories (wsjt_fort_omp PRIVATE ${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/lib/ft8 ${CMAKE_SOURCE_DIR}/lib/ft2 ${CMAKE_SOURCE_DIR}/lib/ft4 ${FFTW3_INCLUDE_DIRS})
   target_link_libraries (wsjt_fort_omp  ${FFTW3_LIBRARIES})
   if (OpenMP_C_FLAGS AND NOT APPLE)
     set_target_properties (wsjt_fort_omp

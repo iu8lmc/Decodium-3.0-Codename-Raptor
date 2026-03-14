@@ -29,7 +29,7 @@ subroutine four2avar(a,nfft,ndim,isign,iform)
   logical found_plan
   data nplan/0/                          !Number of stored plans
   common/patience/npatience,nthreads     !Patience and threads for FFTW plans
-  include '/lib/fftw3.f90'                    !FFTW definitions
+  include 'fftw3.f90'                    !FFTW definitions
   save plan,nplan,nn,ns,nf,nl
 
   if(nfft.lt.0) go to 999

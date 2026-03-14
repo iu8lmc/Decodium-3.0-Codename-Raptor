@@ -5,19 +5,24 @@ subroutine gen_ft2wave(itone,nsym,nsps,fsample,f0,cwave,wave,icmplx,nwave)
   real pulse(3456)              !288*4*3
   real dphi(0:250000-1)
   integer itone(nsym)
+  integer last_nsps
   logical first
   data first/.true./
-  save pulse,first,twopi,dt,hmod
+  data last_nsps/0/
+  save pulse,first,twopi,hmod,last_nsps
 
-  if(first) then
-     twopi=8.0*atan(1.0)
-     dt=1.0/fsample
-     hmod=1.0
-! Compute the smoothed frequency-deviation pulse
+! Always recompute dt from current fsample (decoder uses 12000, TX uses 48000)
+  twopi=8.0*atan(1.0)
+  dt=1.0/fsample
+  hmod=1.0
+
+! Recompute pulse when nsps changes (decoder uses 288, TX uses 1152)
+  if(first .or. nsps.ne.last_nsps) then
      do i=1,3*nsps
         tt=(i-1.5*nsps)/real(nsps)
         pulse(i)=gfsk_pulse(1.0,tt)
      enddo
+     last_nsps=nsps
      first=.false.
   endif
 
