@@ -6,7 +6,7 @@ set ISCC="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 set PFX=C:\Users\IU8LMC\decodium_codesign.pfx
 set PASS=Dec2026sign
 set SRC=C:\Users\IU8LMC\Downloads\WSJTX_3.0_Source
-set BUILD=2603140300
+set BUILD=2603140400
 
 echo ============================================
 echo  Decodium 3.0 ASYMX %BUILD% - Build Installers
@@ -48,6 +48,11 @@ for %%f in (decodium.exe jt9.exe message_aggregator.exe wsprd.exe udp_daemon.exe
 )
 echo.
 
+echo === Step 2b: Remove Win7 synch DLL from dist (standard installers must NOT include it) ===
+if exist "%SRC%\dist_64bit\api-ms-win-core-synch-l1-2-0.dll" del /Q "%SRC%\dist_64bit\api-ms-win-core-synch-l1-2-0.dll"
+if exist "%SRC%\dist_32bit\api-ms-win-core-synch-l1-2-0.dll" del /Q "%SRC%\dist_32bit\api-ms-win-core-synch-l1-2-0.dll"
+echo.
+
 echo === Step 3: Building x64 installer ===
 %ISCC% "%SRC%\decodium_x64.iss"
 if errorlevel 1 (
@@ -65,6 +70,8 @@ if errorlevel 1 (
 echo.
 
 echo === Step 5: Building x64 Win7 installer ===
+echo   Copying Win7 synch DLL to dist_64bit...
+copy /Y "%SRC%\win7_compat\api-ms-win-core-synch-l1-2-0.dll" "%SRC%\dist_64bit\api-ms-win-core-synch-l1-2-0.dll"
 echo   Patching decodium.exe for Win7 compatibility...
 python "%SRC%\win7_compat\patch_precise.py" "%SRC%\dist_64bit\decodium.exe"
 %ISCC% "%SRC%\decodium_x64_win7.iss"
@@ -74,7 +81,12 @@ if errorlevel 1 (
 )
 echo.
 
+echo === Step 5b: Remove Win7 synch DLL from dist_64bit after Win7 installer ===
+del /Q "%SRC%\dist_64bit\api-ms-win-core-synch-l1-2-0.dll" 2>nul
+
 echo === Step 6: Building x86 Win7 installer ===
+echo   Copying Win7 synch DLL to dist_32bit...
+copy /Y "%SRC%\win7_compat\api-ms-win-core-synch-l1-2-0_x86.dll" "%SRC%\dist_32bit\api-ms-win-core-synch-l1-2-0.dll"
 echo   Patching x86 decodium.exe for Win7 compatibility...
 python "%SRC%\win7_compat\patch_precise.py" "%SRC%\dist_32bit\decodium.exe"
 %ISCC% "%SRC%\decodium_x86_win7.iss"
@@ -82,6 +94,7 @@ if errorlevel 1 (
     echo ERROR: x86 Win7 installer build failed!
     goto :error
 )
+del /Q "%SRC%\dist_32bit\api-ms-win-core-synch-l1-2-0.dll" 2>nul
 echo.
 
 echo === Step 7: Signing installers ===
