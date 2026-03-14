@@ -1,271 +1,353 @@
-# Decodium v3.0 FT2 "Raptor"
+# Decodium 3.0 ASYMX
 
-Optimized weak-signal FT2 client with enhanced sensitivity, extended frequency range, and real-time NTP/DT feedback.
-Based on WSJT-X 3.0.0 RC1 — focused exclusively on FT2 mode.
+**Asynchronous weak-signal digital communication client — FT2 mode (3.75s, 4-GFSK)**
+Based on WSJT-X 3.0.0 RC1 — async TX, enhanced decoder, built-in alert engine.
 
-**Build:** Vers.2603031040 | **Codename:** Raptor | **Author:** IU8LMC | **License:** GPL v3
+**Build:** 2603141352 | **Codename:** ASYMX | **Author:** IU8LMC | **License:** GPL v3
 
----
-
-## Downloads
-
-- [**x64 Installer**](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) (recommended)
-- [**x86 Installer**](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) (32-bit systems)
-
-Both installers are digitally signed (SHA256 + DigiCert RFC3161 timestamp).
+[![Download Latest](https://img.shields.io/github/v/release/iu8lmc/Decodium-3.0-Codename-Raptor?label=Download&style=for-the-badge)](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest)
 
 ---
 
-## Features
+> **[Italiano](#italiano)** | **[English](#english)** | **[Español](#español)**
 
-### Multi-Mode Support
-- FT2 as primary mode, forced at startup
-- All standard modes available via Mode menu (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, WSPR, FST4, FST4W, Echo, FreqCal)
-- Mode-specific quick buttons for FT8, FT4, FT2
+---
 
-### FT2 Multi-Period Averaging (+4dB)
-- EMA soft averaging of bitmetrics over 2-4 consecutive periods
-- When single-period decode fails, averaged decode is attempted automatically
-- Expected gain: **+3-5 dB** on weak signals with stable DT
-- Averaging state cleared on frequency change or band switch
+<a name="english"></a>
+## 🇬🇧 English
 
-### Decoder Sensitivity Boost
+### Downloads
+
+| Installer | Platform |
+|-----------|----------|
+| [**x64 Setup**](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) | Windows 10/11 64-bit (recommended) |
+| [**x86 Setup**](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) | Windows 10/11 32-bit |
+| [**x64 Win7 Setup**](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) | Windows 7/8 64-bit |
+| [**x86 Win7 Setup**](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) | Windows 7/8 32-bit |
+
+All installers are digitally signed (SHA256 + RFC3161 timestamp).
+
+---
+
+### Key Features
+
+#### Async FT2 TX (No Period Sync Required)
+- TX fires immediately after decode — no waiting for even/odd period alignment
+- Full QSO cycle in ~6 seconds (decode → 300ms guard → 1.28s TX → RX)
+- Ideal for portable, QRP, and rapid contest operation
+
+#### Smart Frequency Finder (NEW — Build 2603141145+)
+- **Auto Offset TX** — When responding to a CQ, TX is automatically placed on a clear frequency away from RX. Eliminates QRM from other callers on the same frequency
+- **Find Clear button** — One-click scan to find the least-crowded frequency in the 200–2500 Hz audio passband
+- **FT2 TX≠RX enforced** — In FT2 mode, TX frequency is ALWAYS different from RX (mandatory, not optional)
+- **Real-time frequency tracking** — All decoded signals are tracked (30s window) to build a live occupancy map
+
+#### Intelligent Auto-Sequence (NEW — Build 2603141145+)
+- **Auto TX frequency change** — After 3 failed call attempts, TX automatically shifts to a new clear frequency
+- **Extended retry tolerance** — MAX_TX_RETRIES=6, MAX_MISSED_PERIODS=8 (optimized for async FT2 timing)
+- **Async decode tolerance** — Period-miss counter adapts to FT2 async timing instead of rigid FT8 periods
+- **Reset on valid response** — Retry counter resets when the other station responds, preventing premature timeout
+
+#### DXpedition 2-Slot Mode
+- Dual-carrier TX on two independent frequencies (500 Hz spacing)
+- FSM auto-sequencer: CQ → RST → RR73+log → next caller
+- SNR-sorted caller queue with frequency distance penalty
+- 2-period QSO cycle (RST → RR73+log), piggyback CQ every 4 TX periods
+
+#### Built-in Alert Engine (replaces JTAlert)
+- **12 Audio Alerts:** CQ, MyCall, DXCC, DXCCOnBand, Grid, GridOnBand, Continent, ContinentOnBand, CQZone, CQZoneOnBand, ITUZone, ITUZoneOnBand
+- **B4 Tracking:** strikethrough + color highlight per type (call, country, grid, continent, zone)
+- **DXCC / Country / Zone lookup:** integrated cty.dat with auto-update (30-day check)
+- **Customizable Color Highlights:** CQ, MyCall, DXCC, Grid, Continent, Zone, LoTW
+- **LoTW User Highlighting:** stations on LoTW shown with distinct color
+- **DX Call Alert:** audio + visual alert on specific callsigns
+- **No B4 Filter:** hide stations already worked on band
+
+#### Auto CQ with Caller Queue
+- Dedicated Tab 2 with FIFO queue (max 20 stations)
+- Double-click enqueues callers during active QSO
+- SNR-sorted, auto-process on QSO completion
+
+#### FT2 Decoder Enhancements
 
 | Parameter | Value | Effect |
 |-----------|-------|--------|
-| syncmin | 0.82 | Lower sync correlation threshold — more weak-signal candidates |
-| MAXCAND | 300 | More candidates evaluated (default 200) |
-| nsp | 4 | 4th subtraction pass recovers hidden signals (default 3) |
-| OSD depth | 4 | More aggressive LDPC decoding (default 3) |
-| SNR floor | -24 dB | Reports weaker signals (default -21 dB) |
-| Freq range | 200–5500 Hz | +600 Hz useful bandwidth (default ~4910 Hz) |
-| Freq grid | 2 Hz | Finer sync search in 1st pass (default 3 Hz) |
+| syncmin | 0.90 | Balanced sync threshold |
+| MAXCAND | 300 | More candidates evaluated |
+| nsp | 4 | 4th subtraction pass |
+| OSD depth | 3 | Aggressive LDPC decoding |
+| SNR floor | -21 dB | Weak signal reporting |
+| Freq range | 200–4910 Hz | Extended bandwidth |
+| Freq grid | 2 Hz | Finer sync search |
 
-- Candidates sorted by sync power (strongest first) for optimal subtraction order
-- 4-pass decoding architecture with progressive LDPC/soft-decision + OSD with a priori info
-- Expected impact: **+10–25% weak-signal decodes**
+#### Async Sliding Window Decoder
+- Continuous 1.5s decode ticks on a 7.5s ring buffer (45000 samples)
+- Deduplication with 10s window (QSet-based)
+- Background decoding via QtConcurrent — no UI freeze
 
-### Advanced Time Synchronization
+#### Logging & Integration
+- **N1MM Logger+** — real-time UDP broadcast
+- **Cloudlog** — direct API logging
+- **LoTW** — upload/download QSO
+- **PSKReporter** — automatic spot reporting
+- **OmniRig** — auto-launch with COM wait loop
+- **Cabrillo** — contest logging support
 
-#### TimeSyncPanel (Logger32-style)
-- Live UTC clock with sub-millisecond precision (100ms update)
-- NTP offset with color coding (Green <20ms, Yellow <100ms, Red >=100ms)
-- Soundcard drift monitoring in PPM and ms/period
-- DT convergence indicator (LOCKED / Converging / Adjusting)
-- Decode latency tracking with color thresholds
-- EMA factor display (warm-up / tracking / stable)
-- NTP/DT divergence warning system
-
-#### NTP Client (25+ servers)
-- NTP Pool Project, NIST, Google, Cloudflare, INRIM Italy (Stratum 1 cesium), PTB Germany, Apple, Microsoft, Meta
-- Custom NTP server field (user-configurable, persisted)
-- RTT filtering: 50ms for FT2 (configurable, default 100ms)
-- IQR outlier removal + median + EMA smoothing
-- FT2 mode: **30s refresh** (normal: 60s)
-- HTTP fallback when NTP fails
-
-#### DT Feedback Loop
-- NTP offset + soundcard drift correction injected into Detector
-- High-resolution timer (~1us on Windows vs ~15ms QDateTime)
-- FT2-optimized clamp: +/-30ms step, +/-300ms total
-- Fast EMA warm-up: convergence in **~2-3 FT2 periods (7-11 seconds)**
-- Predictive drift compensation based on measured PPM
-
-### Waterfall Optimized for FT2
-- Gain normalized by TR period (compensates FT2 3.75s vs FT8 15s energy difference)
-- Line reset at 17 pixels for FT2 short period
-- Averaging forced to 1 for maximum responsiveness
-- Multi-slot orange dashed markers for Fox mode (200 Hz spacing)
-
-### Fox and Hound
-- Multi-slot TX: up to 5 (SuperFox) or 3 (standard Fox)
-- SuperFox mode integration with dedicated UI
-- Wait & Call for Hound mode
-- Multi-slot TX disabled outside Fox mode (safety)
-
-### Decoder Watchdog
-- Prevents UI freeze from hung decoders
-- Timeout: max(5s, 2x TR period)
-- Automatic termination and restart
-
-### Network & Integration
-- **PSKReporter:** automatic spot reporting (user-agent: Decodium3FT2-Raptor)
-- **OmniRig:** auto-launch with 5s COM wait loop
-- **LOTW:** upload/download QSO integration
-- **Cabrillo:** contest logging support
-
-### Audio Improvements
-- Underrun recovery (resume instead of fatal error)
-- Notify interval: 20ms (was 1000ms)
-- Default buffer: 16384 frames for Windows
-- Predictive soundcard drift compensation
-
-### UI & Display
-- Raptor palette (green military theme)
-- Customizable color highlighting (CQ, MyCall, DX entity, 73/RR73, Pounce)
-- Diagnostic mode for rig control troubleshooting
-- About dialog with ft2logo, codename, version, decoder parameters
-- **B4 Strikethrough** — stations already worked on band shown with strikethrough text in Band Activity, in addition to background color
-- **TX Bracket on Waterfall** — red `[ ]` brackets drawn on waterfall overlay at TX slot position (FT2/FT8/FT4)
-
-### Auto CQ Caller Queue
-- Automatic FIFO queue for callers in Auto CQ mode (max 20 stations)
-- **Live queue display** in right panel with "Caller Queue (N)" title and numbered station list
-- Double-click enqueues stations in **any** Auto CQ state (CALLING, in QSO, SIGNOFF)
-- First click during CQ auto-processes immediately; subsequent clicks queue for later
-- When in QSO and responses arrive from other stations, they are auto-queued
-- On current QSO completion, the next caller in queue is automatically processed
-- Callsign, RX frequency and standard messages generated automatically
-- Panel restores to "Rx Frequency" when Auto CQ is deactivated
-
-### No B4 Filter
-- Checkbox to filter out stations already worked on current band
-- Applies to both double-click selection and auto caller queue interception
-
-### Auto-update CTY.DAT
-- At startup, if `cty.dat` is missing or older than 30 days, it is automatically downloaded in background
-- Download from country-files.com with automatic logbook rescan
+#### Ed25519 Signed DXpedition List
+- Verified DXpedition list with Ed25519 cryptographic signatures
+- Certificate Manager GUI for managing DXpedition certificates
 
 ---
 
-## Building from Source
+### Building from Source
 
-### Requirements
+#### Requirements
 - MSYS2 MinGW-w64 (GCC 15.x, gfortran)
-- Qt 5.15.x
-- Boost (dynamic linking)
+- Qt 5.15.x + Boost
 - CMake 3.x
 
-### Build x64
+#### Build
 ```bash
 cd build
 cmake .. -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=C:/msys64/mingw64/bin/mingw32-make.exe
-cmake --build . --target wsjtx -- -j4
+mingw32-make -j4 decodium
 ```
 
-### Build x86
-```bash
-cd build32
-PATH="/c/msys64/mingw32/bin:$PATH"
-cmake .. -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=C:/msys64/mingw32/bin/mingw32-make.exe
-cmake --build . --target wsjtx -- -j4
-```
-
-### Create Installers
-Requires [Inno Setup 6](https://jrsoftware.org/isinfo.php) and Windows SDK (signtool):
+#### Create Installers
+Requires [Inno Setup 6](https://jrsoftware.org/isinfo.php):
 ```
 build_installers.bat
 ```
 
 ---
 
-## Key Differences from Stock WSJT-X
+### Changelog (Recent)
 
-| Feature | Decodium Raptor | Stock WSJT-X |
-|---------|----------------|--------------|
-| Primary Mode | FT2 default, multi-mode | Multi-mode |
-| syncmin | 0.82 | Standard |
-| OSD Depth | 4 | Mode-dependent |
-| MAXCAND | 300 | Lower |
-| Freq Range | 200–5500 Hz | Mode-dependent |
-| TimeSyncPanel | Logger32-style | Basic status bar |
-| NTP Servers | 25+ with Stratum 1 | Default pool |
-| RTT Filtering | Yes (50ms FT2) | No |
-| IQR Outlier Removal | Yes | No |
-| Soundcard Drift PPM | Real-time | Not available |
-| DT Feedback Loop | NTP + drift | Not implemented |
-| Decoder Watchdog | Yes | No |
-| OmniRig Auto-Launch | Yes | Manual |
-| B4 Strikethrough | Yes | No |
-| TX Bracket Waterfall | Yes | No |
-| Auto CQ Caller Queue | Yes (FIFO, max 20, live display) | Fox/Hound only |
-| No B4 Filter | Yes | No |
-| FT2 Multi-Period Avg | Yes (+4dB EMA) | No |
-| Auto-update CTY.DAT | Yes (30-day check) | Manual only |
+#### Build 2603141352 (2026-03-14) — Latest
+- Smart Frequency Finder: Auto Offset TX + Find Clear button
+- FT2 TX≠RX enforced: TX always on a different frequency from RX
+- Intelligent auto-sequence: auto TX freq change after 3 failed retries
+- Extended retry tolerance for async FT2 (MAX_TX_RETRIES=6, MAX_MISSED_PERIODS=8)
+- Async decode period-miss tolerance + reset on valid response
+
+#### Build 2603140700 (2026-03-14)
+- Fix async FT2 decoder crash on startup (Fortran FCL overflow)
+- Fix null-terminator bug in async decode results
+
+#### Build 2603132108 (2026-03-13)
+- DXpedition 2-slot mode with dual-carrier TX
+- SNR-sorted caller queue with frequency distance penalty
+- 2-period QSO cycle, piggyback CQ
+
+#### Build 2603110028 (2026-03-11)
+- Ed25519 signed verified DXpedition list
+- Certificate Manager GUI
+
+#### Build 2603080006 (2026-03-08)
+- Async TX: bypass period synchronization in FT2
+- Guard timer 300ms between decode and TX
+- Full QSO in ~6 seconds
+
+#### Build 2603080005 (2026-03-08)
+- Remove NTP/DT timing system (simplified)
+- Caller queue scoring = SNR only
+
+#### Build 2603070006 (2026-03-07)
+- Async sliding window decoder (1.5s ticks, 7.5s buffer)
+- QtConcurrent background decoding
+- 10s deduplication window
 
 ---
 
-## Changelog
+<a name="italiano"></a>
+## 🇮🇹 Italiano
 
-### Build 2603031040 (2026-03-03) — Latest
-- Caller Queue moved to dedicated Tab 2 (QStackedWidget), right panel stays "Rx Frequency"
-- Merge PR #9: fix FT2 wrong-period nutc from late decode (dataSink timing)
-- Remove FT2 from VHF averaging features (not applicable)
-- Enqueue only during active QSO (m_QSOProgress > CALLING)
-- Add donation link (Buy Me a Coffee) to About dialog
-- List all built-in JTAlert-equivalent features in About dialog
-- Update version to build 2603031040
+### Caratteristiche Principali
 
-### Build 2603010555 (2026-03-01)
-- Add Auto CQ Caller Queue live display in right panel with numbered station list
-- Fix double-click enqueue: now works during CALLING state (was blocked by `> CALLING` condition)
-- Auto-process first queued station immediately when in CALLING state
-- Panel restores to "Rx Frequency" when Auto CQ is deactivated
-- Update About dialog and program title to build 2603010555
+#### TX Asincrono FT2 (Senza Sincronizzazione di Periodo)
+- Il TX parte immediatamente dopo la decodifica — nessuna attesa per l'allineamento pari/dispari
+- Ciclo QSO completo in ~6 secondi (decodifica → 300ms pausa → 1.28s TX → RX)
+- Ideale per operazioni portatili, QRP e contest veloci
 
-### Build 2603010503 (2026-03-01)
-- FT2 multi-period soft averaging (EMA): +3-5 dB gain over 2-4 periods
-- Module-level bitmetrics accumulation buffer in ft2_decode.f90
-- Averaged decode attempt when single-period fails (navg >= 2)
-- Add SignPath Foundation code signing workflow (GitHub Actions)
+#### Ricerca Frequenza Intelligente (NOVITÀ — Build 2603141145+)
+- **Auto Offset TX** — Rispondendo a un CQ, il TX viene posizionato automaticamente su una frequenza libera lontana dall'RX. Elimina il QRM da altri chiamanti sulla stessa frequenza
+- **Pulsante Find Clear** — Scansione con un click per trovare la frequenza meno affollata nel range 200–2500 Hz
+- **TX≠RX obbligatorio in FT2** — La frequenza TX è SEMPRE diversa dall'RX (obbligatorio, non opzionale)
+- **Tracciamento frequenze in tempo reale** — Tutti i segnali decodificati vengono tracciati (finestra 30s) per costruire una mappa di occupazione
 
-### Build 2602281900 (2026-02-28)
-- Double-click on callsign during active Auto CQ QSO enqueues instead of interrupting
-- New "No B4" checkbox filters out stations already worked on current band
-- Restore all mode actions (FT8, FT4, JT65, JT9, Q65, MSK144, etc.) in Mode menu
-- Translate README feature descriptions to English
+#### Auto-Sequenza Intelligente (NOVITÀ — Build 2603141145+)
+- **Cambio automatico frequenza TX** — Dopo 3 tentativi di chiamata falliti, il TX si sposta automaticamente su una nuova frequenza libera
+- **Tolleranza retry estesa** — MAX_TX_RETRIES=6, MAX_MISSED_PERIODS=8 (ottimizzato per il timing asincrono FT2)
+- **Tolleranza decodifica asincrona** — Il contatore periodi mancati si adatta al timing FT2 invece dei periodi rigidi FT8
+- **Reset su risposta valida** — Il contatore retry si azzera quando l'altra stazione risponde
 
-### Build 2602281659 (2026-02-28)
-- B4 Strikethrough: stations already worked on band shown with strikethrough text
-- Auto CQ Caller Queue: FIFO queue (max 20) for callers during active QSO
-- TX Bracket Waterfall: red `[ ]` brackets drawn at TX slot position
-- Auto CTY.DAT: auto-download cty.dat at startup if missing or older than 30 days
+#### Modalità DXpedition 2-Slot
+- TX dual-carrier su due frequenze indipendenti (spaziatura 500 Hz)
+- Auto-sequencer FSM: CQ → RST → RR73+log → prossimo chiamante
+- Coda chiamanti ordinata per SNR con penalità distanza in frequenza
+- Ciclo QSO a 2 periodi (RST → RR73+log), CQ piggyback ogni 4 periodi TX
 
-### Build 2602270848 (2026-02-27)
-- Restore DT display (Decode Timing panel), keep soundcard drift removed
-- Bump build tag for x64/x86 installers
+#### Motore Alert Integrato (sostituisce JTAlert)
+- **12 Avvisi Audio:** CQ, MyCall, DXCC, DXCCOnBand, Grid, GridOnBand, Continente, ContinenteOnBand, CQZone, CQZoneOnBand, ITUZone, ITUZoneOnBand
+- **Tracciamento B4:** barrato + colore evidenziato per tipo (call, paese, grid, continente, zona)
+- **Lookup DXCC / Paese / Zona:** cty.dat integrato con aggiornamento automatico
+- **Colori Personalizzabili:** CQ, MyCall, DXCC, Grid, Continente, Zona, LoTW
+- **Evidenziazione Utenti LoTW:** stazioni su LoTW con colore distinto
+- **Avviso DX Call:** alert audio + visivo su callsign specifici
+- **Filtro No B4:** nasconde stazioni già lavorate sulla banda
 
-### Build 2602270204 (2026-02-27)
-- Remove DT feedback loop (display-only, never applied to Detector)
-- Rename wsjtx → decodium across entire project (CMake, config, log, UI, desktop, icons)
+#### Auto CQ con Coda Chiamanti
+- Tab 2 dedicato con coda FIFO (max 20 stazioni)
+- Doppio-click accoda i chiamanti durante QSO attivo
+- Ordinamento SNR, elaborazione automatica al completamento QSO
 
-### Build 2602261706 (2026-02-26)
-- Add ChronoGPS to installer and menu with dedicated icon
-- Integrate ChronoGPS panel into TimeSyncPanel as two-column layout (720x580)
-- Auto-launch ChronoGPS at startup (persisted setting)
+#### Decoder FT2 Asincrono a Finestra Scorrevole
+- Tick di decodifica continui ogni 1.5s su buffer circolare 7.5s (45000 campioni)
+- Deduplicazione con finestra 10s
+- Decodifica in background via QtConcurrent — nessun blocco UI
 
-### Build 2602261018 (2026-02-26)
-- Re-enable DT feedback for TimeSyncPanel convergence display
-- Disable DT feedback correction (display only, no Detector injection)
-- Tune FT2 decoder: syncmin 0.90, ndeep/maxosd=3, SNR floor -21 dB
-- Replace wsjtx.ico with decodium.ico for proper branding
+#### Lista DXpedition con Firma Ed25519
+- Lista DXpedition verificata con firme crittografiche Ed25519
+- GUI Certificate Manager per la gestione dei certificati
 
-### Build 2602260045 (2026-02-26)
-- Revert aggressive decoder params causing high decode latency
-- Restore Detector to exact working build (stock behavior)
-- Remove all timing corrections from Detector (NTP/DT/drift = display only)
-- Fix DT feedback oscillation: remove predictive correction, reduce EMA factors
-- Relax NTP RTT filter (50→100ms) and refresh interval (30→60s)
-- FT2-exclusive mode with Raptor branding, ft2logo, Raptor.pal palette
-- Build scripts: sign_and_pack, sign_installers, build_installers
+#### Logging & Integrazioni
+- N1MM Logger+, Cloudlog, LoTW, PSKReporter, OmniRig, Cabrillo
 
-### Build 2402261000 (2024-02-26) — Initial Release
-- Rebrand WSJT-X to Decodium v3.0 FT2 (IU8LMC)
-- Add FT2 digital mode with new Fortran decoder sources
-- Add NTP precision client (25+ servers, RTT filtering, IQR outlier removal, EMA)
-- Soundcard clock drift detection (PPM + ms/period)
-- Audio output underrun recovery, optimized buffer settings
-- OmniRig auto-launch with COM server wait loop
-- Multi-slot waterfall markers (FT2=200Hz spacing)
-- Time Synchronization panel (Logger32-style)
-- Custom NTP server field, decoder watchdog timer, PSKReporter fix
-- Windows manifest, Inno Setup scripts, CI workflows (Linux, macOS, Windows)
+---
+
+### Cronologia Modifiche (Recenti)
+
+#### Build 2603141352 (14-03-2026) — Ultima
+- Ricerca Frequenza Intelligente: Auto Offset TX + pulsante Find Clear
+- TX≠RX obbligatorio in FT2: TX sempre su frequenza diversa da RX
+- Auto-sequenza intelligente: cambio automatico freq TX dopo 3 tentativi falliti
+- Tolleranza retry estesa per FT2 asincrono
+- Tolleranza periodi mancati + reset su risposta valida
+
+#### Build 2603140700 (14-03-2026)
+- Fix crash decoder FT2 asincrono all'avvio (overflow FCL Fortran)
+- Fix bug null-terminator nei risultati di decodifica asincrona
+
+#### Build 2603132108 (13-03-2026)
+- Modalità DXpedition 2-slot con TX dual-carrier
+- Coda chiamanti ordinata per SNR
+
+#### Build 2603080006 (08-03-2026)
+- TX Asincrono: bypass sincronizzazione periodo in FT2
+- QSO completo in ~6 secondi
+
+#### Build 2603070006 (07-03-2026)
+- Decoder asincrono a finestra scorrevole (tick 1.5s, buffer 7.5s)
+
+---
+
+<a name="español"></a>
+## 🇪🇸 Español
+
+### Características Principales
+
+#### TX Asíncrono FT2 (Sin Sincronización de Período)
+- El TX se activa inmediatamente después de la decodificación — sin esperar alineación de períodos par/impar
+- Ciclo QSO completo en ~6 segundos (decodificación → 300ms pausa → 1.28s TX → RX)
+- Ideal para operaciones portátiles, QRP y concursos rápidos
+
+#### Buscador Inteligente de Frecuencia (NUEVO — Build 2603141145+)
+- **Auto Offset TX** — Al responder un CQ, el TX se coloca automáticamente en una frecuencia libre alejada del RX. Elimina el QRM de otros llamantes en la misma frecuencia
+- **Botón Find Clear** — Escaneo con un click para encontrar la frecuencia menos congestionada en el rango 200–2500 Hz
+- **TX≠RX obligatorio en FT2** — La frecuencia TX es SIEMPRE diferente de RX (obligatorio, no opcional)
+- **Seguimiento de frecuencias en tiempo real** — Todas las señales decodificadas se rastrean (ventana 30s) para construir un mapa de ocupación en vivo
+
+#### Auto-Secuencia Inteligente (NUEVO — Build 2603141145+)
+- **Cambio automático de frecuencia TX** — Después de 3 intentos de llamada fallidos, el TX se desplaza automáticamente a una nueva frecuencia libre
+- **Tolerancia de reintento extendida** — MAX_TX_RETRIES=6, MAX_MISSED_PERIODS=8 (optimizado para temporización asíncrona FT2)
+- **Tolerancia de decodificación asíncrona** — El contador de períodos perdidos se adapta a la temporización FT2 en lugar de los períodos rígidos de FT8
+- **Reset con respuesta válida** — El contador de reintentos se reinicia cuando la otra estación responde
+
+#### Modo DXpedición 2-Slot
+- TX dual-carrier en dos frecuencias independientes (espaciado 500 Hz)
+- Auto-secuenciador FSM: CQ → RST → RR73+log → siguiente llamante
+- Cola de llamantes ordenada por SNR con penalización por distancia en frecuencia
+- Ciclo QSO de 2 períodos (RST → RR73+log), CQ piggyback cada 4 períodos TX
+
+#### Motor de Alertas Integrado (reemplaza JTAlert)
+- **12 Alertas de Audio:** CQ, MyCall, DXCC, DXCCOnBand, Grid, GridOnBand, Continente, ContinenteOnBand, CQZone, CQZoneOnBand, ITUZone, ITUZoneOnBand
+- **Seguimiento B4:** tachado + resaltado de color por tipo (indicativo, país, grid, continente, zona)
+- **Búsqueda DXCC / País / Zona:** cty.dat integrado con actualización automática
+- **Colores Personalizables:** CQ, MyCall, DXCC, Grid, Continente, Zona, LoTW
+- **Resaltado Usuarios LoTW:** estaciones en LoTW con color distintivo
+- **Alerta DX Call:** alerta audio + visual en indicativos específicos
+- **Filtro No B4:** oculta estaciones ya trabajadas en la banda
+
+#### Auto CQ con Cola de Llamantes
+- Pestaña 2 dedicada con cola FIFO (máx 20 estaciones)
+- Doble-click encola llamantes durante QSO activo
+- Ordenamiento por SNR, procesamiento automático al completar QSO
+
+#### Decodificador FT2 Asíncrono de Ventana Deslizante
+- Ticks de decodificación continuos cada 1.5s en buffer circular de 7.5s (45000 muestras)
+- Deduplicación con ventana de 10s
+- Decodificación en segundo plano via QtConcurrent — sin congelamiento de UI
+
+#### Lista DXpedición con Firma Ed25519
+- Lista de DXpediciones verificada con firmas criptográficas Ed25519
+- GUI Certificate Manager para gestión de certificados
+
+#### Registro e Integraciones
+- N1MM Logger+, Cloudlog, LoTW, PSKReporter, OmniRig, Cabrillo
+
+---
+
+### Historial de Cambios (Recientes)
+
+#### Build 2603141352 (14-03-2026) — Última
+- Buscador Inteligente de Frecuencia: Auto Offset TX + botón Find Clear
+- TX≠RX obligatorio en FT2: TX siempre en frecuencia diferente de RX
+- Auto-secuencia inteligente: cambio automático de freq TX después de 3 intentos fallidos
+- Tolerancia de reintento extendida para FT2 asíncrono
+- Tolerancia de períodos perdidos + reset con respuesta válida
+
+#### Build 2603140700 (14-03-2026)
+- Fix crash del decodificador FT2 asíncrono al inicio (overflow FCL Fortran)
+- Fix bug null-terminator en resultados de decodificación asíncrona
+
+#### Build 2603132108 (13-03-2026)
+- Modo DXpedición 2-slot con TX dual-carrier
+- Cola de llamantes ordenada por SNR
+
+#### Build 2603080006 (08-03-2026)
+- TX Asíncrono: bypass de sincronización de período en FT2
+- QSO completo en ~6 segundos
+
+#### Build 2603070006 (07-03-2026)
+- Decodificador asíncrono de ventana deslizante (tick 1.5s, buffer 7.5s)
+
+---
+
+## Key Differences from Stock WSJT-X
+
+| Feature | Decodium ASYMX | Stock WSJT-X |
+|---------|---------------|--------------|
+| Async TX | Yes (no period sync) | No |
+| Smart Freq Finder | Auto Offset + Find Clear | No |
+| TX≠RX in FT2 | Enforced | Same freq |
+| Auto TX Freq Change | After 3 failed retries | No |
+| DXped 2-Slot | Dual-carrier, FSM auto-seq | Fox/Hound |
+| Built-in Alerts | 12 types + B4 + LoTW | No (needs JTAlert) |
+| Caller Queue | FIFO max 20, SNR-sorted | Fox only |
+| Async Decoder | Sliding window 1.5s/7.5s | Period-based |
+| DXped Certificates | Ed25519 signed | No |
+| No B4 Filter | Yes | No |
+| Auto CTY.DAT | Yes (30-day) | Manual |
+| B4 Strikethrough | Yes | No |
+| TX Bracket Waterfall | Yes | No |
 
 ---
 
 ## Credits
 - **WSJT-X** by Joe Taylor K1JT and the WSJT Development Group
 - **WSJT-X 3.0.0** fork by WM8Q (avantol)
-- **Decodium v3.0 FT2 Raptor** by IU8LMC
+- **Decodium 3.0 ASYMX** by IU8LMC
 
-73 de IU8LMC Martino   IZ8XXE Mimmo
+73 de IU8LMC
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/iu8lmc)
