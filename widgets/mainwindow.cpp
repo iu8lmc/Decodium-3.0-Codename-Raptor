@@ -17654,14 +17654,14 @@ int MainWindow::findClearFrequency (int avoidFreq, int minFreq, int maxFreq, int
 void MainWindow::autoOffsetTxFreq (int rxFreq)
 {
   // RX stays on the decoded station's frequency
-  // TX goes to a nearby clear frequency
-  int minFreq = ui->TxFreqSpinBox->minimum();
-  int maxFreq = ui->TxFreqSpinBox->maximum();
-  // Constrain search to ±500 Hz around RX freq for best propagation
+  // TX goes to a nearby clear frequency, capped at 2500 Hz
+  int minFreq = qMax(200, ui->TxFreqSpinBox->minimum());
+  int maxFreq = qMin(2500, ui->TxFreqSpinBox->maximum());
+  // Constrain search to ±500 Hz around RX freq
   int searchMin = qMax(minFreq, rxFreq - 500);
   int searchMax = qMin(maxFreq, rxFreq + 500);
   int clearFreq = findClearFrequency(rxFreq, searchMin, searchMax, 60);
-  // If the clear freq is the same as RX, try wider search
+  // If the clear freq is the same as RX, try wider search (still within 2500)
   if (qAbs(clearFreq - rxFreq) < 60) {
     searchMin = qMax(minFreq, rxFreq - 1000);
     searchMax = qMin(maxFreq, rxFreq + 1000);
@@ -17672,9 +17672,9 @@ void MainWindow::autoOffsetTxFreq (int rxFreq)
 
 void MainWindow::on_btnFindClear_clicked ()
 {
-  int minFreq = ui->RxFreqSpinBox->minimum();
-  int maxFreq = ui->RxFreqSpinBox->maximum();
-  // Find the clearest frequency in the full range
+  // Search only within 200-2500 Hz range
+  int minFreq = qMax(200, ui->RxFreqSpinBox->minimum());
+  int maxFreq = qMin(2500, ui->RxFreqSpinBox->maximum());
   int clearFreq = findClearFrequency(0, minFreq, maxFreq, 80);
   ui->RxFreqSpinBox->setValue(clearFreq);
   if (!ui->cbHoldTxFreq->isChecked()) {
