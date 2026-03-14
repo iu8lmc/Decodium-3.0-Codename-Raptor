@@ -13,7 +13,7 @@ integer*1 gen(M,K)
 integer*1 message77(77),message(K)
 integer*1 pchecks(M)
 integer*1, target :: i1MsgBytes(12)
-include '/lib/ft8/ldpc_174_91_c_generator.f90'
+include 'ldpc_174_91_c_generator.f90'
 logical first
 data first/.true./
 save first,gen

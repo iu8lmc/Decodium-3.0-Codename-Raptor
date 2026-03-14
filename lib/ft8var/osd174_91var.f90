@@ -14,7 +14,7 @@ integer*1 decoded(K)
 integer*1 message77(77)
 integer indx(N)
 real llr(N),rx(N),absrx(N)
-include '/lib/ft8/ldpc_174_91_c_generator.f90'
+include 'ldpc_174_91_c_generator.f90'
 logical reset
 
 integer, DIMENSION(:,:), ALLOCATABLE :: indexes
