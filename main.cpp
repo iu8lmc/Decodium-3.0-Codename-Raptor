@@ -356,6 +356,13 @@ int main(int argc, char *argv[])
               sys_lg.push_record (boost::move (rec));
             }
 
+          // Kill any orphaned jt9 from a previous crash before touching shared memory
+#ifdef Q_OS_WIN
+          system("taskkill /F /IM jt9.exe >nul 2>&1");
+#else
+          system("pkill -9 jt9 2>/dev/null");
+#endif
+
           // Create and initialize shared memory segment
           // Multiple instances: use rig_name as shared memory key
           mem_jt9.setKey(a.applicationName ());
