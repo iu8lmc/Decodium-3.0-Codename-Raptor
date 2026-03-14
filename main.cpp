@@ -10,7 +10,6 @@
 
 #include <QApplication>
 #include <QSharedMemory>
-#include <QProcess>
 #include <QProcessEnvironment>
 #include <QTemporaryFile>
 #include <QDateTime>
@@ -362,10 +361,6 @@ int main(int argc, char *argv[])
           mem_jt9.setKey(a.applicationName ());
 
           // try and shut down any orphaned jt9 process
-#if defined (Q_OS_WIN)
-          // On Windows, force-kill any leftover jt9.exe from a previous crash
-          QProcess::execute ("taskkill", {"/F", "/IM", "jt9.exe"});
-#endif
           for (int i = 3; i; --i) // three tries to close old jt9
             {
               if (mem_jt9.attach ()) // shared memory presence implies
@@ -395,17 +390,9 @@ int main(int argc, char *argv[])
             }
           else
             {
-              // jt9 process is dead but shared memory persists (common after crash on Windows).
-              // Force-detach the stale segment and create a fresh one instead of failing fatally.
-              LOG_INFO ("Orphaned shared memory detected — forcing cleanup");
-              mem_jt9.detach ();
-              if (!mem_jt9.create (sizeof (dec_data)))
-              {
-                MessageBox::critical_message (nullptr, a.translate ("main", "Shared memory error"),
-                                              a.translate ("main", "Unable to create shared memory segment"));
-                throw std::runtime_error {"Shared memory error"};
-              }
-              LOG_INFO ("shmem recreated after orphan cleanup, size: " << mem_jt9.size ());
+              MessageBox::critical_message (nullptr, a.translate ("main", "Sub-process error"),
+                                            a.translate ("main", "Failed to close orphaned jt9 process"));
+              throw std::runtime_error {"Sub-process error"};
             }
           mem_jt9.lock ();
           memset(mem_jt9.data(),0,sizeof(struct dec_data)); //Zero all decoding params in shared memory
