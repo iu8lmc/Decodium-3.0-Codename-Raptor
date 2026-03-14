@@ -14,12 +14,12 @@ echo ============================================
 echo.
 
 echo === Step 0: Copy build output to dist ===
-if exist "%SRC%\build\decodium.exe" (
-    copy /Y "%SRC%\build\decodium.exe" "%SRC%\dist_64bit\decodium.exe"
+if exist "%SRC%\build-w2\decodium.exe" (
+    copy /Y "%SRC%\build-w2\decodium.exe" "%SRC%\dist_64bit\decodium.exe"
     echo   Copied decodium.exe to dist_64bit
 )
-if exist "%SRC%\build\jt9.exe" (
-    copy /Y "%SRC%\build\jt9.exe" "%SRC%\dist_64bit\jt9.exe"
+if exist "%SRC%\build-w2\jt9.exe" (
+    copy /Y "%SRC%\build-w2\jt9.exe" "%SRC%\dist_64bit\jt9.exe"
     echo   Copied jt9.exe to dist_64bit
 )
 echo.
