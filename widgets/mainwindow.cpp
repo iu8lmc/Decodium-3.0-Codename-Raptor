@@ -1520,7 +1520,8 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 
   connect(&m_asyncDecodeTimer, &QTimer::timeout, this, [this]() {
     if (m_mode != "FT2" || !ui->cbAsyncDecode || !ui->cbAsyncDecode->isChecked()) return;
-    if (m_bAsyncDecoding) return;  // previous decode still running
+    if (!m_monitoring) return;  // no audio input yet
+    if (m_bAsyncDecoding) return;  // still processing
     if (m_asyncAudioPos < 45000) return;  // not enough audio yet
 
     // Extract last 45000 samples from ring buffer
@@ -1530,8 +1531,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     for (int i = 0; i < 45000; i++) {
       asyncBuf[i] = m_asyncAudio[(start + i) % 90000];
     }
-
-    // Dedup purge is handled inside isDuplicateDecode()
 
     // Set up decode parameters
     int nqsoprogress = m_QSOProgress;
@@ -1549,7 +1548,9 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
                             &ndepth, &ncontest,
                             dec_data.params.mycall, dec_data.params.hiscall,
                             &m_asyncMsg[0][0], &nout,
-                            (FCL)12, (FCL)12, (FCL)(100*80));
+                            (FCL)12, (FCL)12, (FCL)80);
+      // Null-terminate after valid results (Fortran fills rest with spaces)
+      if (nout < 100) m_asyncMsg[nout][0] = 0;
     }));
   });
   
@@ -1701,7 +1702,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 
   // Show startup banner
   showStartupBanner ();
-
   // Load verified DXpedition callsigns (Ed25519-signed list from server + cache)
   m_verifiedListMgr = new VerifiedDxpedListManager (
     m_config.writeable_data_dir (), "https://ft2.it/verified_dxpeds.json", this);
