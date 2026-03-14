@@ -313,7 +313,7 @@ subroutine ft8b(dd0,newdat,nQSOProgress,nfqso,nftx,ndepth,nzhsym,lapon,     &
 !
 ! Conditions that cause us to bail out of AP decoding
         if(ncontest.le.5 .and. iaptype.ge.3 .and. (abs(f1-nfqso).gt.napwid .and. abs(f1-nftx).gt.napwid) ) cycle
-        if(ncontest.eq.6) cycle                     ! No AP for Foxes
+!        if(ncontest.eq.6) cycle                     ! AP now enabled for Fox/DXped
         if(ncontest.eq.7.and.f1.gt.950.0) cycle     ! Hounds use AP only for signals below 950 Hz
         if(iaptype.ge.2 .and. apsym(1).gt.1) cycle  ! No, or nonstandard, mycall 
         if(ncontest.eq.7 .and. iaptype.ge.2 .and. aph10(1).gt.1) cycle

@@ -408,7 +408,7 @@ contains
                npasses=5+nappasses(nQSOProgress)
                if(lapcqonly) npasses=6
                if(ndepth0.eq.1) npasses=5
-               if(ncontest.eq.6) npasses=6  ! Fox/DXped: 5 metric + AP type 1 (CQ)
+!               if(ncontest.eq.6) npasses=6  ! AP now enabled for Fox/DXped
 ! ncontest=7 (Hound): full AP passes enabled
                do ipass=1,npasses
                   if(ipass.eq.1) llr=llra
@@ -499,8 +499,7 @@ contains
                   dmin=0.0
 
                   ndeep=3
-                  maxosd=3
-                  if(ndepth0.ge.3) maxosd=4
+                  maxosd=4
                   if(.not.doosd) maxosd = -1
                   call timer('dec174_91 ',0)
                   Keff=91
@@ -604,7 +603,7 @@ contains
             npasses=5+nappasses(nQSOProgress)
             if(lapcqonly) npasses=6
             if(ndepth0.eq.1) npasses=5
-            if(ncontest.eq.6) npasses=5
+!            if(ncontest.eq.6) npasses=5  ! AP now enabled for Fox/DXped
 
             do ipass=1,npasses
                if(ipass.eq.1) llr=llra
@@ -687,10 +686,7 @@ contains
                dmin=0.0
 
                ndeep=3
-               maxosd=3
-               if(abs(nfqso-f_avg).le.75.0 .and. ndepth0.ge.3) then
-                  maxosd=4
-               endif
+               maxosd=4
                if(.not.doosd) maxosd = -1
                Keff=91
                call decode174_91(llr,Keff,maxosd,ndeep,apmask,   &
