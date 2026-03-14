@@ -10201,7 +10201,8 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
         || "CQ" == firstcall || "QRZ" == firstcall || ctrl || shift) {
       if (((SpecOp::HOUND != m_specOp) || (m_mode != "FT8" and m_mode != "FT2"))
           && (!ui->cbHoldTxFreq->isChecked () || shift || ctrl)) {
-        if (ui->cbAutoOffset && ui->cbAutoOffset->isChecked() && !shift && !ctrl) {
+        // In FT2: TX must ALWAYS be on a different frequency than RX
+        if (m_mode == "FT2" || (ui->cbAutoOffset && ui->cbAutoOffset->isChecked() && !shift && !ctrl)) {
           autoOffsetTxFreq(frequency);
         } else {
           ui->TxFreqSpinBox->setValue(frequency);
@@ -13693,6 +13694,14 @@ void MainWindow::on_TxFreqSpinBox_valueChanged(int n)
   if (m_config.superFox() && m_specOp==SpecOp::FOX && n!=750) {
     ui->TxFreqSpinBox->setValue(750);
     m_wideGraph->setTxFreq(750);
+    return;
+  }
+  // FT2: TX must never equal RX — force offset if they match
+  if (m_mode == "FT2" && n == ui->RxFreqSpinBox->value()) {
+    int maxFreq = qMin(2500, ui->TxFreqSpinBox->maximum());
+    int offset = (n + 100 <= maxFreq) ? n + 100 : n - 100;
+    offset = qMax(200, qMin(maxFreq, offset));
+    ui->TxFreqSpinBox->setValue(offset);
     return;
   }
   m_config.transceiver_tune (false);  // reset rig tuning
@@ -17666,6 +17675,11 @@ void MainWindow::autoOffsetTxFreq (int rxFreq)
     searchMin = qMax(minFreq, rxFreq - 1000);
     searchMax = qMin(maxFreq, rxFreq + 1000);
     clearFreq = findClearFrequency(rxFreq, searchMin, searchMax, 60);
+  }
+  // Last resort: if still too close to RX, force offset ±100 Hz
+  if (qAbs(clearFreq - rxFreq) < 50) {
+    clearFreq = (rxFreq + 100 <= maxFreq) ? rxFreq + 100 : rxFreq - 100;
+    clearFreq = qMax(minFreq, qMin(maxFreq, clearFreq));
   }
   ui->TxFreqSpinBox->setValue(clearFreq);
 }
