@@ -1983,6 +1983,7 @@ void MainWindow::writeSettings()
   m_settings->setValue("GUItab",ui->tabWidget->currentIndex());
   m_settings->setValue("OutBufSize",outBufSize);
   m_settings->setValue ("HoldTxFreq", ui->cbHoldTxFreq->isChecked ());
+  if (ui->cbAutoOffset) m_settings->setValue ("AutoOffset", ui->cbAutoOffset->isChecked ());
   m_settings->setValue ("CQonly", ui->cbCQonly->isChecked ());
   m_settings->setValue ("Spotting", ui->cbSpotting->isChecked ());
   m_settings->setValue ("BypassFilters", ui->cbBypass->isChecked ());
@@ -2420,6 +2421,7 @@ void MainWindow::readSettings()
   outBufSize=m_settings->value("OutBufSize",4096).toInt();
   ui->cbHoldTxFreq->setChecked (m_settings->value ("HoldTxFreq", false).toBool ());
   HoldTxFreqStatus = m_settings->value ("HoldTxFreq", false).toBool ();
+  if (ui->cbAutoOffset) ui->cbAutoOffset->setChecked (m_settings->value ("AutoOffset", false).toBool ());
   ui->cbCQonly->setChecked (m_settings->value ("CQonly", false).toBool ());
   ui->cbSpotting->setChecked (m_settings->value ("Spotting", true).toBool ());
   ui->cbBypass->setChecked (m_settings->value ("BypassFilters", false).toBool ());
@@ -3106,6 +3108,7 @@ void MainWindow::fastSink(qint64 frames)
   if(bmsk144 and (line[0]!=0)) {
     QString message {QString::fromLatin1 (line)};
     DecodedText decodedtext {message.replace (QChar::LineFeed, "")};
+    if (!decodedtext.isTX()) trackOccupiedFrequency(decodedtext.frequencyOffset());
 
     QString text = decodedtext.string().replace("<","").replace(">","");   // for Wait features
 
@@ -6365,6 +6368,7 @@ void::MainWindow::fast_decode_done()
 
 //Left (Band activity) window
     DecodedText decodedtext {QString(message).replace (QChar::LineFeed, "")};
+    if (!decodedtext.isTX()) trackOccupiedFrequency(decodedtext.frequencyOffset());
     if(!m_bFastDone) {
       ui->decodedTextBrowser->displayDecodedText (decodedtext, m_config.my_callsign (), m_mode, m_config.DXCC (),
          m_logBook, m_currentBandPeriod, m_config.ppfx (), false, false, 0.0, false, -99, "", m_muted);
@@ -10197,7 +10201,11 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
         || "CQ" == firstcall || "QRZ" == firstcall || ctrl || shift) {
       if (((SpecOp::HOUND != m_specOp) || (m_mode != "FT8" and m_mode != "FT2"))
           && (!ui->cbHoldTxFreq->isChecked () || shift || ctrl)) {
-        ui->TxFreqSpinBox->setValue(frequency);
+        if (ui->cbAutoOffset && ui->cbAutoOffset->isChecked() && !shift && !ctrl) {
+          autoOffsetTxFreq(frequency);
+        } else {
+          ui->TxFreqSpinBox->setValue(frequency);
+        }
       }
       if(m_mode != "JT4" && m_mode != "JT65" && !m_mode.startsWith ("JT9") &&
          m_mode != "Q65" && m_mode!="FT8" && m_mode!="FT2" && m_mode!="FT4" && m_mode!="FST4") {
@@ -17566,6 +17574,114 @@ void MainWindow::on_cbDualCarrier_toggled (bool checked)
     if (ui->labelDualCarrierWarning) ui->labelDualCarrierWarning->setVisible (checked);
 }
 
+//---------------------------------------------------------------------
+// Smart Frequency Finder — track occupied frequencies and find clear ones
+//---------------------------------------------------------------------
+
+void MainWindow::trackOccupiedFrequency (int audioFreq)
+{
+  if (audioFreq < 100 || audioFreq > 5000) return;
+  auto now = QDateTime::currentMSecsSinceEpoch();
+  m_occupiedFreqs[audioFreq] = now;
+  // Purge entries older than 30 seconds
+  auto it = m_occupiedFreqs.begin();
+  while (it != m_occupiedFreqs.end()) {
+    if (now - it.value() > 30000)
+      it = m_occupiedFreqs.erase(it);
+    else
+      ++it;
+  }
+}
+
+int MainWindow::findClearFrequency (int avoidFreq, int minFreq, int maxFreq, int minDistance)
+{
+  // Build list of occupied frequencies (within last 30s)
+  QList<int> occupied;
+  auto now = QDateTime::currentMSecsSinceEpoch();
+  for (auto it = m_occupiedFreqs.constBegin(); it != m_occupiedFreqs.constEnd(); ++it) {
+    if (now - it.value() < 30000 && it.key() >= minFreq && it.key() <= maxFreq)
+      occupied.append(it.key());
+  }
+  std::sort(occupied.begin(), occupied.end());
+
+  // If no activity, return a frequency in the middle of the range
+  if (occupied.isEmpty())
+    return (minFreq + maxFreq) / 2;
+
+  // Score each candidate frequency: higher score = more clear
+  int bestFreq = avoidFreq;
+  int bestScore = -1;
+
+  // Step through the range in 50 Hz increments
+  for (int f = minFreq; f <= maxFreq; f += 50) {
+    int minDist = 99999;
+    for (int occ : occupied) {
+      int d = qAbs(f - occ);
+      if (d < minDist) minDist = d;
+    }
+    // Penalize if too close to avoidFreq (we want TX different from RX)
+    int avoidDist = qAbs(f - avoidFreq);
+    int score = minDist;
+    // Bonus for being away from avoidFreq
+    if (avoidDist >= minDistance) score += avoidDist / 4;
+    // Must be at least minDistance from all occupied
+    if (minDist < minDistance) continue;
+    if (score > bestScore) {
+      bestScore = score;
+      bestFreq = f;
+    }
+  }
+
+  // If nothing found with minDistance, relax the constraint
+  if (bestScore < 0) {
+    bestScore = -1;
+    for (int f = minFreq; f <= maxFreq; f += 50) {
+      int minDist = 99999;
+      for (int occ : occupied) {
+        int d = qAbs(f - occ);
+        if (d < minDist) minDist = d;
+      }
+      if (minDist > bestScore) {
+        bestScore = minDist;
+        bestFreq = f;
+      }
+    }
+  }
+
+  return bestFreq;
+}
+
+void MainWindow::autoOffsetTxFreq (int rxFreq)
+{
+  // RX stays on the decoded station's frequency
+  // TX goes to a nearby clear frequency
+  int minFreq = ui->TxFreqSpinBox->minimum();
+  int maxFreq = ui->TxFreqSpinBox->maximum();
+  // Constrain search to ±500 Hz around RX freq for best propagation
+  int searchMin = qMax(minFreq, rxFreq - 500);
+  int searchMax = qMin(maxFreq, rxFreq + 500);
+  int clearFreq = findClearFrequency(rxFreq, searchMin, searchMax, 60);
+  // If the clear freq is the same as RX, try wider search
+  if (qAbs(clearFreq - rxFreq) < 60) {
+    searchMin = qMax(minFreq, rxFreq - 1000);
+    searchMax = qMin(maxFreq, rxFreq + 1000);
+    clearFreq = findClearFrequency(rxFreq, searchMin, searchMax, 60);
+  }
+  ui->TxFreqSpinBox->setValue(clearFreq);
+}
+
+void MainWindow::on_btnFindClear_clicked ()
+{
+  int minFreq = ui->RxFreqSpinBox->minimum();
+  int maxFreq = ui->RxFreqSpinBox->maximum();
+  // Find the clearest frequency in the full range
+  int clearFreq = findClearFrequency(0, minFreq, maxFreq, 80);
+  ui->RxFreqSpinBox->setValue(clearFreq);
+  if (!ui->cbHoldTxFreq->isChecked()) {
+    ui->TxFreqSpinBox->setValue(clearFreq);
+  }
+}
+
 void MainWindow::on_cbAsyncDecode_toggled (bool checked)
 {
     // In FT2, Async L2 is mandatory — re-check if user tries to uncheck
@@ -17633,6 +17749,7 @@ void MainWindow::asyncDecodeDone()
 
       // Display in left (Band Activity) window
       DecodedText decodedtext {QString(message).replace(QChar::LineFeed, "")};
+      if (!decodedtext.isTX()) trackOccupiedFrequency(decodedtext.frequencyOffset());
       ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
           m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
           false, false, 0.0, false, -99, "", m_muted);

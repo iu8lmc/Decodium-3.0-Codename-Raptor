@@ -1262,6 +1262,13 @@ private:
   void clusterDisconnect ();
   void clusterProcessLine (QString const& line);
   void clusterShowSettings ();
+
+  // Smart Frequency Finder — auto-offset TX and find clear RX/TX
+  QMap<int, qint64> m_occupiedFreqs;     // audioFreq → last seen (msec since epoch)
+  void trackOccupiedFrequency (int audioFreq);
+  int  findClearFrequency (int avoidFreq, int minFreq, int maxFreq, int minDistance = 60);
+  void autoOffsetTxFreq (int rxFreq);
+  Q_SLOT void on_btnFindClear_clicked ();
 };
 
 extern int killbyname(const char* progName);
