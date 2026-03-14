@@ -390,16 +390,8 @@ int main(int argc, char *argv[])
             }
           else
             {
-              // orphaned shared memory from a previous crash — force reclaim
-              LOG_INFO ("Reclaiming orphaned shared memory segment");
-              mem_jt9.detach ();
-              if (!mem_jt9.create (sizeof (dec_data)))
-              {
-                MessageBox::critical_message (nullptr, a.translate ("main", "Shared memory error"),
-                                              a.translate ("main", "Unable to create shared memory segment"));
-                throw std::runtime_error {"Shared memory error"};
-              }
-              LOG_INFO ("shmem size (reclaimed): " << mem_jt9.size ());
+              // orphaned shared memory — already attached, just reuse it
+              LOG_INFO ("Reusing orphaned shared memory segment");
             }
           mem_jt9.lock ();
           memset(mem_jt9.data(),0,sizeof(struct dec_data)); //Zero all decoding params in shared memory
