@@ -2,7 +2,7 @@
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
-#define MyBuildTag "2603141352"
+#define MyBuildTag "2603141435"
 #define DistDir "dist_32bit"
 
 [Setup]
