@@ -390,9 +390,16 @@ int main(int argc, char *argv[])
             }
           else
             {
-              MessageBox::critical_message (nullptr, a.translate ("main", "Sub-process error"),
-                                            a.translate ("main", "Failed to close orphaned jt9 process"));
-              throw std::runtime_error {"Sub-process error"};
+              // orphaned shared memory from a previous crash — force reclaim
+              LOG_INFO ("Reclaiming orphaned shared memory segment");
+              mem_jt9.detach ();
+              if (!mem_jt9.create (sizeof (dec_data)))
+              {
+                MessageBox::critical_message (nullptr, a.translate ("main", "Shared memory error"),
+                                              a.translate ("main", "Unable to create shared memory segment"));
+                throw std::runtime_error {"Shared memory error"};
+              }
+              LOG_INFO ("shmem size (reclaimed): " << mem_jt9.size ());
             }
           mem_jt9.lock ();
           memset(mem_jt9.data(),0,sizeof(struct dec_data)); //Zero all decoding params in shared memory
