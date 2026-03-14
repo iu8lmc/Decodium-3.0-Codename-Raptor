@@ -706,10 +706,10 @@ private:
   qint32  m_nSentFoxRrpt=0;    //Serial number for next R+rpt Hound will send to Fox
   qint32  m_txRetryCount {0};  // Consecutive Tx retry counter for auto-sequence timeout
   qint32  m_lastNtx {-1};     // Last Tx number sent (for retry detection)
-  static constexpr int MAX_TX_RETRIES = 3;    // Tx2/Tx3/Tx4 retries before returning to CQ
+  static constexpr int MAX_TX_RETRIES = 6;    // Tx retries before returning to CQ (FT2 needs more)
   int  m_autoCQPeriodsMissed   {0};           // RX periods senza risposta dal caller corrente
   bool m_receivedReplyThisPeriod {false};     // flag reset ogni periodo RX
-  static constexpr int MAX_MISSED_PERIODS = 4;
+  static constexpr int MAX_MISSED_PERIODS = 8; // Async FT2 needs more tolerance
   qint32  m_kin0=0;
   qint32  m_earlyDecode=41;
   qint32  m_earlyDecode2=47;

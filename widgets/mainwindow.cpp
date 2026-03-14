@@ -6456,10 +6456,15 @@ void MainWindow::decodeDone ()
 
   // Auto CQ MSHV-style timeout: dopo MAX_MISSED_PERIODS RX senza risposta → salta al prossimo
   if (m_autoCQ && m_QSOProgress > CALLING && !m_diskData) {
-    if (!m_receivedReplyThisPeriod) {
+    // In FT2 Async: don't count as missed if async decode is still in progress
+    if (!m_receivedReplyThisPeriod && !(m_mode == "FT2" && m_bAsyncDecoding)) {
       m_autoCQPeriodsMissed++;
-      if (m_autoCQPeriodsMissed >= MAX_MISSED_PERIODS)
+      if (m_autoCQPeriodsMissed >= MAX_MISSED_PERIODS) {
+        qDebug() << "AutoCQ: " << MAX_MISSED_PERIODS << "periods without response, clearing DX";
         QTimer::singleShot (0, this, [this] { clearDX (); });
+      }
+    } else if (m_receivedReplyThisPeriod) {
+      m_autoCQPeriodsMissed = 0;  // Reset on valid response
     }
     m_receivedReplyThisPeriod = false;
   }
@@ -9114,9 +9119,15 @@ void MainWindow::guiUpdate()
     // Auto CQ retry logic (only when Auto CQ mode is active)
     if (m_autoCQ && !m_tune) {
       if (m_ntx >= 2 && m_ntx <= 4) {
-        // Rule 1: Tx2/Tx3/Tx4 repeated 3 times without response → return to CQ (Tx6)
+        // Rule 1: Tx2/Tx3/Tx4 repeated MAX_TX_RETRIES times → return to CQ (Tx6)
         if (m_ntx == m_lastNtx) {
           ++m_txRetryCount;
+          // After 3 failed retries in FT2: auto-change TX frequency
+          if (m_txRetryCount == 3 && m_mode == "FT2") {
+            int rxF = ui->RxFreqSpinBox->value();
+            autoOffsetTxFreq(rxF);
+            qDebug () << "AutoCQ: Tx" << m_ntx << "retry #3 — auto-offset TX to" << ui->TxFreqSpinBox->value();
+          }
           if (m_txRetryCount >= MAX_TX_RETRIES) {
             qDebug () << "AutoCQ: Tx" << m_ntx << "sent" << MAX_TX_RETRIES << "times without response, returning to CQ";
             m_txRetryCount = 0;
@@ -9134,6 +9145,20 @@ void MainWindow::guiUpdate()
       } else if (m_ntx == 6) {
         m_txRetryCount = 0;
         m_lastNtx = 6;
+      } else {
+        m_txRetryCount = 0;
+        m_lastNtx = m_ntx;
+      }
+    }
+    // FT2 non-AutoCQ: also track retries and auto-offset TX after 3 failed attempts
+    if (!m_autoCQ && m_mode == "FT2" && !m_tune && m_ntx >= 1 && m_ntx <= 4) {
+      if (m_ntx == m_lastNtx) {
+        ++m_txRetryCount;
+        if (m_txRetryCount == 3) {
+          int rxF = ui->RxFreqSpinBox->value();
+          autoOffsetTxFreq(rxF);
+          qDebug () << "FT2: retry #3 — auto-offset TX to" << ui->TxFreqSpinBox->value();
+        }
       } else {
         m_txRetryCount = 0;
         m_lastNtx = m_ntx;
