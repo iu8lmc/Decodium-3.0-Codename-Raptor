@@ -1490,6 +1490,30 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     }
   });
 
+  // TX NOW button blink + click for Digital Morse mode
+  m_txRdyBlinkTimer.setInterval(500);
+  connect(&m_txRdyBlinkTimer, &QTimer::timeout, this, [this]() {
+    if (m_bTxPreloaded && m_bDigitalMorse) {
+      // blink between red and bright red
+      static bool bright = false;
+      bright = !bright;
+      ui->btnTxNow->setStyleSheet(bright
+        ? "QPushButton { background-color: #ff2222; color: #ffffff; font-weight: bold; font-size: 16px; border-radius: 6px; padding: 4px 16px; min-height: 28px; }"
+        : "QPushButton { background-color: #cc0000; color: #ffffff; font-weight: bold; font-size: 16px; border-radius: 6px; padding: 4px 16px; min-height: 28px; }");
+    }
+  });
+
+  // TX NOW button click = same as Spacebar
+  connect(ui->btnTxNow, &QPushButton::clicked, this, [this]() {
+    if (m_bDigitalMorse && m_mode == "FT2" && !m_transmitting) {
+      if (!m_auto) auto_tx_mode(true);
+      m_bAsyncTxArmed = true;
+      m_bTxPreloaded = false;
+      ui->btnTxNow->setVisible(false);
+      m_txRdyBlinkTimer.stop();
+    }
+  });
+
   connect(&m_asyncDecodeTimer, &QTimer::timeout, this, [this]() {
     if (m_mode != "FT2" || !ui->cbAsyncDecode->isChecked()) return;
     if (m_bAsyncDecoding) return;  // previous decode still running
@@ -4247,9 +4271,11 @@ void MainWindow::process_autoButton (bool checked)   //manually or by controller
   if (checked) {
     m_auto = checked;
 
-    // Async FT2: arm guard timer for immediate TX start
+    // Async FT2: arm TX
     if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
-      if (!m_asyncTxGuardTimer.isActive()) {
+      if (m_bSpeedyContest || m_bDigitalMorse) {
+        m_bAsyncTxArmed = true;  // instant TX, bypass guard timer
+      } else if (!m_asyncTxGuardTimer.isActive()) {
         m_asyncTxGuardTimer.start(100);
       }
     }
@@ -4318,9 +4344,11 @@ void MainWindow::auto_tx_mode (bool state)
   //debugToFile(QString{"autoTxMode   m_autoButtonState:%1"}.arg(m_autoButtonState));   //avt 2/2/24
   on_autoButton_clicked (state);
 
-  // Async FT2: arm guard timer for immediate TX (bypass period wait)
+  // Async FT2: arm TX
   if (state && m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
-    if (!m_asyncTxGuardTimer.isActive()) {
+    if (m_bSpeedyContest || m_bDigitalMorse) {
+      m_bAsyncTxArmed = true;  // instant TX, bypass guard timer
+    } else if (!m_asyncTxGuardTimer.isActive()) {
       m_asyncTxGuardTimer.start(100);  // 100ms guard before TX
     }
   }
@@ -4360,6 +4388,16 @@ void MainWindow::keyPressEvent (QKeyEvent * e)
 //    }
 //    QMainWindow::keyPressEvent (e);
 //  }
+
+  // Digital Morse: Spacebar = TX NOW
+  if (e->key() == Qt::Key_Space && m_bDigitalMorse && m_mode == "FT2" && !m_transmitting) {
+    if (!m_auto) auto_tx_mode(true);
+    m_bAsyncTxArmed = true;
+    m_bTxPreloaded = false;
+    ui->btnTxNow->setVisible(false);
+    m_txRdyBlinkTimer.stop();
+    return;
+  }
 
   int n;
   bool bAltF1F6=m_config.alternate_bindings();
@@ -8116,6 +8154,22 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
   bool is_OK=false;
   if(m_mode=="MSK144" && msg_no_hash.indexOf(ui->dxCallEntry->text()+" R ")>0) is_OK=true;
   if (message_words.size () > 3 && (message.isStandardMessage() || (is_73 or is_OK))) {
+    // QSO cooldown: ignore repeated 73 from a station we just completed a QSO with
+    // Only in FT2 async mode where the same 73 gets decoded every ~4s
+    if (is_73 && m_mode == "FT2" && ui->cbAsyncDecode->isChecked()) {
+      QString caller;
+      QString grid;
+      message.deCallAndGrid(caller, grid);
+      if (!caller.isEmpty()) {
+        qint64 now = QDateTime::currentMSecsSinceEpoch();
+        // purge expired entries (>30s)
+        for (auto it = m_qsoCooldown.begin(); it != m_qsoCooldown.end(); ) {
+          if (now - it.value() > 30000) it = m_qsoCooldown.erase(it);
+          else ++it;
+        }
+        if (m_qsoCooldown.contains(caller)) return;  // still in cooldown, ignore
+      }
+    }
     // Auto CQ caller queue: intercept messages directed to us from OTHER stations
     // while we're already in an active QSO — queue them for later processing
     if (m_autoCQ && m_auto && m_QSOProgress > CALLING && m_QSOProgress < SIGNOFF) {
@@ -8182,7 +8236,7 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
       //ui->stopTxButton->click (); // halt any transmission  avt 11/17/20  not necessary, interferes with external controller actions
     } else if (m_auto             // transmit allowed
                //avt 10/2/25
-               && ui->cbAutoSeq->isVisible () && (ui->cbAutoSeq->isEnabled () or is_externalCtrlMode()) && ui->cbAutoSeq->isChecked () // auto-sequencing allowed
+               && (m_mode == "FT2" || (ui->cbAutoSeq->isVisible () && (ui->cbAutoSeq->isEnabled () or is_externalCtrlMode()) && ui->cbAutoSeq->isChecked ())) // auto-sequencing allowed (FT2: always on)
                && ((!m_bCallingCQ      // not calling CQ/QRZ
                     && !m_sentFirst73       // not finished QSO
                     && ((message_words.at (2).contains (m_baseCall)
@@ -8203,6 +8257,14 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
         //debugToFile(QString{"             processMessage:%1"}.arg(message.string().trimmed()));   //avt 1/4/24
         if (m_autoCQ && m_QSOProgress > CALLING)
           m_receivedReplyThisPeriod = true;  // risposta valida ricevuta questo periodo
+        // QSO cooldown: when we receive acceptable 73, add caller to cooldown (FT2 async only)
+        if (is_73 && m_mode == "FT2" && m_QSOProgress >= ROGER_REPORT) {
+          QString cooldownCall;
+          QString cooldownGrid;
+          message.deCallAndGrid(cooldownCall, cooldownGrid);
+          if (!cooldownCall.isEmpty())
+            m_qsoCooldown[cooldownCall] = QDateTime::currentMSecsSinceEpoch();
+        }
         if (m_bDXpedMode) {
           QString dxpedCall;
           QString dxpedGrid;
@@ -8376,15 +8438,15 @@ void MainWindow::guiUpdate()
   }
   if(m_tune) m_bTxTime=true;                 //"Tune" takes precedence
 
-  // Async TX: only arm TX if we are already inside the TX window (respect period boundaries)
+  // Async TX: Speedy/D-CW force TX window; normal async waits for TX window
   if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && m_bAsyncTxArmed && m_auto) {
-    if (m_bTxTime) {
-      // Already in TX window — confirm armed, TX will proceed normally
+    if (m_bSpeedyContest || m_bDigitalMorse) {
+      // Speedy/Digital Morse: force TX window when armed
+      m_bTxTime = true;
+      m_bAsyncTxArmed = false;  // consume
     } else {
-      // Not in TX window — wait for next TX window (don't force TX during RX)
-      // m_bAsyncTxArmed stays true, will be consumed when m_bTxTime becomes true
+      if (m_bTxTime) m_bAsyncTxArmed = false;  // consume only when in TX window
     }
-    if (m_bTxTime) m_bAsyncTxArmed = false;  // consume only when in TX window
   }
 
   if(m_transmitting or m_auto or m_tune) {
@@ -8967,7 +9029,7 @@ void MainWindow::guiUpdate()
         {
         //avt 10/2/25 possibly stop Tx after sending 73
         if (!is_externalCtrlMode() && m_config.repeat_Tx() && (m_mode=="MSK144" or m_mode=="Q65") && m_ntx != 4) cease_auto_Tx_after_QSO ();    //avt 10/2/25
-        if (!is_externalCtrlMode() && !(m_mode=="FT4" && SpecOp::NA_VHF==m_specOp && m_config.NCCC_Sprint())) logQSOTimer.start(0);    //avt 9/30/25
+        if (!is_externalCtrlMode() && !(m_mode=="FT4" && SpecOp::NA_VHF==m_specOp && m_config.NCCC_Sprint()) && !logQSOTimer.isActive()) logQSOTimer.start(0);    //avt 9/30/25
         }
       else
         {
@@ -8975,8 +9037,8 @@ void MainWindow::guiUpdate()
         }
     }
 
-    bool b=("FT8"==m_mode or "FT4"==m_mode or "Q65"==m_mode or "JT65"==m_mode or "JT9"==m_mode or m_mode == "FST4" or m_mode == "MSK144" or m_mode == "JT65" or m_mode == "JT9")  //avt 9/30/25
-        &&  ui->cbAutoSeq->isVisible () && (ui->cbAutoSeq->isEnabled () or is_externalCtrlMode()) && ui->cbAutoSeq->isChecked ();   //avt 9/30/25
+    bool b=("FT8"==m_mode or "FT4"==m_mode or "FT2"==m_mode or "Q65"==m_mode or "JT65"==m_mode or "JT9"==m_mode or m_mode == "FST4" or m_mode == "MSK144" or m_mode == "JT65" or m_mode == "JT9")  //avt 9/30/25
+        &&  (m_mode == "FT2" || (ui->cbAutoSeq->isVisible () && (ui->cbAutoSeq->isEnabled () or is_externalCtrlMode()) && ui->cbAutoSeq->isChecked ()));   //avt 9/30/25
     if(is_73 and (m_config.disable_TX_on_73() or b)) {
       m_nextCall="";  //### Temporary: disable use of "TU;" messages;
       if(m_nextCall!="") {
@@ -9494,11 +9556,17 @@ void MainWindow::stopTx2()
   } else {
     m_config.transceiver_ptt (false); //Lower PTT
   }
-  if (m_mode == "JT9" && m_bFast9
-      && ui->cbAutoSeq->isVisible () && (ui->cbAutoSeq->isEnabled () or is_externalCtrlMode()) && ui->cbAutoSeq->isChecked ()  //avt 9/30/25
+  if (((m_mode == "JT9" && m_bFast9) || (m_mode == "FT2"))
+      && (m_mode == "FT2" || (ui->cbAutoSeq->isVisible () && (ui->cbAutoSeq->isEnabled () or is_externalCtrlMode()) && ui->cbAutoSeq->isChecked ()))
       && m_ntx == 5 && m_nTx73 >= 5) {
+    // Max 5 retries of 73 — escape stuck RR73 loop
     on_stopTxButton_clicked ();
     m_nTx73 = 0;
+    if (m_mode == "FT2") {
+      m_ntx = 6;
+      ui->txrb6->setChecked(true);
+      m_QSOProgress = CALLING;
+    }
   }
   if(((m_mode=="WSPR" or m_mode=="FST4W") and m_ntr==-1) and !m_tuneup) {
     m_wideGraph->setWSPRtransmitted();
@@ -9967,7 +10035,10 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
   auto ctrl = modifiers.testFlag (Qt::ControlModifier);
   auto alt = modifiers.testFlag (Qt::AltModifier);      //avt 1/1/21
   if (alt) return;                                      //avt 1/1/21
-  auto auto_seq = ui->cbAutoSeq->isVisible () && (ui->cbAutoSeq->isEnabled () or is_externalCtrlMode()) && ui->cbAutoSeq->isChecked ();  //avt
+  // FT2 async: block processMessage during active TX to prevent race conditions
+  if (m_mode == "FT2" && m_transmitting && m_bTxTime) return;
+
+  auto auto_seq = (m_mode == "FT2") || (ui->cbAutoSeq->isVisible () && (ui->cbAutoSeq->isEnabled () or is_externalCtrlMode()) && ui->cbAutoSeq->isChecked ());  //avt — FT2: auto-seq always on
   // basic mode sanity checks
   auto const& parts = message.clean_string ().split (' ', SkipEmptyParts);
   if (parts.size () < 5) {
@@ -10516,6 +10587,16 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
   if (auto_seq && !m_bDoubleClicked && m_mode!="FT4" && m_mode!="FT2") {
     return;
   }
+
+  // Digital Morse: prepare message but DON'T transmit — wait for Spacebar
+  if (m_bDigitalMorse && m_mode == "FT2" && m_bDoubleClicked) {
+    m_bTxPreloaded = true;
+    m_bDoubleClicked = false;
+    ui->btnTxNow->setVisible(true);
+    m_txRdyBlinkTimer.start();
+    return;
+  }
+
   if(m_config.quick_call() && m_bDoubleClicked) auto_tx_mode(true);
   m_bDoubleClicked=false;
 
@@ -10978,6 +11059,7 @@ void MainWindow::clearDX ()
   set_dateTimeQSO (-1);
   m_autoCQPeriodsMissed = 0;
   m_receivedReplyThisPeriod = false;
+  m_sentFirst73 = false;  // reset so next QSO can engage
   // Process next caller in queue before returning to CQ
   if (m_autoCQ && !m_callerQueue.isEmpty ()) {
     processNextInQueue ();
@@ -12224,7 +12306,7 @@ void MainWindow::cease_auto_Tx_after_QSO ()
   }
 
   if (SpecOp::FOX != m_specOp && m_mode != "MSK144"    //avt 10/2/25
-      && ui->cbAutoSeq->isVisible () && ui->cbAutoSeq->isEnabled () && ui->cbAutoSeq->isChecked ())   //avt
+      && (m_mode == "FT2" || (ui->cbAutoSeq->isVisible () && ui->cbAutoSeq->isEnabled () && ui->cbAutoSeq->isChecked ())))   //avt — FT2: cbAutoSeq hidden but always on
     {
       // ensure that auto Tx is disabled even if disable Tx
       // on 73 is not checked, unless in Fox mode where it is allowed
@@ -12235,7 +12317,7 @@ void MainWindow::cease_auto_Tx_after_QSO ()
 
 void MainWindow::on_logQSOButton_clicked()                 //Log QSO button
 {
-  if (!(m_config.repeat_Tx() && (m_mode=="MSK144" or m_mode=="Q65"))) {
+  if (!(m_config.repeat_Tx() && (m_mode=="MSK144" or m_mode=="Q65" or m_mode=="FT2"))) {
     if (!m_autoCQ) {  // Skip cease when Auto CQ is active to prevent circular dependency
       if (SpecOp::NA_VHF==m_specOp && m_mode=="FT4" && m_config.NCCC_Sprint()) {
         QTimer::singleShot (int(850.0*m_TRperiod), [=] {cease_auto_Tx_after_QSO ();});
@@ -12465,6 +12547,13 @@ void MainWindow::displayWidgets(qint64 n)
   bool isFT2 = (m_mode == "FT2");
   ui->cbAsyncDecode->setVisible(false);  // always hidden: forced on in FT2, off elsewhere
   ui->labelAsymxBadge->setVisible(isFT2);
+  ui->cbSpeedyContest->setVisible(isFT2);
+  ui->cbDigitalMorse->setVisible(isFT2);
+  if (!isFT2) {
+    ui->btnTxNow->setVisible(false);
+    m_txRdyBlinkTimer.stop();
+    m_bTxPreloaded = false;
+  }
   if (!isFT2 && ui->cbAsyncDecode->isChecked()) {
     ui->cbAsyncDecode->setChecked(false);  // triggers on_cbAsyncDecode_toggled → stops timer
   }
@@ -17432,6 +17521,30 @@ void MainWindow::on_cbHoldTxFreq_clicked (bool)
 void MainWindow::on_cbDualCarrier_toggled (bool checked)
 {
     ui->labelDualCarrierWarning->setVisible (checked);
+}
+
+void MainWindow::on_cbSpeedyContest_toggled (bool checked)
+{
+    m_bSpeedyContest = checked;
+    if (!checked && m_bDigitalMorse) {
+      // D-CW implies Speedy — if Speedy unchecked, also uncheck D-CW
+      ui->cbDigitalMorse->setChecked(false);
+    }
+}
+
+void MainWindow::on_cbDigitalMorse_toggled (bool checked)
+{
+    m_bDigitalMorse = checked;
+    if (checked) {
+      // D-CW implies Speedy
+      if (!ui->cbSpeedyContest->isChecked())
+        ui->cbSpeedyContest->setChecked(true);
+    }
+    if (!checked) {
+      m_bTxPreloaded = false;
+      ui->btnTxNow->setVisible(false);
+      m_txRdyBlinkTimer.stop();
+    }
 }
 
 void MainWindow::on_cbAsyncDecode_toggled (bool checked)

@@ -319,7 +319,7 @@ namespace
 
 void FoxLog::export_qsos (QTextStream& out) const
 {
-  out << "Decodium v3.0 FT2 Raptor 2603151211 FT8 DXpedition Mode Fox Log\n<eoh>";
+  out << "Decodium v3.0 FT2 Raptor 2603151607 FT8 DXpedition Mode Fox Log\n<eoh>";
 
   SQL_error_check (m_->export_query_, static_cast<bool (QSqlQuery::*) ()> (&QSqlQuery::exec));
   auto record = m_->export_query_.record ();

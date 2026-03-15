@@ -2155,6 +2155,51 @@ When not checked you can view the calibration results.</string>
                      </widget>
                     </item>
                     <item>
+                     <widget class="QCheckBox" name="cbSpeedyContest">
+                      <property name="toolTip">
+                       <string>Contest: double-click su decode = TX immediato (~20ms)</string>
+                      </property>
+                      <property name="text">
+                       <string>Speedy</string>
+                      </property>
+                      <property name="visible">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QCheckBox" name="cbDigitalMorse">
+                      <property name="toolTip">
+                       <string>Digital Morse: Spacebar = TX manuale del messaggio pre-caricato</string>
+                      </property>
+                      <property name="text">
+                       <string>D-CW</string>
+                      </property>
+                      <property name="visible">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="btnTxNow">
+                      <property name="text">
+                       <string>TX NOW</string>
+                      </property>
+                      <property name="styleSheet">
+                       <string>QPushButton { background-color: #cc0000; color: #ffffff; font-weight: bold; font-size: 16px; border-radius: 6px; padding: 4px 16px; min-height: 28px; } QPushButton:hover { background-color: #ff2222; } QPushButton:pressed { background-color: #990000; }</string>
+                      </property>
+                      <property name="visible">
+                       <bool>false</bool>
+                      </property>
+                      <property name="toolTip">
+                       <string>Trasmetti ORA il messaggio pre-caricato (anche: Spacebar)</string>
+                      </property>
+                      <property name="focusPolicy">
+                       <enum>Qt::NoFocus</enum>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QStackedWidget" name="opt_controls_stack">
                       <property name="currentIndex">
                        <number>1</number>
