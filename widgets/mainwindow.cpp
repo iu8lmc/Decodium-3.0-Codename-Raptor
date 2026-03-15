@@ -4538,6 +4538,25 @@ void MainWindow::keyPressEvent (QKeyEvent * e)
         return;
       }
       break;
+    case Qt::Key_K:
+      if(e->modifiers() & Qt::ControlModifier) {
+        // Clear DX call and reset TX messages
+        ui->dxCallEntry->clear();
+        ui->dxGridEntry->clear();
+        m_hisCall.clear();
+        m_hisCall0.clear();
+        m_lastCallsign.clear();
+        m_inQSOwith.clear();
+        m_rptSent.clear();
+        m_rptRcvd.clear();
+        genStdMsgs(QString{});
+        m_ntx=6;
+        ui->txrb6->setChecked(true);
+        m_QSOProgress = CALLING;
+        statusUpdate();
+        return;
+      }
+      break;
     case Qt::Key_L:
       if(e->modifiers() & Qt::ControlModifier) {
         lookup();
@@ -5745,6 +5764,7 @@ void MainWindow::on_actionKeyboard_shortcuts_triggered()
   <tr><td><b>Alt+G    </b></td><td>Generate standard messages</td></tr>
   <tr><td><b>Alt+H    </b></td><td>Halt Tx</td></tr>
   <tr><td><b>Ctrl+I   </b></td><td>Add Dx Call to the Ignore List</td></tr>
+  <tr><td><b>Ctrl+K   </b></td><td>Clear DX call and reset TX messages</td></tr>
   <tr><td><b>Ctrl+L   </b></td><td>Lookup callsign in database, generate standard messages</td></tr>
   <tr><td><b>Alt+M    </b></td><td>Monitor</td></tr>
   <tr><td><b>Alt+N    </b></td><td>Toggle "Enable Tx"</td></tr>
@@ -6808,13 +6828,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
         }
       }
 
-    // ASYMX: in FT2, replace DT field (cols 9-13) with TΔ = seconds since last TX ended
     QString rawLine = QString::fromUtf8(line_read.constData());
-    if (m_mode == "FT2" && m_asyncRxStartMs > 0 && rawLine.length() >= 14) {
-      double tdelta = (QDateTime::currentMSecsSinceEpoch() - m_asyncRxStartMs) / 1000.0;
-      QString tdStr = QString("%1").arg(tdelta, 4, 'f', 1);
-      rawLine.replace(9, 4, tdStr.right(4));
-    }
     QString message0 {rawLine};
     DecodedText decodedtext0 {rawLine};
     DecodedText decodedtext {QString(rawLine).remove("TU; ")};
@@ -17457,13 +17471,6 @@ void MainWindow::asyncDecodeDone()
       // Prepend timestamp to match normal format; replace " ~ " with " + " for consistency
       QString message = hhmmss + raw;
       message.replace(" ~ ", " + ");  // match FT2 marker used by jt9
-
-      // ASYMX: replace DT field (cols 9-13) with TΔ = seconds since last TX ended
-      if (m_asyncRxStartMs > 0 && message.length() >= 14) {
-        double tdelta = (QDateTime::currentMSecsSinceEpoch() - m_asyncRxStartMs) / 1000.0;
-        QString tdStr = QString("%1").arg(tdelta, 4, 'f', 1);
-        message.replace(9, 4, tdStr.right(4));  // overwrite DT field (4 chars at col 9)
-      }
 
       // Unified dedup: 5s window, best SNR wins
       if (isDuplicateDecode(message)) continue;
