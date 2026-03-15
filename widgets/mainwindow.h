@@ -70,7 +70,7 @@
 #define NUM_FT8_SYMBOLS 79
 #define NUM_SUPERFOX_SYMBOLS 153
 #define NUM_FT4_SYMBOLS 105
-#define NUM_FT2_SYMBOLS 105
+#define NUM_FT2_SYMBOLS 103              // NN=103 (sync+data); Modulator adds +2 for ramp
 #define NUM_FST4_SYMBOLS 160             //240/2 data + 5*8 sync
 #define NUM_CW_SYMBOLS 250
 #define MAX_NUM_SYMBOLS 250
