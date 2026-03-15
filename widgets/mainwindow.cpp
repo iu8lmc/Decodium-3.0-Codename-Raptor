@@ -12651,9 +12651,8 @@ void MainWindow::on_actionFT2_triggered()
   ui->cbAutoSeq->setChecked(true);
   m_fastGraph->hide();
   m_wideGraph->show();
-  // ASYMX: replace DT with TΔ (time since TX) in FT2 headings
   {
-    QString ft2hdr = QString::fromUtf8("UTC   dB   T\xce\x94 Freq    ") + tr ("Message");
+    QString ft2hdr = "UTC   dB   DT Freq    " + tr ("Message");
     ui->rh_decodes_headings_label->setText(ft2hdr);
     ui->lh_decodes_headings_label->setText(ft2hdr);
   }
