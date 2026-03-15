@@ -6,7 +6,7 @@ set ISCC="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 set PFX=C:\Users\IU8LMC\decodium_codesign.pfx
 set PASS=Dec2026sign
 set SRC=C:\Users\IU8LMC\Downloads\WSJTX_3.0_Source
-set BUILD=2603120745
+set BUILD=2603151210
 
 echo ============================================
 echo  Decodium 3.0 ASYMX %BUILD% - Build Installers
@@ -14,12 +14,12 @@ echo ============================================
 echo.
 
 echo === Step 0: Copy build output to dist ===
-if exist "%SRC%\build\decodium.exe" (
-    copy /Y "%SRC%\build\decodium.exe" "%SRC%\dist_64bit\decodium.exe"
+if exist "%SRC%\build-w2\decodium.exe" (
+    copy /Y "%SRC%\build-w2\decodium.exe" "%SRC%\dist_64bit\decodium.exe"
     echo   Copied decodium.exe to dist_64bit
 )
-if exist "%SRC%\build\jt9.exe" (
-    copy /Y "%SRC%\build\jt9.exe" "%SRC%\dist_64bit\jt9.exe"
+if exist "%SRC%\build-w2\jt9.exe" (
+    copy /Y "%SRC%\build-w2\jt9.exe" "%SRC%\dist_64bit\jt9.exe"
     echo   Copied jt9.exe to dist_64bit
 )
 echo.
