@@ -5,6 +5,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QProgressDialog>
 #include <QFile>
 #include <QDir>
@@ -12,6 +13,7 @@
 #include <QProcess>
 #include <QSysInfo>
 #include <QNetworkRequest>
+#include <QSettings>
 #include <QDebug>
 
 #include "revision_utils.hpp"
@@ -47,7 +49,7 @@ UpdateChecker::UpdateChecker (QWidget * parent, bool silent)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Confronta tag remoto (es. "v3.0.2603060002") con build locale (es. "2603160818")
+// Confronta tag remoto (es. "v3.0.2603060002") con build locale (es. "2603160843")
 // Estrae la parte numerica finale e la confronta come intero.
 bool UpdateChecker::isNewerVersion (QString const& remoteTag) const
 {
@@ -101,6 +103,16 @@ void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
     return;
   }
 
+  // Skip se l'utente ha già rifiutato questa versione (solo in modalità silent/auto)
+  if (m_silent) {
+    QSettings settings;
+    QString skipped = settings.value ("UpdateChecker/SkippedVersion").toString ();
+    if (skipped == m_remoteVersion) {
+      deleteLater ();
+      return;  // utente ha scelto "Non ora" per questa versione
+    }
+  }
+
   // Cerca l'asset giusto per questa architettura
   QString arch = (QSysInfo::currentCpuArchitecture () == "x86_64") ? "x64" : "x86";
   QJsonArray assets = root["assets"].toArray ();
@@ -123,11 +135,22 @@ void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
   box.setWindowTitle (tr ("Aggiornamento Decodium"));
   box.setTextFormat  (Qt::RichText);
   box.setText        (msg);
-  box.setStandardButtons (QMessageBox::Yes | QMessageBox::No);
-  box.setDefaultButton   (QMessageBox::Yes);
-  box.setIcon            (QMessageBox::Information);
+  QPushButton *btnYes  = box.addButton (tr ("Sì, aggiorna"), QMessageBox::AcceptRole);
+  QPushButton *btnSkip = box.addButton (tr ("Non ora (non chiedere più per questa versione)"), QMessageBox::RejectRole);
+  box.addButton (tr ("Più tardi"), QMessageBox::DestructiveRole);
+  box.setDefaultButton (btnYes);
+  box.setIcon (QMessageBox::Information);
+  box.exec ();
 
-  if (box.exec () != QMessageBox::Yes || m_assetUrl.isEmpty ()) {
+  if (box.clickedButton () == btnSkip) {
+    // Ricorda: non chiedere più per questa versione
+    QSettings settings;
+    settings.setValue ("UpdateChecker/SkippedVersion", m_remoteVersion);
+    deleteLater ();
+    return;
+  }
+
+  if (box.clickedButton () != btnYes || m_assetUrl.isEmpty ()) {
     deleteLater ();
     return;
   }
