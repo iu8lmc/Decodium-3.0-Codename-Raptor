@@ -282,7 +282,7 @@ void DisplayText::new_period ()
 QString DisplayText::appendWorkedB4 (QString message, QString call, QString const& grid,
                                      QColor * bg, QColor * fg, LogBook const& logBook,
                                      QString const& currentBand, QString const& currentMode,
-                                     QString extra)
+                                     QString extra, bool isCQ)
 {
   QString countryName;
   bool callB4;
@@ -393,7 +393,7 @@ QString DisplayText::appendWorkedB4 (QString message, QString call, QString cons
     {
       types.push_back (Highlight::LotW);
     }
-  types.push_back (Highlight::CQ);
+  if (isCQ) types.push_back (Highlight::CQ);
   auto top_highlight = set_colours (m_config, bg, fg, types);
 
   switch (top_highlight)
@@ -631,7 +631,15 @@ void DisplayText::displayDecodedText(DecodedText const& decodedText, QString con
     }
   else
     {
-      if (m_config->show_country_names())
+      if (displayDXCCEntity)
+        {
+          // apply DXCC/B4 highlighting to non-CQ messages too
+          auto currentMode = mode;
+          message = appendWorkedB4 (message, dxCall, dxGrid, &bg, &fg
+                                    , logBook, currentBand, currentMode, extra
+                                    , false /* isCQ */);
+        }
+      else if (m_config->show_country_names())
         {
           auto const& looked_up = logBook.countries ()->lookup (dxCall);
           auto countryName = looked_up.entity_name;
