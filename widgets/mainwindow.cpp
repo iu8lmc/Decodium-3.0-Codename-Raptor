@@ -619,12 +619,11 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_asymxPulse->setLoopCount (-1);  // infinite
   // don't start — replaced by async visualizer below
 
-  // FT2 async mode visualizer (sine wave + S-meter)
+  // FT2 async mode visualizer (sine wave + S-meter) — insert after Dual Carrier warning
   m_asyncVis = new AsyncModeWidget (this);
   m_asyncVis->setVisible (false);
-  // insert right after the badge label in the same layout
-  if (auto *lay = qobject_cast<QBoxLayout *>(m_labelAsymxBadge->parentWidget ()->layout ())) {
-    int idx = lay->indexOf (m_labelAsymxBadge);
+  if (auto *lay = qobject_cast<QBoxLayout *>(ui->cbDualCarrier->parentWidget ()->layout ())) {
+    int idx = lay->indexOf (ui->labelDualCarrierWarning);
     if (idx >= 0) lay->insertWidget (idx + 1, m_asyncVis);
     else lay->addWidget (m_asyncVis);
   }
