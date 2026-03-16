@@ -619,13 +619,16 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_asymxPulse->setLoopCount (-1);  // infinite
   // don't start — replaced by async visualizer below
 
-  // FT2 async mode visualizer — after D-CW checkbox
+  // FT2 async mode visualizer — in verticalLayout_13, after D-CW
   m_asyncVis = new AsyncModeWidget (this);
   m_asyncVis->setVisible (false);
-  if (auto *lay = qobject_cast<QBoxLayout *>(ui->cbDigitalMorse->parentWidget ()->layout ())) {
-    int idx = lay->indexOf (ui->cbDigitalMorse);
-    if (idx >= 0) lay->insertWidget (idx + 1, m_asyncVis);
-    else lay->addWidget (m_asyncVis);
+  {
+    auto *vl13 = findChild<QVBoxLayout *>("verticalLayout_13");
+    if (vl13) {
+      int idx = vl13->indexOf (ui->cbDigitalMorse);
+      if (idx >= 0) vl13->insertWidget (idx + 1, m_asyncVis);
+      else vl13->addWidget (m_asyncVis);
+    }
   }
 
   // DX Cluster menu & dock
