@@ -50,7 +50,7 @@ UpdateChecker::UpdateChecker (QWidget * parent, bool silent)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Confronta tag remoto (es. "v3.0.2603160934") con build locale.
+// Confronta tag remoto (es. "v3.0.") con build locale.
 // Estrae il build number (10 cifre YYMMDDHHMM) da entrambi e confronta.
 bool UpdateChecker::isNewerVersion (QString const& remoteTag) const
 {

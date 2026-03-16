@@ -6879,16 +6879,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
            || (decodedtext.snr() < -21 && decodedtext.isLowConfidence()))))       // very weak + uncertain
       )
     {
-    // FDR step 4: ITU callsign structure validation (FT2 + FT8)
-    // Rejects ghost callsigns that pass LDPC CRC but have invalid format
-    if (m_mode=="FT2" || m_mode=="FT8") {
-      QString fdrCall, fdrGrid;
-      decodedtext.deCallAndGrid(fdrCall, fdrGrid);
-      if (!fdrCall.isEmpty() && fdrCall != "..." && !fdrCall.startsWith("<")
-          && !Radio::is_valid_callsign(fdrCall)) {
-        filtered = true;
-      }
-    }
+    // Callsign filter removed — was too restrictive, blocking valid decodes
 
     if (m_mode!="FT8" and m_mode!="FT2" and m_mode!="FT4" and !m_mode.startsWith ("FST4") and m_mode!="Q65") {
       //Pad 22-char msg to at least 37 chars
@@ -17608,22 +17599,7 @@ void MainWindow::asyncDecodeDone()
 
       DecodedText decodedtext {QString(message).replace(QChar::LineFeed, "")};
 
-      // FT2 callsign validation filter — reject ghost/invalid callsigns
-      {
-        QString deCall, deGrid;
-        decodedtext.deCallAndGrid(deCall, deGrid);
-        if (!deCall.isEmpty() && deCall != "..." && !deCall.startsWith("<")
-            && !Radio::is_valid_callsign(deCall)) {
-          continue;  // skip invalid callsign — false positive from noise/hash
-        }
-        // Also validate the first word if it looks like a callsign (not CQ/DE/QRZ)
-        QString w1 = decodedtext.call();
-        if (!w1.isEmpty() && w1 != "CQ" && w1 != "DE" && w1 != "QRZ"
-            && !w1.startsWith("<") && !w1.contains("...")
-            && !Radio::is_valid_callsign(w1)) {
-          continue;  // skip invalid first callsign
-        }
-      }
+      // Callsign filter removed — was too restrictive, blocking valid decodes
 
       ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
           m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
