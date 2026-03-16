@@ -1254,6 +1254,9 @@ private:
   QGraphicsOpacityEffect *m_asymxOpacity {nullptr};
   QPropertyAnimation *m_asymxPulse {nullptr};
 
+  // FT2 async mode visualizer (replaces badge)
+  class AsyncModeWidget *m_asyncVis {nullptr};
+
   // DX Cluster
   QTcpSocket *m_clusterSocket {nullptr};
   bool m_clusterConnected {false};

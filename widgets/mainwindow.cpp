@@ -1,5 +1,6 @@
 //---------------------------------------------------------- MainWindow
 #include "mainwindow.h"
+#include "asyncmodewidget.h"
 
 #include <QAudio>
 #include <QAudioOutput>
@@ -606,7 +607,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->cbAsyncDecode->setChecked(true);
   ui->cbAsyncDecode->setVisible(false);  // will be shown by on_actionFT2_triggered
 
-  // FT2 badge pulse animation
+  // FT2 badge pulse animation (keep reference, now hidden — replaced by async visualizer)
   m_labelAsymxBadge = ui->labelAsymxBadge;
   m_asymxOpacity = new QGraphicsOpacityEffect (m_labelAsymxBadge);
   m_labelAsymxBadge->setGraphicsEffect (m_asymxOpacity);
@@ -616,7 +617,17 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_asymxPulse->setEndValue (1.0);
   m_asymxPulse->setEasingCurve (QEasingCurve::InOutSine);
   m_asymxPulse->setLoopCount (-1);  // infinite
-  m_asymxPulse->start ();
+  // don't start — replaced by async visualizer below
+
+  // FT2 async mode visualizer (sine wave + S-meter)
+  m_asyncVis = new AsyncModeWidget (this);
+  m_asyncVis->setVisible (false);
+  // insert right after the badge label in the same layout
+  if (auto *lay = qobject_cast<QBoxLayout *>(m_labelAsymxBadge->parentWidget ()->layout ())) {
+    int idx = lay->indexOf (m_labelAsymxBadge);
+    if (idx >= 0) lay->insertWidget (idx + 1, m_asyncVis);
+    else lay->addWidget (m_asyncVis);
+  }
 
   // DX Cluster menu & dock
   {
@@ -9138,6 +9149,7 @@ void MainWindow::guiUpdate()
       default: break;             // determined elsewhere
     }
     m_transmitting = true;
+    if (m_asyncVis) m_asyncVis->setTransmitting(true);
     transmitDisplay (true);
     statusUpdate ();
   }
@@ -9513,6 +9525,7 @@ void MainWindow::stopTx()
   else Q_EMIT endTransmitMessage ();
   m_btxok = false;
   m_transmitting = false;
+  if (m_asyncVis) m_asyncVis->setTransmitting(false);
   g_iptt=0;
   if (!m_tx_watchdog) {
     tx_status_label.setStyleSheet("");
@@ -12540,7 +12553,11 @@ void MainWindow::displayWidgets(qint64 n)
   // Fast Track 2: Async L2 visible only in FT2; auto-disable when leaving FT2
   bool isFT2 = (m_mode == "FT2");
   ui->cbAsyncDecode->setVisible(false);  // always hidden: forced on in FT2, off elsewhere
-  ui->labelAsymxBadge->setVisible(isFT2);
+  ui->labelAsymxBadge->setVisible(false);  // replaced by async visualizer
+  if (m_asyncVis) {
+    m_asyncVis->setVisible(isFT2);
+    if (isFT2) m_asyncVis->start(); else m_asyncVis->stop();
+  }
   ui->cbSpeedyContest->setVisible(isFT2);
   ui->cbDigitalMorse->setVisible(isFT2);
   if (!isFT2) {
@@ -12778,7 +12795,8 @@ void MainWindow::on_actionFT2_triggered()
   ui->cbAsyncDecode->setChecked(true);
   ui->cbAsyncDecode->setVisible(false);   // always on in FT2, no user toggle
   ui->labelAsyncL2Active->setVisible(false);
-  ui->labelAsymxBadge->setVisible(true);
+  ui->labelAsymxBadge->setVisible(false);  // replaced by async visualizer
+  if (m_asyncVis) { m_asyncVis->setVisible(true); m_asyncVis->start(); }
   initExternalCtrl();
   statusChanged();
 }
@@ -17554,13 +17572,15 @@ void MainWindow::on_cbAsyncDecode_toggled (bool checked)
       m_asyncDedupeLastClear = QDateTime::currentMSecsSinceEpoch();
       m_decodeDedup.clear();
       m_asyncDecodeTimer.start(187);  // Turbo: 187ms = ~20 decodes/period
-      ui->labelAsyncL2Active->setVisible(false);  // replaced by FT2 badge
-      ui->labelAsymxBadge->setVisible(true);
+      ui->labelAsyncL2Active->setVisible(false);  // replaced by async visualizer
+      ui->labelAsymxBadge->setVisible(false);
+      if (m_asyncVis) { m_asyncVis->setVisible(true); m_asyncVis->start(); }
     } else {
       m_asyncDecodeTimer.stop();
       m_bAsyncDecoding = false;
       ui->labelAsyncL2Active->setVisible(false);
       ui->labelAsymxBadge->setVisible(false);
+      if (m_asyncVis) { m_asyncVis->setVisible(false); m_asyncVis->stop(); }
     }
 }
 
@@ -17607,6 +17627,9 @@ void MainWindow::asyncDecodeDone()
 
       postDecode(true, decodedtext);
       write_all("Rx", message);
+
+      // Update async visualizer with latest SNR
+      if (m_asyncVis) m_asyncVis->setSnr(decodedtext.snr());
 
       // Task 3b: Store predictive DT hints
       QString call = decodedtext.CQersCall();

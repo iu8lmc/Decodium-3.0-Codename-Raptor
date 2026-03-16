@@ -281,6 +281,7 @@ set (decodium_CXXSRCS
   Audio/soundin.cpp
   UpdateChecker.cpp
   VerifiedDxpedListManager.cpp
+  widgets/asyncmodewidget.cpp
   widgets/meterwidget.cpp
   widgets/signalmeter.cpp
   widgets/plotter.cpp
