@@ -54,6 +54,7 @@ namespace Radio
   // Callsigns
   //
   bool UDP_EXPORT is_callsign (QString const&);
+  bool UDP_EXPORT is_valid_callsign (QString const&);
   bool UDP_EXPORT is_compound_callsign (QString const&);
   bool is_77bit_nonstandard_callsign (QString const&);
   QString UDP_EXPORT base_callsign (QString);

@@ -5,6 +5,7 @@
 
 #include <QString>
 #include <QChar>
+#include <QSet>
 #include <QRegularExpression>
 
 namespace Radio
@@ -24,9 +25,22 @@ namespace Radio
     // standard callsign
     QRegularExpression strict_standard_callsign_re {R"(^([A-Z][0-9]?|[0-9A-Z][A-Z])[0-9][A-Z]{0,3}$)"};
 
+    // ITU-compliant callsign format (strict structural validation)
+    // Prefix: 1-3 chars (letter(s) + digit, or digit + letter + digit, etc.)
+    // Suffix: 1-4 letters
+    // Optional /P /M /MM /AM /QRP /R /0-9 portable suffix
+    // Covers: W1AW, VK2ABC, 3DA0XYZ, VP8/G4XYZ, G4XYZ/P, etc.
+    QRegularExpression itu_callsign_re {
+      R"(^(?:[A-Z]{1,2}[0-9]|[0-9][A-Z][0-9]|[A-Z][0-9][A-Z])[0-9]?[A-Z]{1,4}$)",
+      QRegularExpression::CaseInsensitiveOption};
+
     // suffixes that are often used and should not be interpreted as a
     // DXCC Entity prefix used as a suffix
     QRegularExpression non_prefix_suffix {R"(\A([0-9AMPQR]|QRP|F[DF]|[AM]M|L[HT]|LGT)\z)"};
+
+    // Known non-callsign tokens that appear in FT8/FT2 messages
+    QSet<QString> message_tokens {"CQ", "DE", "QRZ", "RR73", "RRR", "73",
+      "TNX", "TU", "GL", "HNY", "PSE", "QSY", "AGN", "TEST", "BCN"};
   }
 
 
@@ -137,6 +151,55 @@ namespace Radio
   bool is_callsign (QString const& callsign)
   {
     return callsign.contains (valid_callsign_regexp);
+  }
+
+  // Strict ITU-format callsign validation
+  // Returns true only if the callsign (or its base part for compound calls)
+  // matches a real amateur radio callsign structure.
+  // Filters out: "1A", "X5", "NOISE3Z", hash fragments, free-text tokens
+  bool is_valid_callsign (QString const& callsign)
+  {
+    if (callsign.isEmpty () || callsign.size () < 3) return false;
+
+    // Skip known message tokens
+    auto upper = callsign.toUpper ().trimmed ();
+    if (message_tokens.contains (upper)) return false;
+
+    // For compound calls (VP8/G4XYZ, G4XYZ/P), validate the base part
+    QString base = upper;
+    if (upper.contains ('/'))
+      {
+        // Split and validate the longer part (the actual callsign)
+        auto parts = upper.split ('/');
+        base = parts[0];
+        for (auto const& p : parts)
+          {
+            if (p.size () > base.size ()) base = p;
+          }
+        // Short suffixes like /P /M /R /MM /AM /QRP are OK — just validate base
+      }
+
+    // Must be 3-10 chars, only A-Z and 0-9
+    if (base.size () < 3 || base.size () > 10) return false;
+    static QRegularExpression alpha_num_only {R"(^[A-Z0-9]+$)"};
+    if (!alpha_num_only.match (base).hasMatch ()) return false;
+
+    // Must contain at least one digit AND at least one letter
+    bool has_digit = false, has_letter = false;
+    for (auto const& c : base)
+      {
+        if (c.isDigit ()) has_digit = true;
+        if (c.isLetter ()) has_letter = true;
+      }
+    if (!has_digit || !has_letter) return false;
+
+    // ITU structural check on base callsign:
+    // Valid prefix patterns followed by 1-4 letter suffix
+    // Pattern: (1-2 letters + digit) OR (digit + letter + digit) OR (letter + digit + letter)
+    //          followed by optional extra digit, then 1-4 suffix letters
+    if (!itu_callsign_re.match (base).hasMatch ()) return false;
+
+    return true;
   }
 
   bool is_compound_callsign (QString const& callsign)

@@ -6879,6 +6879,17 @@ void MainWindow::readFromStdout()                             //readFromStdout
            || (decodedtext.snr() < -21 && decodedtext.isLowConfidence()))))       // very weak + uncertain
       )
     {
+    // FDR step 4: ITU callsign structure validation (FT2 + FT8)
+    // Rejects ghost callsigns that pass LDPC CRC but have invalid format
+    if (m_mode=="FT2" || m_mode=="FT8") {
+      QString fdrCall, fdrGrid;
+      decodedtext.deCallAndGrid(fdrCall, fdrGrid);
+      if (!fdrCall.isEmpty() && fdrCall != "..." && !fdrCall.startsWith("<")
+          && !Radio::is_valid_callsign(fdrCall)) {
+        filtered = true;
+      }
+    }
+
     if (m_mode!="FT8" and m_mode!="FT2" and m_mode!="FT4" and !m_mode.startsWith ("FST4") and m_mode!="Q65") {
       //Pad 22-char msg to at least 37 chars
       line_read = line_read.left(44) + "              " + line_read.mid(44);
@@ -10143,7 +10154,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
   if(!m_bFastMode and (!m_config.enable_VHF_features() or m_mode=="FT8" or m_mode=="FT2" or m_mode=="FT4" or m_mode=="FST4")) {
     // Don't change Tx freq if in a fast mode, or VHF features enabled; also not if a
     // station is calling me, unless CTRL or SHIFT is held down.
-    if ((Radio::is_callsign (firstcall)
+    if ((Radio::is_valid_callsign (firstcall)
          && firstcall != m_config.my_callsign () && firstcall != m_baseCall
          && firstcall != "DE")
         || "CQ" == firstcall || "QRZ" == firstcall || ctrl || shift) {
@@ -17583,6 +17594,24 @@ void MainWindow::asyncDecodeDone()
       if (isDuplicateDecode(message)) continue;
 
       DecodedText decodedtext {QString(message).replace(QChar::LineFeed, "")};
+
+      // FT2 callsign validation filter — reject ghost/invalid callsigns
+      {
+        QString deCall, deGrid;
+        decodedtext.deCallAndGrid(deCall, deGrid);
+        if (!deCall.isEmpty() && deCall != "..." && !deCall.startsWith("<")
+            && !Radio::is_valid_callsign(deCall)) {
+          continue;  // skip invalid callsign — false positive from noise/hash
+        }
+        // Also validate the first word if it looks like a callsign (not CQ/DE/QRZ)
+        QString w1 = decodedtext.call();
+        if (!w1.isEmpty() && w1 != "CQ" && w1 != "DE" && w1 != "QRZ"
+            && !w1.startsWith("<") && !w1.contains("...")
+            && !Radio::is_valid_callsign(w1)) {
+          continue;  // skip invalid first callsign
+        }
+      }
+
       ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
           m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
           false, false, 0.0, false, -99, "", m_muted);
