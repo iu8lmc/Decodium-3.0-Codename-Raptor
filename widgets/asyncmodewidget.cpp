@@ -16,9 +16,7 @@ namespace {
 AsyncModeWidget::AsyncModeWidget (QWidget *parent)
   : QWidget {parent}
 {
-  setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Expanding);
-  setMinimumWidth (48);
-  setMaximumWidth (60);
+  setFixedSize (90, 50);
   m_animTimer.setInterval (1000 / FPS);
   connect (&m_animTimer, &QTimer::timeout, this, [this] {
     m_phase += 0.18;
@@ -60,7 +58,7 @@ void AsyncModeWidget::paintEvent (QPaintEvent *)
   int w = width ();
   int h = height ();
 
-  // dark background
+  // dark background + border
   p.fillRect (rect (), QColor (0x14, 0x14, 0x22));
   p.setPen (QPen (QColor (0x33, 0x33, 0x44), 1.0));
   p.drawRect (rect ().adjusted (0, 0, -1, -1));
@@ -74,39 +72,31 @@ void AsyncModeWidget::paintEvent (QPaintEvent *)
 
   QColor waveColor = m_transmitting ? QColor (0xff, 0x44, 0x44) : QColor (0x00, 0xe6, 0x76);
 
-  // --- "ASINCRONO" header (vertical text area, top 12px) ---
-  p.setFont (QFont {"Segoe UI", 5, QFont::Bold});
+  // --- "ASINCRONO" header ---
+  p.setFont (QFont {"Segoe UI", 6, QFont::Bold});
   p.setPen (waveColor);
-  p.drawText (QRect (0, 1, w, 11), Qt::AlignCenter, "ASINCRONO");
+  p.drawText (QRect (0, 1, w, 10), Qt::AlignCenter, "ASINCRONO");
 
-  // --- RX/TX indicator ---
-  {
-    QString stateLabel = m_transmitting ? "TX" : "RX";
-    p.setFont (QFont {"Segoe UI", 6, QFont::Bold});
-    p.setPen (waveColor);
-    p.drawText (QRect (0, 12, w, 10), Qt::AlignCenter, stateLabel);
-  }
-
-  // --- Sine wave area: from y=24 to y=(h-18) ---
-  int waveTop = 24;
-  int waveBot = h - 18;
-  if (waveBot <= waveTop + 8) waveBot = waveTop + 8;
+  // --- Sine wave: y=12..34 (22px) ---
+  int waveTop = 12;
+  int waveBot = h - 16;
+  if (waveBot < waveTop + 6) waveBot = waveTop + 6;
   int waveH = waveBot - waveTop;
+  int waveMid = waveTop + waveH / 2;
   qreal amp = waveH * 0.42;
 
-  // sine wave: draw vertically-oriented (x=phase, y=position in widget)
   QPainterPath wavePath;
-  for (int y = waveTop; y <= waveBot; ++y) {
-    qreal t = static_cast<qreal>(y - waveTop) / waveH;
-    qreal x = (w / 2.0) + amp * qSin (TWO_PI * 2.0 * t + m_phase);
-    if (y == waveTop) wavePath.moveTo (x, y);
+  for (int x = 1; x <= w - 1; ++x) {
+    qreal t = static_cast<qreal>(x) / w;
+    qreal y = waveMid - amp * qSin (TWO_PI * 2.5 * t + m_phase);
+    if (x == 1) wavePath.moveTo (x, y);
     else wavePath.lineTo (x, y);
   }
 
-  // glow fill
+  // glow
   QPainterPath fillPath = wavePath;
-  fillPath.lineTo (w / 2.0, waveBot);
-  fillPath.lineTo (w / 2.0, waveTop);
+  fillPath.lineTo (w - 1, waveMid);
+  fillPath.lineTo (1, waveMid);
   fillPath.closeSubpath ();
   QColor fillCol = waveColor;
   fillCol.setAlpha (25);
@@ -116,11 +106,11 @@ void AsyncModeWidget::paintEvent (QPaintEvent *)
   p.setPen (QPen (waveColor, 1.5));
   p.drawPath (wavePath);
 
-  // --- S-Meter bar at bottom (horizontal, 6px tall) ---
-  int meterH = 6;
-  int meterY = h - meterH - 3;
-  int meterX = 3;
-  int meterW = w - 6;
+  // --- S-Meter + dB at bottom ---
+  int meterH = 5;
+  int meterY = h - meterH - 2;
+  int meterX = 2;
+  int meterW = w - 4;
 
   p.fillRect (meterX, meterY, meterW, meterH, QColor (0x28, 0x28, 0x28));
 
@@ -135,9 +125,9 @@ void AsyncModeWidget::paintEvent (QPaintEvent *)
     grad.setColorAt (1.0, QColor (0x00, 0xff, 0x88));
     p.fillRect (meterX, meterY, barW, meterH, grad);
 
-    // dB number centered below meter
+    // dB value
     p.setFont (QFont {"Segoe UI", 6});
     p.setPen (Qt::white);
-    p.drawText (QRect (0, meterY - 9, w, 9), Qt::AlignCenter, QString::number (m_snr));
+    p.drawText (QRect (0, meterY - 9, w, 9), Qt::AlignCenter, QString ("%1 dB").arg (m_snr));
   }
 }

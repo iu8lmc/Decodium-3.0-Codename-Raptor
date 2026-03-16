@@ -16,8 +16,8 @@ public:
   int snr () const { return m_snr; }
   bool transmitting () const { return m_transmitting; }
 
-  QSize sizeHint () const override { return {56, 80}; }
-  QSize minimumSizeHint () const override { return {48, 60}; }
+  QSize sizeHint () const override { return {90, 50}; }
+  QSize minimumSizeHint () const override { return {80, 44}; }
 
 public slots:
   void setSnr (int value);
