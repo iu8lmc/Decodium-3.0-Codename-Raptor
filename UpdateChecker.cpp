@@ -50,24 +50,25 @@ UpdateChecker::UpdateChecker (QWidget * parent, bool silent)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Confronta tag remoto (es. "v3.0.2603060002") con build locale (es. "2603160916")
-// Estrae la parte numerica finale e la confronta come intero.
+// Confronta tag remoto (es. "v3.0.2603160922") con build locale.
+// Estrae il build number (10 cifre YYMMDDHHMM) da entrambi e confronta.
 bool UpdateChecker::isNewerVersion (QString const& remoteTag) const
 {
-  // Rimuove prefissi tipo "v3.0."
-  QString cleaned = remoteTag;
-  cleaned.remove (QRegularExpression ("^v?[0-9]+\\.[0-9]+\\.?"));
-  bool ok = false;
-  qint64 remote = cleaned.toLongLong (&ok);
-  if (!ok) return false;
+  // Estrai il build number dal tag remoto: cerca 10 cifre consecutive
+  static QRegularExpression rxDigits {R"((\d{10}))"};
+  auto remoteMatch = rxDigits.match (remoteTag);
+  if (!remoteMatch.hasMatch ()) return false;
+  qint64 remote = remoteMatch.captured (1).toLongLong ();
 
+  // Estrai il build number dal titolo locale
   QString localTag = program_title ();
-  // program_title() restituisce "Decodium Fast Track 2 v3.0.XXXXXXXXXX ..."
-  // Cerca il build number dopo "v3.0."
-  QRegularExpression rx ("v3\\.0\\.(\\d{10})");
-  auto match = rx.match (localTag);
-  if (!match.hasMatch ()) return false;
-  qint64 local = match.captured (1).toLongLong ();
+  auto localMatch = rxDigits.match (localTag);
+  if (!localMatch.hasMatch ()) return false;
+  qint64 local = localMatch.captured (1).toLongLong ();
+
+  qDebug () << "UpdateChecker: remote=" << remote << "local=" << local
+             << "tag=" << remoteTag << "title=" << localTag;
+
   return remote > local;
 }
 
@@ -99,7 +100,11 @@ void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
   if (!isNewerVersion (m_remoteVersion)) {
     if (!m_silent)
       QMessageBox::information (m_parent, tr ("Aggiornamento"),
-                                tr ("Decodium è aggiornato all'ultima versione."));
+                                tr ("Decodium è aggiornato all'ultima versione.\n\n"
+                                    "Versione remota: %1\n"
+                                    "Versione locale: %2")
+                                .arg (m_remoteVersion)
+                                .arg (program_title ()));
     deleteLater ();
     return;
   }
