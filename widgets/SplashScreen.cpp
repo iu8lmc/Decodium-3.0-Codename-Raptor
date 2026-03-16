@@ -69,7 +69,7 @@ SplashScreen::SplashScreen ()
   layout->addWidget (logoLabel);
 
   // Title
-  auto *title = new QLabel ("DECODIUM 3.0 ASYMX");
+  auto *title = new QLabel ("DECODIUM FAST TRACK 2");
   title->setAlignment (Qt::AlignCenter);
   title->setStyleSheet (
     "color: #ffffff; font-size: 26px; font-weight: bold;"

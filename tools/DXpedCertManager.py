@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Decodium ASYMX — DXpedition Certificate Manager
+Decodium Fast Track 2 — DXpedition Certificate Manager
 Tool completo per gestire certificati DXpedition e lista verificata.
 
 Funzionalita':
@@ -192,7 +192,7 @@ def ftp_upload(local_file, cfg):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Decodium ASYMX — DXpedition Certificate Manager")
+        self.title("Decodium Fast Track 2 — DXpedition Certificate Manager")
         self.geometry("920x700")
         self.resizable(True, True)
         self.configure(bg="#1e1e2e")

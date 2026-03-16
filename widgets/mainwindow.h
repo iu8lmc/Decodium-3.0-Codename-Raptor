@@ -1244,12 +1244,12 @@ private:
   void logIncremental(QString, QString);      //avt 9/25/25
   void setIncrLogCount();    //avt 9/25/25
 
-  // ASYMX timing bar
+  // FT2 timing bar
   qint64 m_asyncTxStartMs {0};
   qint64 m_asyncRxStartMs {0};
   bool   m_wasTransmitting {false};
 
-  // ASYMX badge animation
+  // FT2 badge animation
   QLabel *m_labelAsymxBadge {nullptr};
   QGraphicsOpacityEffect *m_asymxOpacity {nullptr};
   QPropertyAnimation *m_asymxPulse {nullptr};

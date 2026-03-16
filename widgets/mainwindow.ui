@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Decodium 3.0 ASYMX</string>
+   <string>Decodium Fast Track 2</string>
   </property>
   <property name="toolTip">
    <string/>
@@ -2141,7 +2141,7 @@ When not checked you can view the calibration results.</string>
                     <item>
                      <widget class="QLabel" name="labelAsymxBadge">
                       <property name="text">
-                       <string> ASYMX </string>
+                       <string> FT2 </string>
                       </property>
                       <property name="styleSheet">
                        <string>background-color: #00cc44; color: #ffffff; font-weight: bold; font-size: 12px; border-radius: 4px; padding: 1px 6px;</string>
@@ -2150,7 +2150,7 @@ When not checked you can view the calibration results.</string>
                        <bool>false</bool>
                       </property>
                       <property name="toolTip">
-                       <string>ASYMX: Async FT2 decoder attivo — decodifica continua senza periodi</string>
+                       <string>Fast Track 2: Async FT2 decoder attivo — decodifica continua senza periodi</string>
                       </property>
                      </widget>
                     </item>
@@ -5279,7 +5279,7 @@ QPushButton[state=&quot;ok&quot;] {
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About Decodium 3.0 ASYMX</string>
+    <string>About Decodium Fast Track 2</string>
    </property>
    <property name="menuRole">
     <enum>QAction::AboutRole</enum>
@@ -5868,23 +5868,23 @@ QPushButton[state=&quot;ok&quot;] {
   </action>
   <action name="actionQuick_Start_Guide_to_WSJT_X_2_7_and_QMAP">
    <property name="text">
-    <string>Quick-Start Guide to Decodium 3.0 ASYMX and QMAP</string>
+    <string>Quick-Start Guide to Decodium Fast Track 2 and QMAP</string>
    </property>
   </action>
   <action name="actionWSJT_X_improved_Home_Page">
    <property name="text">
-    <string>Decodium 3.0 ASYMX Home Page</string>
+    <string>Decodium Fast Track 2 Home Page</string>
    </property>
    <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go to the Decodium 3.0 ASYMX home page.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go to the Decodium Fast Track 2 home page.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionThe_additional_features_of_wsjt_x_improved">
    <property name="text">
-    <string>The additional features of Decodium 3.0 ASYMX</string>
+    <string>The additional features of Decodium Fast Track 2</string>
    </property>
    <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overview on the additional features of Decodium 3.0 ASYMX.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overview on the additional features of Decodium Fast Track 2.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionRecommended_Audio_Settings">

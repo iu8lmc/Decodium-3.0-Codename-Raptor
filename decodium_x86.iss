@@ -1,4 +1,4 @@
-﻿#define MyAppName "Decodium 3.0 ASYMX x86"
+﻿#define MyAppName "Decodium Fast Track 2 x86"
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
@@ -12,12 +12,12 @@ AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyBuildTag}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL=https://www.qrz.com/db/IU8LMC
-DefaultDirName={autopf}\Decodium_3.0_ASYMX_x86
-DefaultGroupName=Decodium 3.0 ASYMX
+DefaultDirName={autopf}\Decodium_FT2_x86
+DefaultGroupName=Decodium Fast Track 2
 DisableDirPage=no
 DisableProgramGroupPage=no
 OutputDir=.
-OutputBaseFilename=Decodium_3.0_{#MyBuildTag}_ASYMX_x86_Setup
+OutputBaseFilename=Decodium_FT2_{#MyBuildTag}_x86_Setup
 SetupIconFile=icons\windows-icons\decodium.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
@@ -69,9 +69,9 @@ Source: "{#DistDir}\sounds\*"; DestDir: "{app}\sounds"; Flags: ignoreversion rec
 Source: "{#DistDir}\Palettes\*"; DestDir: "{app}\Palettes"; Flags: ignoreversion recursesubdirs
 
 [Icons]
-Name: "{group}\Decodium 3.0 ASYMX"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
-Name: "{group}\{cm:UninstallProgram,Decodium 3.0 ASYMX}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\Decodium 3.0 ASYMX x86"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{group}\Decodium Fast Track 2"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
+Name: "{group}\{cm:UninstallProgram,Decodium Fast Track 2}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\Decodium Fast Track 2 x86"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
 ; Aggiunge regola firewall Windows per UDP (necessario per JTAlert e altri programmi esterni)
@@ -79,4 +79,4 @@ Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""Decodium UDP Inbound"" dir=in action=allow protocol=UDP program=""{app}\{#MyAppExeName}"" enable=yes profile=any"; Flags: runhidden; StatusMsg: "Configurazione regola firewall UDP..."
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Decodium UDP 2237"""; Flags: runhidden
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""Decodium UDP 2237"" dir=in action=allow protocol=UDP localport=2237 enable=yes profile=any"; Flags: runhidden
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,Decodium 3.0 ASYMX}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,Decodium Fast Track 2}"; Flags: nowait postinstall skipifsilent

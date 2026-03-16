@@ -580,7 +580,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
         m_config.udp_server_name (), m_config.udp_server_port (),
         m_config.udp_interface_names (), m_config.udp_TTL (),
         this}},
-  m_psk_Reporter {&m_config, QString {"Decodium 3.0 ASYMX v" + version () + " " + m_revision}.simplified ()},
+  m_psk_Reporter {&m_config, QString {"Decodium Fast Track 2 v" + version () + " " + m_revision}.simplified ()},
   m_manual {&m_network_manager},
   m_block_udp_status_updates {false},
   m_useDarkStyle {false},
@@ -602,11 +602,11 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   // ASYMX: hide period 1/2 selector — async mode has no period concept
   ui->txFirstCheckBox->hide();
 
-  // ASYMX: Async L2 on by default, visible only in FT2
+  // Fast Track 2: Async L2 on by default, visible only in FT2
   ui->cbAsyncDecode->setChecked(true);
   ui->cbAsyncDecode->setVisible(false);  // will be shown by on_actionFT2_triggered
 
-  // ASYMX badge pulse animation
+  // FT2 badge pulse animation
   m_labelAsymxBadge = ui->labelAsymxBadge;
   m_asymxOpacity = new QGraphicsOpacityEffect (m_labelAsymxBadge);
   m_labelAsymxBadge->setGraphicsEffect (m_asymxOpacity);
@@ -2061,7 +2061,7 @@ void MainWindow::writeSettings()
 void MainWindow::update_tx5(const QString &qsy_text)
 {
   if (m_hisCall=="") {
-    QMessageBox::warning(this, "Decodium 3.0 ASYMX","There must be a callsign in the\n DX Call Box to send QSY Request");
+    QMessageBox::warning(this, "Decodium Fast Track 2","There must be a callsign in the\n DX Call Box to send QSY Request");
   } else {
     QString text = qsy_text;
     ui->tx6->setText(text.replace("$DX",m_hisCall));
@@ -4665,7 +4665,7 @@ QString MainWindow::userAgent() {
   QString platform = "(" + QSysInfo::prettyProductName()+"; "+QSysInfo::productType() + " " + QSysInfo::productVersion() + "; " +
                      QSysInfo::currentCpuArchitecture() + "; " +
                      QString("rv:%1").arg(QSysInfo::kernelVersion()) + ")";
-  QString userAgent = QString{"Decodium3-ASYMX/" + version() + "_" + m_revision}.simplified() + " " +platform;
+  QString userAgent = QString{"Decodium-FT2/" + version() + "_" + m_revision}.simplified() + " " +platform;
   return userAgent;
   }
 
@@ -5741,7 +5741,7 @@ void MainWindow::on_actionKeyboard_shortcuts_triggered()
   <tr><td><b>Esc      </b></td><td>Stop Tx, abort QSO, clear next-call queue</td></tr>
   <tr><td><b>F1       </b></td><td>Online User's Guide (Alt: transmit Tx6)</td></tr>
   <tr><td><b>Shift+F1  </b></td><td>Copyright Notice</td></tr>
-  <tr><td><b>Ctrl+F1  </b></td><td>About Decodium 3.0 ASYMX</td></tr>
+  <tr><td><b>Ctrl+F1  </b></td><td>About Decodium Fast Track 2</td></tr>
   <tr><td><b>F2       </b></td><td>Open settings window (Alt: transmit Tx2)</td></tr>
   <tr><td><b>F3       </b></td><td>Display keyboard shortcuts (Alt: transmit Tx3)</td></tr>
   <tr><td><b>F4       </b></td><td>Clear DX Call, DX Grid, Tx messages 1-4 (Alt: transmit Tx4)</td></tr>
@@ -6234,7 +6234,7 @@ void MainWindow::decode()                                       //decode()
   }
 }
 
-// ── ASYMX unified dedup: 5s window, best SNR wins ──────────────────────
+// ── FT2 unified dedup: 5s window, best SNR wins ──────────────────────
 bool MainWindow::isDuplicateDecode(QString const& message)
 {
   qint64 now = QDateTime::currentMSecsSinceEpoch();
@@ -6269,7 +6269,7 @@ bool MainWindow::isDuplicateDecode(QString const& message)
   return false;  // new decode
 }
 
-// ── ASYMX split packed lines (multiple decodes fused on one line) ──────
+// ── FT2 split packed lines (multiple decodes fused on one line) ──────
 QStringList MainWindow::splitPackedDecodes(QString const& raw)
 {
   QStringList result;
@@ -8434,7 +8434,7 @@ void MainWindow::guiUpdate()
       if(onAirFreq!=m_onAirFreq0) {
         m_onAirFreq0=onAirFreq;
         auto const& message = tr ("Please choose another Tx frequency."
-                                  " Decodium 3.0 ASYMX will not knowingly transmit another"
+                                  " Decodium Fast Track 2 will not knowingly transmit another"
                                   " mode in the WSPR sub-band on 30m.");
         QTimer::singleShot (0, [=] { // don't block guiUpdate
             MessageBox::warning_message (this, tr ("WSPR Guard Band"), message);
@@ -8453,7 +8453,7 @@ void MainWindow::guiUpdate()
           if (m_tune) stop_tuning();
           auto const& message = tr ("Please choose another dial frequency.\n"
                                     "Must be 3Khz away from %1.\n"
-                                    "Decodium 3.0 ASYMX will not operate in Fox mode\n"
+                                    "Decodium Fast Track 2 will not operate in Fox mode\n"
                                     "overlapping the standard FT8 sub-bands.").arg(ft8Freq[i]);
           QTimer::singleShot (0, [=] {               // don't block guiUpdate
             MessageBox::warning_message (this, tr ("Fox Mode warning"), message);
@@ -8470,7 +8470,7 @@ void MainWindow::guiUpdate()
           if (m_auto) auto_tx_mode (false);
           if (m_tune) stop_tuning();
           auto const& message = tr ("Please choose another dial frequency.\n"
-                                    "Decodium 3.0 ASYMX will not operate in Fox mode\n"
+                                    "Decodium Fast Track 2 will not operate in Fox mode\n"
                                     "overlapping the WSPR sub-bands.").arg(ft8Freq[i]);
           QTimer::singleShot (0, [=] {               // don't block guiUpdate
             MessageBox::warning_message (this, tr ("Fox Mode warning"), message);
@@ -12522,7 +12522,7 @@ qint64 MainWindow::nWidgets(QString t)
 void MainWindow::displayWidgets(qint64 n)
 {
   /* See text file "displayWidgets.txt" for widget numbers */
-  // ASYMX: Async L2 visible only in FT2; auto-disable when leaving FT2
+  // Fast Track 2: Async L2 visible only in FT2; auto-disable when leaving FT2
   bool isFT2 = (m_mode == "FT2");
   ui->cbAsyncDecode->setVisible(false);  // always hidden: forced on in FT2, off elsewhere
   ui->labelAsymxBadge->setVisible(isFT2);
@@ -12759,7 +12759,7 @@ void MainWindow::on_actionFT2_triggered()
   ui->txb6->setEnabled(true);
   ui->txFirstCheckBox->setEnabled(true);
   ui->cbAutoSeq->setEnabled(true);
-  // ASYMX: force Async L2 in FT2, hide checkbox (always on), show ASYMX badge
+  // ASYMX: force Async L2 in FT2, hide checkbox (always on), show FT2 badge
   ui->cbAsyncDecode->setChecked(true);
   ui->cbAsyncDecode->setVisible(false);   // always on in FT2, no user toggle
   ui->labelAsyncL2Active->setVisible(false);
@@ -14840,7 +14840,7 @@ void MainWindow::pskSetLocal ()
   if (rig_information.contains("OmniRig")) rig_information = "N/A (OmniRig)";
   if (rig_information == "FLRig") rig_information = "N/A (FLRig)";
   if (rig_information.contains("TCI Cli")) rig_information = "N/A (TCI)";
-  m_psk_Reporter.setLocalStation(m_config.my_callsign (), m_config.my_grid (), antenna_description, rig_information, QString {"Decodium 3.0 ASYMX v" + version () + " " + m_revision}.simplified ());
+  m_psk_Reporter.setLocalStation(m_config.my_callsign (), m_config.my_grid (), antenna_description, rig_information, QString {"Decodium Fast Track 2 v" + version () + " " + m_revision}.simplified ());
 }
 
 void MainWindow::transmitDisplay (bool transmitting)
@@ -17539,7 +17539,7 @@ void MainWindow::on_cbAsyncDecode_toggled (bool checked)
       m_asyncDedupeLastClear = QDateTime::currentMSecsSinceEpoch();
       m_decodeDedup.clear();
       m_asyncDecodeTimer.start(187);  // Turbo: 187ms = ~20 decodes/period
-      ui->labelAsyncL2Active->setVisible(false);  // replaced by ASYMX badge
+      ui->labelAsyncL2Active->setVisible(false);  // replaced by FT2 badge
       ui->labelAsymxBadge->setVisible(true);
     } else {
       m_asyncDecodeTimer.stop();
@@ -18372,9 +18372,9 @@ void MainWindow::on_actionDiagnostic_mode_triggered()
             "                                     DIAGNOSTIC MODE\n"
             "\n"
             "You have switched to diagnostic mode. It allows you to collect data to\n"
-            "troubleshoot problems with Decodium 3.0 ASYMX, or its communication with your rig.\n"
+            "troubleshoot problems with Decodium Fast Track 2, or its communication with your rig.\n"
             "\n"
-            "The diagnostic mode is active after closing and restarting Decodium 3.0 ASYMX,\n"
+            "The diagnostic mode is active after closing and restarting Decodium Fast Track 2,\n"
             "and is then automatically deactivated when the program is next closed.\n"
             "In the diagnostic mode a new \"logs\" folder appears on your screen, and\n"
             "in it two files are created: \"decodium_syslog.log\" and \"Decodium_RigControl.log\".\n"
@@ -19656,11 +19656,11 @@ void MainWindow::on_actionDownload_from_LOTW_triggered()
   QString logFilePathName = m_config.writeable_data_dir().absolutePath() + "/" + FULL_LOG_FNAME;
   if (m_firstLotwDl and QFile::exists(logFilePathName)) {
     if (MessageBox::No == MessageBox::query_message (this,
-      QString {"This is your first request to download your complete QSO history from LOTW by Decodium 3.0 ASYMX.\n\n"} +
+      QString {"This is your first request to download your complete QSO history from LOTW by Decodium Fast Track 2.\n\n"} +
       QString {"IMPORTANT!!! Before continuing:\n"} +
       QString {"- Be sure you have already uploaded your current QSOs to LOTW, by whatever method you previously used (manually with TQSL and wsjt_log.adi, or automatically with a separate logging program).\n"} +
       QString {"- Allow enough time after this upload for LOTW to process it.\n\n"} +
-      QString {"Note: All QSO activity is archived in the 'Decodium 3.0 ASYMX log directory', which is accessible from the File menu.\n\n"} +
+      QString {"Note: All QSO activity is archived in the 'Decodium Fast Track 2 log directory', which is accessible from the File menu.\n\n"} +
       QString {"Are you ready to continue with downloading QSOs from LOTW?"})) return;
 
     //backup log file
@@ -20109,7 +20109,7 @@ void MainWindow::lotwError (QProcess * process, QProcess::ProcessError)
 //avt
 void MainWindow::download (QUrl url) {
   QNetworkRequest request {url};
-  request.setRawHeader("User-Agent", "Decodium3-ASYMX Downloader");
+  request.setRawHeader("User-Agent", "Decodium-FT2 Downloader");
   request.setOriginatingObject (this);
 
   // this blocks for a second or two the first time it is used on
@@ -20329,7 +20329,7 @@ void MainWindow::showStartupBanner ()
   layout->addWidget (logoLabel);
 
   // Title
-  auto *title = new QLabel ("DECODIUM 3.0 ASYMX");
+  auto *title = new QLabel ("DECODIUM FAST TRACK 2");
   title->setAlignment (Qt::AlignCenter);
   title->setStyleSheet (
     "color: #ffffff; font-size: 26px; font-weight: bold;"

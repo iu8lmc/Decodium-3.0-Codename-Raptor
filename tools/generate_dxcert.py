@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a DXpedition certificate (.dxcert) for Decodium ASYMX."""
+"""Generate a DXpedition certificate (.dxcert) for Decodium Fast Track 2."""
 
 import json
 import hmac

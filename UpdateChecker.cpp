@@ -59,7 +59,7 @@ bool UpdateChecker::isNewerVersion (QString const& remoteTag) const
   if (!ok) return false;
 
   QString localTag = program_title ();
-  // program_title() restituisce "Decodium 3.0 ASYMX v3.0.XXXXXXXXXX ..."
+  // program_title() restituisce "Decodium Fast Track 2 v3.0.XXXXXXXXXX ..."
   // Cerca il build number dopo "v3.0."
   QRegularExpression rx ("v3\\.0\\.(\\d{10})");
   auto match = rx.match (localTag);

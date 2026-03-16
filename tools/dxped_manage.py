@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Decodium ASYMX — DXpedition Certificate & Verified List Manager
+Decodium Fast Track 2 — DXpedition Certificate & Verified List Manager
 
 Comandi:
   add       Aggiunge una DXpedition al database
