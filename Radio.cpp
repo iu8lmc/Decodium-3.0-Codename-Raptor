@@ -193,11 +193,9 @@ namespace Radio
       }
     if (!has_digit || !has_letter) return false;
 
-    // ITU structural check on base callsign:
-    // Valid prefix patterns followed by 1-4 letter suffix
-    // Pattern: (1-2 letters + digit) OR (digit + letter + digit) OR (letter + digit + letter)
-    //          followed by optional extra digit, then 1-4 suffix letters
-    if (!itu_callsign_re.match (base).hasMatch ()) return false;
+    // Basic structural check: must have digit NOT as last char
+    // (real calls always end with letters, e.g. W1AW, VK2ABC, 3DA0XYZ)
+    if (base.back ().isDigit ()) return false;
 
     return true;
   }
