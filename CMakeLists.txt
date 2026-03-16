@@ -1439,7 +1439,6 @@ set (LANGUAGES
   #sv				# Swedish
   zh				# Chinese
   zh_TW				# Chinese traditional
-  it				# Italian
   )
 foreach (lang_ ${LANGUAGES})
   file (TO_NATIVE_PATH ${CMAKE_SOURCE_DIR}/translations/decodium_${lang_}.ts ts_)

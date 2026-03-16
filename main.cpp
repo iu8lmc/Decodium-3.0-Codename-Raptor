@@ -255,8 +255,13 @@ int main(int argc, char *argv[])
             }
         }
 
-      // load UI translations
-      L10nLoader l10n {&a, locale, parser.value (lang_option)};
+      // load UI translations — prefer QSettings language, then CLI, then system locale
+      QString langOverride = parser.value (lang_option);
+      if (langOverride.isEmpty ()) {
+        QSettings settings;
+        langOverride = settings.value ("UILanguage").toString ();
+      }
+      L10nLoader l10n {&a, locale, langOverride};
 
       // Create a unique writeable temporary directory in a suitable location
       bool temp_ok {false};

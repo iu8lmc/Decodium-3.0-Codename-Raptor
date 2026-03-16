@@ -726,6 +726,49 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     }
   }
 
+  // Language menu
+  {
+    struct LangInfo { const char *code; const char *name; };
+    static const LangInfo langs[] = {
+      {"en",    "English"},
+      {"it",    "Italiano"},
+      {"es",    "Español"},
+      {"ca",    "Català"},
+      {"da",    "Dansk"},
+      {"ja",    "日本語"},
+      {"ru",    "Русский"},
+      {"zh",    "中文 (简体)"},
+      {"zh_TW", "中文 (繁體)"},
+      {"en_GB", "English (UK)"},
+    };
+    auto *menuLang = new QMenu (tr ("Language"), this);
+    QString currentLang = m_settings->value ("UILanguage").toString ();
+    auto *langGroup = new QActionGroup (this);
+    langGroup->setExclusive (true);
+    for (auto const& li : langs) {
+      auto *act = menuLang->addAction (li.name);
+      act->setCheckable (true);
+      act->setData (QString (li.code));
+      if (currentLang == li.code || (currentLang.isEmpty () && QString (li.code) == "en"))
+        act->setChecked (true);
+      langGroup->addAction (act);
+    }
+    connect (langGroup, &QActionGroup::triggered, this, [this] (QAction *act) {
+      QString lang = act->data ().toString ();
+      m_settings->setValue ("UILanguage", lang);
+      m_settings->sync ();
+      auto reply = MessageBox::query_message (this,
+        tr ("Language changed"),
+        tr ("The language will change after restarting the application.\n\nRestart now?"),
+        QString {}, MessageBox::Yes | MessageBox::No, MessageBox::Yes);
+      if (reply == MessageBox::Yes) {
+        QProcess::startDetached (QApplication::applicationFilePath (), QApplication::arguments ());
+        QApplication::quit ();
+      }
+    });
+    ui->menuBar->insertMenu (ui->menuHelp->menuAction (), menuLang);
+  }
+
   m_optimizingProgress.setWindowModality (Qt::WindowModal);
   m_optimizingProgress.setAutoReset (false);
   m_optimizingProgress.setMinimumDuration (15000); // only show after 15s delay
