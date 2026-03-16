@@ -757,14 +757,9 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
       QString lang = act->data ().toString ();
       m_settings->setValue ("UILanguage", lang);
       m_settings->sync ();
-      auto reply = MessageBox::query_message (this,
+      MessageBox::information_message (this,
         tr ("Language changed"),
-        tr ("The language will change after restarting the application.\n\nRestart now?"),
-        QString {}, MessageBox::Yes | MessageBox::No, MessageBox::Yes);
-      if (reply == MessageBox::Yes) {
-        QProcess::startDetached (QApplication::applicationFilePath (), QApplication::arguments ());
-        QApplication::quit ();
-      }
+        tr ("Please restart the application for the language change to take effect."));
     });
     ui->menuBar->insertMenu (ui->menuHelp->menuAction (), menuLang);
   }
