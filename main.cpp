@@ -258,8 +258,7 @@ int main(int argc, char *argv[])
       // load UI translations — prefer QSettings language, then CLI, then system locale
       QString langOverride = parser.value (lang_option);
       if (langOverride.isEmpty ()) {
-        QSettings settings;
-        langOverride = settings.value ("UILanguage").toString ();
+        langOverride = multi_settings.settings ()->value ("UILanguage").toString ();
       }
       L10nLoader l10n {&a, locale, langOverride};
 
