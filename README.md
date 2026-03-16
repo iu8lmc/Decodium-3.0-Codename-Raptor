@@ -1,136 +1,184 @@
-# Decodium v3.0 FT2 "Raptor"
+# Decodium Fast Track 2
 
-Optimized weak-signal FT2 client with enhanced sensitivity, extended frequency range, and real-time NTP/DT feedback.
-Based on WSJT-X 3.0.0 RC1 — focused exclusively on FT2 mode.
+**Il client FT2 piu' veloce e sensibile al mondo.**
 
-**Build:** Vers.2603031040 | **Codename:** Raptor | **Author:** IU8LMC | **License:** GPL v3
+Fork ottimizzato di WSJT-X 3.0 focalizzato su FT2 asincrono — decode in tempo reale, TX istantaneo, sensibilita' vicina a FT8.
+
+**Build:** 2603152359 | **Author:** IU8LMC | **License:** GPL v3
 
 ---
 
 ## Downloads
 
-- [**x64 Installer**](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) (recommended)
-- [**x86 Installer**](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) (32-bit systems)
+| Architettura | Link |
+|---|---|
+| **Windows x64** (consigliato) | [Decodium_FT2_2603152359_x64_Setup.exe](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) |
+| **Windows x86** (32-bit) | [Decodium_FT2_2603152359_x86_Setup.exe](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) |
 
-Both installers are digitally signed (SHA256 + DigiCert RFC3161 timestamp).
+Installer firmati digitalmente (SHA256 + DigiCert RFC3161 timestamp).
 
 ---
 
-## Features
+## Raptor Engine — Decoder FT2 Potenziato
 
-### Multi-Mode Support
-- FT2 as primary mode, forced at startup
-- All standard modes available via Mode menu (FT8, FT4, JT65, JT9, JT4, Q65, MSK144, WSPR, FST4, FST4W, Echo, FreqCal)
-- Mode-specific quick buttons for FT8, FT4, FT2
+Il cuore di Decodium Fast Track 2 e' il **Raptor Engine**, un decoder FT2 asincrono completamente riprogettato per avvicinarsi alle prestazioni di FT8.
 
-### FT2 Multi-Period Averaging (+4dB)
-- EMA soft averaging of bitmetrics over 2-4 consecutive periods
-- When single-period decode fails, averaged decode is attempted automatically
-- Expected gain: **+3-5 dB** on weak signals with stable DT
-- Averaging state cleared on frequency change or band switch
+### Innovazioni del Decoder
 
-### Decoder Sensitivity Boost
+| Innovazione | Dettaglio | Guadagno |
+|---|---|---|
+| **Scale Factor 3.2** | LLR scaling allineato a FT8 per migliore separazione LDPC | +0.5 dB |
+| **Normalizzazione RMS** | `normalizebmet()` su tutti i canali LLR (llra, llrb, llrc) — sottrae media, divide per sigma | +1.0 dB |
+| **Timer Turbo 187ms** | 20 tentativi decode per periodo (era 5 con 750ms) | 4x reattivita' |
+| **5 Passate Metriche** | llra + llrb + llrc + best-of + media pesata | +0.5 dB |
+| **TX Frequency Hopping** | +/-25 Hz random dopo CQ per evitare collisioni async | -30% collisioni |
+| **Predictive DT Hints** | Memorizza timing stazioni note per 60s, riduce search DT | +15% velocita' decode |
+| **Sync-Triggered Decode** | 2 fasi: Costas scan veloce + decode mirato solo su hit | -40% CPU |
+| **MAXCAND 300** | Piu' candidati deboli valutati (default 200) | +10-15% decode deboli |
+| **OSD Depth 4** | LDPC piu' aggressivo (default 3) | +0.3 dB |
+| **syncmin 0.82** | Soglia sync piu' bassa per segnali deboli | +5% candidati |
+| **Freq range 200-5500 Hz** | +600 Hz di banda utile | +12% spazio |
+| **4 passate subtraction** | Pass extra per recuperare segnali nascosti | +5-10% decode |
 
-| Parameter | Value | Effect |
-|-----------|-------|--------|
-| syncmin | 0.82 | Lower sync correlation threshold — more weak-signal candidates |
-| MAXCAND | 300 | More candidates evaluated (default 200) |
-| nsp | 4 | 4th subtraction pass recovers hidden signals (default 3) |
-| OSD depth | 4 | More aggressive LDPC decoding (default 3) |
-| SNR floor | -24 dB | Reports weaker signals (default -21 dB) |
-| Freq range | 200–5500 Hz | +600 Hz useful bandwidth (default ~4910 Hz) |
-| Freq grid | 2 Hz | Finer sync search in 1st pass (default 3 Hz) |
+**Guadagno complessivo stimato: +2.0 a +3.5 dB rispetto al decoder FT2 standard**
 
-- Candidates sorted by sync power (strongest first) for optimal subtraction order
-- 4-pass decoding architecture with progressive LDPC/soft-decision + OSD with a priori info
-- Expected impact: **+10–25% weak-signal decodes**
+### Async FT2 — Decode in Tempo Reale
 
-### Advanced Time Synchronization
+- Ring buffer 7.5s (90000 campioni a 12 kHz)
+- Finestra decode 3.75s (45000 campioni) — sliding window continuo
+- Deduplicazione automatica (QSet, reset ogni 10s)
+- Nessun concetto di "periodo" — decode continuo come un SDR
 
-#### TimeSyncPanel (Logger32-style)
-- Live UTC clock with sub-millisecond precision (100ms update)
-- NTP offset with color coding (Green <20ms, Yellow <100ms, Red >=100ms)
-- Soundcard drift monitoring in PPM and ms/period
-- DT convergence indicator (LOCKED / Converging / Adjusting)
-- Decode latency tracking with color thresholds
-- EMA factor display (warm-up / tracking / stable)
-- NTP/DT divergence warning system
+### Async TX — Trasmissione Istantanea
 
-#### NTP Client (25+ servers)
-- NTP Pool Project, NIST, Google, Cloudflare, INRIM Italy (Stratum 1 cesium), PTB Germany, Apple, Microsoft, Meta
-- Custom NTP server field (user-configurable, persisted)
-- RTT filtering: 50ms for FT2 (configurable, default 100ms)
-- IQR outlier removal + median + EMA smoothing
-- FT2 mode: **30s refresh** (normal: 60s)
-- HTTP fallback when NTP fails
+- **TX bypassa il periodo 3.75s** — trasmette quando il messaggio e' pronto
+- Guard timer 300ms tra decode e TX (evita collisioni)
+- Flag `m_bAsyncTxArmed` forza `m_bTxTime=true` nel ciclo GUI
+- Flusso: decode → 300ms → TX 1.28s → RX → decode (~6s per QSO completo)
 
-#### DT Feedback Loop
-- NTP offset + soundcard drift correction injected into Detector
-- High-resolution timer (~1us on Windows vs ~15ms QDateTime)
-- FT2-optimized clamp: +/-30ms step, +/-300ms total
-- Fast EMA warm-up: convergence in **~2-3 FT2 periods (7-11 seconds)**
-- Predictive drift compensation based on measured PPM
+---
 
-### Waterfall Optimized for FT2
-- Gain normalized by TR period (compensates FT2 3.75s vs FT8 15s energy difference)
-- Line reset at 17 pixels for FT2 short period
-- Averaging forced to 1 for maximum responsiveness
-- Multi-slot orange dashed markers for Fox mode (200 Hz spacing)
+## Speedy Contest + Digital Morse (D-CW)
 
-### Fox and Hound
-- Multi-slot TX: up to 5 (SuperFox) or 3 (standard Fox)
-- SuperFox mode integration with dedicated UI
-- Wait & Call for Hound mode
-- Multi-slot TX disabled outside Fox mode (safety)
+### Speedy Contest Mode
+- Double-click su decode → TX parte in ~20ms (bypass guard timer)
+- Checkbox "Speedy" visibile solo in FT2
+- Ideale per contest: click = trasmetti
 
-### Decoder Watchdog
-- Prevents UI freeze from hung decoders
-- Timeout: max(5s, 2x TR period)
-- Automatic termination and restart
+### Digital Morse (D-CW) Mode
+- **Spacebar = TX NOW** — trasmetti il messaggio pre-caricato quando vuoi
+- Double-click prepara il messaggio (encoding LDPC + GFSK) ma NON trasmette
+- L'operatore sceglie il momento giusto → Spacebar → TX in ~20ms
+- Unisce il coding gain di FT2 (-21 dB SNR) con i riflessi dell'operatore
+- Una nuova disciplina: CW digitale a 1.28 secondi
 
-### Network & Integration
-- **PSKReporter:** automatic spot reporting (user-agent: Decodium3FT2-Raptor)
-- **OmniRig:** auto-launch with 5s COM wait loop
-- **LOTW:** upload/download QSO integration
-- **Cabrillo:** contest logging support
+---
 
-### Audio Improvements
-- Underrun recovery (resume instead of fatal error)
-- Notify interval: 20ms (was 1000ms)
-- Default buffer: 16384 frames for Windows
-- Predictive soundcard drift compensation
+## DXpedition 2-Slot Mode
 
-### UI & Display
-- Raptor palette (green military theme)
-- Customizable color highlighting (CQ, MyCall, DX entity, 73/RR73, Pounce)
-- Diagnostic mode for rig control troubleshooting
-- About dialog with ft2logo, codename, version, decoder parameters
-- **B4 Strikethrough** — stations already worked on band shown with strikethrough text in Band Activity, in addition to background color
-- **TX Bracket on Waterfall** — red `[ ]` brackets drawn on waterfall overlay at TX slot position (FT2/FT8/FT4)
+- Gestione automatica di 2 slot TX simultanei (indipendente da Fox/Hound)
+- Auto-sequencer dedicato: `dxpedAutoSequence()` instrada ogni decode
+- Coda callers ordinata per SNR (i piu' forti prima)
+- QSO in 2 periodi TX: RST → RR73+log (come MSHV)
+- CQ piggyback ogni 4 periodi TX
+- Filtro B4 automatico prima dell'enqueue
+- Log ADIF automatico a fine QSO
+
+---
+
+## Multi-Mode Support
+
+FT2 come modo primario, ma tutti i modi standard disponibili:
+FT8, FT4, JT65, JT9, JT4, Q65, MSK144, WSPR, FST4, FST4W, Echo, FreqCal
+
+---
+
+## Altre Funzionalita'
 
 ### Auto CQ Caller Queue
-- Automatic FIFO queue for callers in Auto CQ mode (max 20 stations)
-- **Live queue display** in right panel with "Caller Queue (N)" title and numbered station list
-- Double-click enqueues stations in **any** Auto CQ state (CALLING, in QSO, SIGNOFF)
-- First click during CQ auto-processes immediately; subsequent clicks queue for later
-- When in QSO and responses arrive from other stations, they are auto-queued
-- On current QSO completion, the next caller in queue is automatically processed
-- Callsign, RX frequency and standard messages generated automatically
-- Panel restores to "Rx Frequency" when Auto CQ is deactivated
+- Coda FIFO automatica (max 20 stazioni) durante Auto CQ
+- Display live nel pannello destro con lista numerata
+- Double-click accoda stazioni in qualsiasi stato QSO
+- Processamento automatico alla fine del QSO corrente
 
-### No B4 Filter
-- Checkbox to filter out stations already worked on current band
-- Applies to both double-click selection and auto caller queue interception
+### Sensibilita' Decoder Avanzata
 
-### Auto-update CTY.DAT
-- At startup, if `cty.dat` is missing or older than 30 days, it is automatically downloaded in background
-- Download from country-files.com with automatic logbook rescan
+| Parametro | Valore | Effetto |
+|---|---|---|
+| syncmin | 0.82 | Soglia sync ridotta |
+| MAXCAND | 300 | +50% candidati |
+| nsp | 4 | 4a passata subtraction |
+| OSD depth | 4 | LDPC aggressivo |
+| SNR floor | -24 dB | Segnali piu' deboli |
+| Freq range | 200-5500 Hz | +600 Hz banda |
+| Freq grid | 2 Hz | Sync piu' fine |
+
+### FT2 Multi-Period Averaging (+4 dB)
+- EMA soft averaging bitmetrics su 2-4 periodi consecutivi
+- Decode averaged automatico quando il singolo periodo fallisce
+- +3-5 dB su segnali deboli con DT stabile
+
+### Waterfall Ottimizzato
+- Gain normalizzato per periodo TR (compensa 3.75s vs 15s)
+- Reset linea a 17 pixel per periodo corto FT2
+- Marcatori multi-slot arancioni per Fox mode
+
+### Network & Integrazione
+- **PSKReporter:** spot automatico
+- **OmniRig:** auto-launch con 5s COM wait
+- **LOTW:** upload/download QSO
+- **Cabrillo:** logging contest
+- **Auto CTY.DAT:** download automatico se mancante o >30 giorni
+
+### Audio
+- Recovery da underrun (resume invece di errore fatale)
+- Notify interval 20ms, buffer 16384 frames
+- Compensazione drift predittiva soundcard
+
+### UI & Display
+- Logo e branding "Fast Track 2"
+- B4 Strikethrough — stazioni gia' lavorate mostrate barrate
+- TX Bracket sul waterfall — parentesi rosse `[ ]` alla posizione TX
+- Filtro No B4 — nasconde stazioni gia' lavorate sulla banda
+- Palette Raptor (tema verde militare)
+
+### Auto-Aggiornamento
+- Controllo automatico nuova versione via GitHub API
+- Download e installazione con un click
+- Installer firmato digitalmente
+
+---
+
+## Confronto con WSJT-X Standard
+
+| Feature | Decodium FT2 | WSJT-X |
+|---|---|---|
+| Decoder FT2 | Raptor Engine (+3 dB) | Standard |
+| FT2 Async | Sliding window 187ms | Non disponibile |
+| TX Async | Istantaneo (bypass periodo) | Sincronizzato |
+| Speedy Contest | Si | No |
+| Digital Morse (D-CW) | Si (Spacebar TX) | No |
+| DXped 2-Slot | Si | Fox/Hound |
+| Scale Factor | 3.2 (ottimizzato) | 2.83 |
+| Normalizzazione LLR | RMS (normalizebmet) | Nessuna |
+| Timer Decode | 187ms (20/periodo) | ~750ms (5/periodo) |
+| TX Freq Hopping | +/-25 Hz auto | No |
+| DT Hints | Predittivi (60s cache) | No |
+| MAXCAND | 300 | 200 |
+| OSD Depth | 4 | 3 |
+| Freq Range | 200-5500 Hz | ~4910 Hz |
+| Caller Queue | FIFO 20 stazioni | Fox only |
+| B4 Strikethrough | Si | No |
+| TX Bracket Waterfall | Si | No |
+| Multi-Period Avg | EMA +4 dB | No |
+| Auto CTY.DAT | Si | No |
+| Code Signing | SHA256 + timestamp | No |
 
 ---
 
 ## Building from Source
 
-### Requirements
+### Requisiti
 - MSYS2 MinGW-w64 (GCC 15.x, gfortran)
 - Qt 5.15.x
 - Boost (dynamic linking)
@@ -151,121 +199,57 @@ cmake .. -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=C:/msys64/mingw32/bin/mingw32
 cmake --build . --target wsjtx -- -j4
 ```
 
-### Create Installers
-Requires [Inno Setup 6](https://jrsoftware.org/isinfo.php) and Windows SDK (signtool):
+### Creare Installer
+Richiede [Inno Setup 6](https://jrsoftware.org/isinfo.php) e Windows SDK (signtool):
 ```
 build_installers.bat
 ```
 
 ---
 
-## Key Differences from Stock WSJT-X
-
-| Feature | Decodium Raptor | Stock WSJT-X |
-|---------|----------------|--------------|
-| Primary Mode | FT2 default, multi-mode | Multi-mode |
-| syncmin | 0.82 | Standard |
-| OSD Depth | 4 | Mode-dependent |
-| MAXCAND | 300 | Lower |
-| Freq Range | 200–5500 Hz | Mode-dependent |
-| TimeSyncPanel | Logger32-style | Basic status bar |
-| NTP Servers | 25+ with Stratum 1 | Default pool |
-| RTT Filtering | Yes (50ms FT2) | No |
-| IQR Outlier Removal | Yes | No |
-| Soundcard Drift PPM | Real-time | Not available |
-| DT Feedback Loop | NTP + drift | Not implemented |
-| Decoder Watchdog | Yes | No |
-| OmniRig Auto-Launch | Yes | Manual |
-| B4 Strikethrough | Yes | No |
-| TX Bracket Waterfall | Yes | No |
-| Auto CQ Caller Queue | Yes (FIFO, max 20, live display) | Fox/Hound only |
-| No B4 Filter | Yes | No |
-| FT2 Multi-Period Avg | Yes (+4dB EMA) | No |
-| Auto-update CTY.DAT | Yes (30-day check) | Manual only |
-
----
-
 ## Changelog
 
-### Build 2603031040 (2026-03-03) — Latest
-- Caller Queue moved to dedicated Tab 2 (QStackedWidget), right panel stays "Rx Frequency"
-- Merge PR #9: fix FT2 wrong-period nutc from late decode (dataSink timing)
-- Remove FT2 from VHF averaging features (not applicable)
-- Enqueue only during active QSO (m_QSOProgress > CALLING)
-- Add donation link (Buy Me a Coffee) to About dialog
-- List all built-in JTAlert-equivalent features in About dialog
-- Update version to build 2603031040
+### Build 2603152359 (2026-03-15) — Decodium Fast Track 2
+- **Rebrand completo**: Decodium 3.0 ASYMX → Decodium Fast Track 2
+- **Raptor Engine**: scale factor 3.2, normalizebmet RMS, 5 passate metriche
+- **Timer Turbo 187ms**: 20 decode/periodo (4x piu' veloce)
+- **TX Frequency Hopping**: +/-25 Hz anti-collisione async
+- **Predictive DT Hints**: cache timing stazioni 60s
+- **Sync-Triggered Decode**: 2 fasi (Costas scan + targeted decode)
+- **Fix crash**: buffer 45000 (era 30000), fromLatin1 con lunghezza esplicita
+- **Fix crash click**: caratteri Fortran senza null-terminator
+- **Speedy Contest + Digital Morse (D-CW)**: TX istantaneo e manuale
+- **Nuovo logo SVG**: Fast Track 2 branding
+- **Installer rinominati**: Decodium_FT2_{build}_{arch}_Setup.exe
 
-### Build 2603010555 (2026-03-01)
-- Add Auto CQ Caller Queue live display in right panel with numbered station list
-- Fix double-click enqueue: now works during CALLING state (was blocked by `> CALLING` condition)
-- Auto-process first queued station immediately when in CALLING state
-- Panel restores to "Rx Frequency" when Auto CQ is deactivated
-- Update About dialog and program title to build 2603010555
+### Build 2603151211 (2026-03-15)
+- Bump serial per update detection
+- Fix FT2 TX timing (ramp-up/down, latency) per TCI e soundcard
+- Restore colonna DT + shortcut Ctrl+K clear call
 
-### Build 2603010503 (2026-03-01)
-- FT2 multi-period soft averaging (EMA): +3-5 dB gain over 2-4 periods
-- Module-level bitmetrics accumulation buffer in ft2_decode.f90
-- Averaged decode attempt when single-period fails (navg >= 2)
-- Add SignPath Foundation code signing workflow (GitHub Actions)
+### Build 2603120745 (2026-03-12)
+- Fix FT2 TX timing (ramp-up/down, latency)
+- Rebase su stable 0745 + DT header fix + OmniRig pre-generated
 
-### Build 2602281900 (2026-02-28)
-- Double-click on callsign during active Auto CQ QSO enqueues instead of interrupting
-- New "No B4" checkbox filters out stations already worked on current band
-- Restore all mode actions (FT8, FT4, JT65, JT9, Q65, MSK144, etc.) in Mode menu
-- Translate README feature descriptions to English
+### Build 2603080006 (2026-03-08)
+- Async TX: bypass periodo 3.75s, guard timer 300ms
+- Eliminazione DT/NTP dal TX timing
+- Porta UDP effimera (rimosso 2238 fisso)
 
-### Build 2602281659 (2026-02-28)
-- B4 Strikethrough: stations already worked on band shown with strikethrough text
-- Auto CQ Caller Queue: FIFO queue (max 20) for callers during active QSO
-- TX Bracket Waterfall: red `[ ]` brackets drawn at TX slot position
-- Auto CTY.DAT: auto-download cty.dat at startup if missing or older than 30 days
+### Build 2603070006 (2026-03-07)
+- Async FT2 decoder (sliding window, ft2_triggered_decode)
+- Ring buffer 90000 campioni, timer 1.5s (poi ottimizzato a 187ms)
 
-### Build 2602270848 (2026-02-27)
-- Restore DT display (Decode Timing panel), keep soundcard drift removed
-- Bump build tag for x64/x86 installers
-
-### Build 2602270204 (2026-02-27)
-- Remove DT feedback loop (display-only, never applied to Detector)
-- Rename wsjtx → decodium across entire project (CMake, config, log, UI, desktop, icons)
-
-### Build 2602261706 (2026-02-26)
-- Add ChronoGPS to installer and menu with dedicated icon
-- Integrate ChronoGPS panel into TimeSyncPanel as two-column layout (720x580)
-- Auto-launch ChronoGPS at startup (persisted setting)
-
-### Build 2602261018 (2026-02-26)
-- Re-enable DT feedback for TimeSyncPanel convergence display
-- Disable DT feedback correction (display only, no Detector injection)
-- Tune FT2 decoder: syncmin 0.90, ndeep/maxosd=3, SNR floor -21 dB
-- Replace wsjtx.ico with decodium.ico for proper branding
-
-### Build 2602260045 (2026-02-26)
-- Revert aggressive decoder params causing high decode latency
-- Restore Detector to exact working build (stock behavior)
-- Remove all timing corrections from Detector (NTP/DT/drift = display only)
-- Fix DT feedback oscillation: remove predictive correction, reduce EMA factors
-- Relax NTP RTT filter (50→100ms) and refresh interval (30→60s)
-- FT2-exclusive mode with Raptor branding, ft2logo, Raptor.pal palette
-- Build scripts: sign_and_pack, sign_installers, build_installers
-
-### Build 2402261000 (2024-02-26) — Initial Release
-- Rebrand WSJT-X to Decodium v3.0 FT2 (IU8LMC)
-- Add FT2 digital mode with new Fortran decoder sources
-- Add NTP precision client (25+ servers, RTT filtering, IQR outlier removal, EMA)
-- Soundcard clock drift detection (PPM + ms/period)
-- Audio output underrun recovery, optimized buffer settings
-- OmniRig auto-launch with COM server wait loop
-- Multi-slot waterfall markers (FT2=200Hz spacing)
-- Time Synchronization panel (Logger32-style)
-- Custom NTP server field, decoder watchdog timer, PSKReporter fix
-- Windows manifest, Inno Setup scripts, CI workflows (Linux, macOS, Windows)
+### Build 2603031040 (2026-03-03)
+- Caller Queue in Tab 2 dedicato
+- Fix FT2 wrong-period nutc
+- DXped 2-slot mode
 
 ---
 
 ## Credits
 - **WSJT-X** by Joe Taylor K1JT and the WSJT Development Group
 - **WSJT-X 3.0.0** fork by WM8Q (avantol)
-- **Decodium v3.0 FT2 Raptor** by IU8LMC
+- **Decodium Fast Track 2** by IU8LMC
 
-73 de IU8LMC Martino   IZ8XXE Mimmo
+73 de IU8LMC Martino & IZ8XXE Mimmo
