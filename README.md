@@ -4,7 +4,7 @@
 
 Fork ottimizzato di WSJT-X 3.0 focalizzato su FT2 asincrono — decode in tempo reale, TX istantaneo, sensibilita' vicina a FT8.
 
-**Build:** 2603160922 | **Author:** IU8LMC | **License:** GPL v3
+**Build:** 2603160934 | **Author:** IU8LMC | **License:** GPL v3
 
 ---
 
@@ -12,8 +12,8 @@ Fork ottimizzato di WSJT-X 3.0 focalizzato su FT2 asincrono — decode in tempo 
 
 | Architettura | Link |
 |---|---|
-| **Windows x64** (consigliato) | [Decodium_FT2_2603160922_x64_Setup.exe](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) |
-| **Windows x86** (32-bit) | [Decodium_FT2_2603160922_x86_Setup.exe](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) |
+| **Windows x64** (consigliato) | [Decodium_FT2_2603160934_x64_Setup.exe](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) |
+| **Windows x86** (32-bit) | [Decodium_FT2_2603160934_x86_Setup.exe](https://github.com/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest) |
 
 Installer firmati digitalmente (SHA256 + DigiCert RFC3161 timestamp).
 
@@ -209,7 +209,7 @@ build_installers.bat
 
 ## Changelog
 
-### Build 2603160922 (2026-03-15) — Decodium Fast Track 2
+### Build 2603160934 (2026-03-15) — Decodium Fast Track 2
 - **Rebrand completo**: Decodium 3.0 ASYMX → Decodium Fast Track 2
 - **Raptor Engine**: scale factor 3.2, normalizebmet RMS, 5 passate metriche
 - **Timer Turbo 187ms**: 20 decode/periodo (4x piu' veloce)

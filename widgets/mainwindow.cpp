@@ -9104,7 +9104,18 @@ void MainWindow::guiUpdate()
           m_lastNtx = m_ntx;
         }
       } else if (m_ntx == 6) {
-        m_txRetryCount = 0;
+        // RR73 sent — count retries so we don't loop forever
+        // if the other station keeps sending R-xx
+        ++m_txRetryCount;
+        if (m_txRetryCount >= MAX_TX_RETRIES) {
+          qDebug () << "AutoCQ: RR73 sent" << MAX_TX_RETRIES << "times, QSO complete — returning to CQ";
+          m_txRetryCount = 0;
+          m_lastNtx = -1;
+          QTimer::singleShot (0, this, [this] () {
+            m_QSOProgress = CALLING;
+            clearDX ();
+          });
+        }
         m_lastNtx = 6;
       } else {
         m_txRetryCount = 0;
@@ -10379,7 +10390,9 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                    (m_mode=="MSK144" or m_mode=="FT8" or m_mode=="FT2" or m_mode=="FT4" || "Q65" == m_mode)))
                   && word_3.startsWith ('R')) {
           m_ntx=4;
-          m_txRetryCount = 0; m_lastNtx = -1;  // Reset Tx retry counter on R+rpt response
+          if (m_QSOProgress < ROGERS) {
+            m_txRetryCount = 0; m_lastNtx = -1;  // Reset only on FIRST R+rpt (not on repeats)
+          }
           m_QSOProgress = ROGERS;
           if(SpecOp::RTTY == m_specOp) {
             int n=t.size();
