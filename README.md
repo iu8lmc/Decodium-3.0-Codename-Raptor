@@ -19,9 +19,9 @@ Installer firmati digitalmente (SHA256 + DigiCert RFC3161 timestamp).
 
 ---
 
-## Raptor 2603160948Engine — Decoder FT2 Potenziato
+## Raptor 2603161508Engine — Decoder FT2 Potenziato
 
-Il cuore di Decodium Fast Track 2 e' il **Raptor 2603160948Engine**, un decoder FT2 asincrono completamente riprogettato per avvicinarsi alle prestazioni di FT8.
+Il cuore di Decodium Fast Track 2 e' il **Raptor 2603161508Engine**, un decoder FT2 asincrono completamente riprogettato per avvicinarsi alle prestazioni di FT8.
 
 ### Innovazioni del Decoder
 
@@ -153,7 +153,7 @@ FT8, FT4, JT65, JT9, JT4, Q65, MSK144, WSPR, FST4, FST4W, Echo, FreqCal
 
 | Feature | Decodium FT2 | WSJT-X |
 |---|---|---|
-| Decoder FT2 | Raptor 2603160948Engine (+3 dB) | Standard |
+| Decoder FT2 | Raptor 2603161508Engine (+3 dB) | Standard |
 | FT2 Async | Sliding window 187ms | Non disponibile |
 | TX Async | Istantaneo (bypass periodo) | Sincronizzato |
 | Speedy Contest | Si | No |
@@ -184,14 +184,14 @@ FT8, FT4, JT65, JT9, JT4, Q65, MSK144, WSPR, FST4, FST4W, Echo, FreqCal
 - Boost (dynamic linking)
 - CMake 3.x
 
-### Build 2603160948x64
+### Build 2603161508x64
 ```bash
 cd build
 cmake .. -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=C:/msys64/mingw64/bin/mingw32-make.exe
 cmake --build . --target wsjtx -- -j4
 ```
 
-### Build 2603160948x86
+### Build 2603161508x86
 ```bash
 cd build32
 PATH="/c/msys64/mingw32/bin:$PATH"
@@ -211,7 +211,7 @@ build_installers.bat
 
 ### Build  (2026-03-15) — Decodium Fast Track 2
 - **Rebrand completo**: Decodium 3.0 ASYMX → Decodium Fast Track 2
-- **Raptor 2603160948Engine**: scale factor 3.2, normalizebmet RMS, 5 passate metriche
+- **Raptor 2603161508Engine**: scale factor 3.2, normalizebmet RMS, 5 passate metriche
 - **Timer Turbo 187ms**: 20 decode/periodo (4x piu' veloce)
 - **TX Frequency Hopping**: +/-25 Hz anti-collisione async
 - **Predictive DT Hints**: cache timing stazioni 60s

@@ -6879,7 +6879,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
            || (decodedtext.snr() < -21 && decodedtext.isLowConfidence()))))       // very weak + uncertain
       )
     {
-    // Callsign filter removed — was too restrictive, blocking valid decodes
+    // Callsign filter removed — was blocking valid decodes
 
     if (m_mode!="FT8" and m_mode!="FT2" and m_mode!="FT4" and !m_mode.startsWith ("FST4") and m_mode!="Q65") {
       //Pad 22-char msg to at least 37 chars
@@ -9095,11 +9095,8 @@ void MainWindow::guiUpdate()
           m_lastNtx = m_ntx;
         }
       } else if (m_ntx == 6) {
-        // RR73 sent — count retries so we don't loop forever
-        // if the other station keeps sending R-xx
         ++m_txRetryCount;
         if (m_txRetryCount >= MAX_TX_RETRIES) {
-          qDebug () << "AutoCQ: RR73 sent" << MAX_TX_RETRIES << "times, QSO complete — returning to CQ";
           m_txRetryCount = 0;
           m_lastNtx = -1;
           QTimer::singleShot (0, this, [this] () {
@@ -9550,14 +9547,16 @@ void MainWindow::stopTx2()
   }
   if (((m_mode == "JT9" && m_bFast9) || (m_mode == "FT2"))
       && (m_mode == "FT2" || (ui->cbAutoSeq->isVisible () && (ui->cbAutoSeq->isEnabled () or is_externalCtrlMode()) && ui->cbAutoSeq->isChecked ()))
-      && m_ntx == 5 && m_nTx73 >= 5) {
-    // Max 5 retries of 73 — escape stuck RR73 loop
-    on_stopTxButton_clicked ();
+      && m_ntx == 5 && m_nTx73 >= 2) {
+    // Max 2 retries of 73 — escape stuck loop, return to CQ
     m_nTx73 = 0;
-    if (m_mode == "FT2") {
+    if (m_mode == "FT2" && m_autoCQ) {
       m_ntx = 6;
       ui->txrb6->setChecked(true);
       m_QSOProgress = CALLING;
+      clearDX ();
+    } else {
+      on_stopTxButton_clicked ();
     }
   }
   if(((m_mode=="WSPR" or m_mode=="FST4W") and m_ntr==-1) and !m_tuneup) {
@@ -10156,7 +10155,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
   if(!m_bFastMode and (!m_config.enable_VHF_features() or m_mode=="FT8" or m_mode=="FT2" or m_mode=="FT4" or m_mode=="FST4")) {
     // Don't change Tx freq if in a fast mode, or VHF features enabled; also not if a
     // station is calling me, unless CTRL or SHIFT is held down.
-    if ((Radio::is_valid_callsign (firstcall)
+    if ((Radio::is_callsign (firstcall)
          && firstcall != m_config.my_callsign () && firstcall != m_baseCall
          && firstcall != "DE")
         || "CQ" == firstcall || "QRZ" == firstcall || ctrl || shift) {
@@ -10341,8 +10340,9 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                 m_ntx=4;
                 ui->txrb4->setChecked(true);
               }
-            else if ((m_QSOProgress > CALLING && m_QSOProgress < ROGERS)
-                     || word_3.contains (QRegularExpression {"^RR(?:R|73)$"}))
+            else if (m_QSOProgress != SIGNOFF
+                     && ((m_QSOProgress > CALLING && m_QSOProgress < ROGERS)
+                         || word_3.contains (QRegularExpression {"^RR(?:R|73)$"})))
               {
                 m_ntx=5;
                 ui->txrb5->setChecked(true);
@@ -10382,7 +10382,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                   && word_3.startsWith ('R')) {
           m_ntx=4;
           if (m_QSOProgress < ROGERS) {
-            m_txRetryCount = 0; m_lastNtx = -1;  // Reset only on FIRST R+rpt (not on repeats)
+            m_txRetryCount = 0; m_lastNtx = -1;  // Reset only on FIRST R+rpt
           }
           m_QSOProgress = ROGERS;
           if(SpecOp::RTTY == m_specOp) {
@@ -17599,7 +17599,7 @@ void MainWindow::asyncDecodeDone()
 
       DecodedText decodedtext {QString(message).replace(QChar::LineFeed, "")};
 
-      // Callsign filter removed — was too restrictive, blocking valid decodes
+      // Callsign filter removed — was blocking valid FT2 decodes
 
       ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
           m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
