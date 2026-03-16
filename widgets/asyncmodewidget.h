@@ -16,8 +16,8 @@ public:
   int snr () const { return m_snr; }
   bool transmitting () const { return m_transmitting; }
 
-  QSize sizeHint () const override { return {80, 40}; }
-  QSize minimumSizeHint () const override { return {80, 40}; }
+  QSize sizeHint () const override { return {56, 80}; }
+  QSize minimumSizeHint () const override { return {48, 60}; }
 
 public slots:
   void setSnr (int value);
@@ -30,8 +30,8 @@ protected:
 
 private:
   QTimer m_animTimer;
-  qreal  m_phase {0.0};        // sine wave phase offset (radians)
-  int    m_snr {-99};           // last received SNR in dB
+  qreal  m_phase {0.0};
+  int    m_snr {-99};
   bool   m_transmitting {false};
   bool   m_running {false};
 };

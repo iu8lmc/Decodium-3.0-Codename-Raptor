@@ -619,13 +619,11 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_asymxPulse->setLoopCount (-1);  // infinite
   // don't start — replaced by async visualizer below
 
-  // FT2 async mode visualizer (sine wave + S-meter) — insert after Dual Carrier warning
+  // FT2 async mode visualizer — right of Tx buttons (column 3, rows 2-5)
   m_asyncVis = new AsyncModeWidget (this);
   m_asyncVis->setVisible (false);
-  if (auto *lay = qobject_cast<QBoxLayout *>(ui->cbDualCarrier->parentWidget ()->layout ())) {
-    int idx = lay->indexOf (ui->labelDualCarrierWarning);
-    if (idx >= 0) lay->insertWidget (idx + 1, m_asyncVis);
-    else lay->addWidget (m_asyncVis);
+  if (auto *grid = qobject_cast<QGridLayout *>(ui->txb3->parentWidget ()->layout ())) {
+    grid->addWidget (m_asyncVis, 2, 3, 4, 1);  // row 2, col 3, span 4 rows × 1 col
   }
 
   // DX Cluster menu & dock
