@@ -1481,6 +1481,8 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 
   connect(&watcher3, SIGNAL(finished()),this,SLOT(fast_decode_done()));
   connect(&m_asyncDecodeWatcher, &QFutureWatcher<void>::finished, this, &MainWindow::asyncDecodeDone);
+  memset(m_asyncAudio, 0, sizeof(m_asyncAudio));
+  memset(m_asyncMsg, 0, sizeof(m_asyncMsg));
 
   // Async TX guard timer: fires 100ms after decode to start TX immediately
   m_asyncTxGuardTimer.setSingleShot(true);
@@ -1514,40 +1516,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     }
   });
 
-  connect(&m_asyncDecodeTimer, &QTimer::timeout, this, [this]() {
-    if (m_mode != "FT2" || !ui->cbAsyncDecode->isChecked()) return;
-    if (m_bAsyncDecoding) return;  // previous decode still running
-    if (m_asyncAudioPos < 45000) return;  // not enough audio yet
-
-    // Extract last 45000 samples from ring buffer
-    static short int asyncBuf[45000];
-    int pos = m_asyncAudioPos;
-    int start = (pos - 45000 + 90000) % 90000;
-    for (int i = 0; i < 45000; i++) {
-      asyncBuf[i] = m_asyncAudio[(start + i) % 90000];
-    }
-
-    // Dedup purge is handled inside isDuplicateDecode()
-
-    // Set up decode parameters
-    int nqsoprogress = m_QSOProgress;
-    int nfqso = m_wideGraph->rxFreq();
-    int nfa = m_wideGraph->nStartFreq();
-    int nfb = m_wideGraph->Fmax();
-    int ndepth = m_ndepth;
-    int ncontest = int(m_specOp);
-    m_asyncMsg[0][0] = 0;
-    m_bAsyncDecoding = true;
-
-    m_asyncDecodeWatcher.setFuture(QtConcurrent::run([=]() mutable {
-      int nout = 0;
-      ft2_triggered_decode_(asyncBuf, &nqsoprogress, &nfqso, &nfa, &nfb,
-                            &ndepth, &ncontest,
-                            dec_data.params.mycall, dec_data.params.hiscall,
-                            &m_asyncMsg[0][0], &nout,
-                            (FCL)12, (FCL)12, (FCL)(100*80));
-    }));
-  });
+  connect(&m_asyncDecodeTimer, &QTimer::timeout, this, &MainWindow::asyncDecodeTimerFired);
   
   m_tci = m_config.is_tci();
   m_tci_audio = (m_config.tci_audio() && m_config.is_tci());
@@ -2680,13 +2649,14 @@ void MainWindow::dataSink(qint64 frames)
   int k(frames);
 
   // Async FT2: fill ring buffer with latest audio
-  if (m_mode == "FT2" && ui->cbAsyncDecode->isChecked() && k > 0) {
-    int nsamples = qMin(k, 90000);
+  if (m_mode == "FT2" && m_asyncDecodeTimer.isActive() && k > 0) {
+    int nsamples = qMin(k, ASYNC_RING_SIZE);
     int src_start = qMax(0, k - nsamples);
     for (int i = 0; i < nsamples; i++) {
-      m_asyncAudio[m_asyncAudioPos % 90000] = dec_data.d2[src_start + i];
+      m_asyncAudio[m_asyncAudioPos % ASYNC_RING_SIZE] = dec_data.d2[src_start + i];
       m_asyncAudioPos++;
     }
+    // m_asyncAudioPos tracks cumulative samples written
   }
 
   auto fname {QDir::toNativeSeparators(m_config.writeable_data_dir ().absoluteFilePath ("refspec.dat")).toLocal8Bit ()};
@@ -9544,6 +9514,15 @@ void MainWindow::stopTx()
     ptt0Timer.start(200);                //end-of-transmission sequencer delay
     monitor (true);
     statusUpdate ();
+  }
+
+  // Task 3c: FT2 async TX frequency hopping to avoid collisions
+  if (m_mode == "FT2" && m_asyncDecodeTimer.isActive() && m_auto) {
+    if (m_QSOProgress == CALLING) {
+      int hop = (QRandomGenerator::global()->bounded(51)) - 25;  // -25 to +25 Hz
+      int newFreq = qBound(200, ui->TxFreqSpinBox->value() + hop, 4900);
+      ui->TxFreqSpinBox->setValue(newFreq);
+    }
   }
 }
 
@@ -17556,8 +17535,10 @@ void MainWindow::on_cbAsyncDecode_toggled (bool checked)
     }
     if (checked && m_mode == "FT2") {
       m_asyncAudioPos = 0;
+      m_asyncDedupeSet.clear();
+      m_asyncDedupeLastClear = QDateTime::currentMSecsSinceEpoch();
       m_decodeDedup.clear();
-      m_asyncDecodeTimer.start(750);  // Level 2: sync-triggered every 750ms
+      m_asyncDecodeTimer.start(187);  // Turbo: 187ms = ~20 decodes/period
       ui->labelAsyncL2Active->setVisible(false);  // replaced by ASYMX badge
       ui->labelAsymxBadge->setVisible(true);
     } else {
@@ -17568,27 +17549,39 @@ void MainWindow::on_cbAsyncDecode_toggled (bool checked)
     }
 }
 
+// Helper: process decoded messages from an async decode buffer
 void MainWindow::asyncDecodeDone()
 {
     m_bAsyncDecoding = false;
     auto now = QDateTime::currentDateTimeUtc();
     auto hhmmss = now.toString("hhmmss");
+    qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
 
-    for (int i = 0; m_asyncMsg[i][0] && i < 100; i++) {
-      QString raw = QString::fromLatin1(m_asyncMsg[i]);
+    // Clear async dedup set every 10s
+    if (nowMs - m_asyncDedupeLastClear > 10000) {
+      m_asyncDedupeSet.clear();
+      m_asyncDedupeLastClear = nowMs;
+      // Clean up station hints older than 60s
+      QMutableMapIterator<QString, StationHint> it(m_knownStationHints);
+      while (it.hasNext()) { it.next(); if (nowMs - it.value().timestamp > 60000) it.remove(); }
+    }
+
+    for (int i = 0; i < 100 && m_asyncMsg[i][0]; i++) {
+      QString raw = QString::fromLatin1(m_asyncMsg[i], 80).trimmed();
       m_asyncMsg[i][0] = 0;
-      if (raw.trimmed().isEmpty()) continue;
+      if (raw.isEmpty()) continue;
 
-      // Async Fortran output: "snr(i4) dt(f5.1) freq(i5) ' ~ ' msg(a37) annot(a2)"
-      // Normal FT2 jt9 output: "HHMMSS(i6.6) snr(i4) dt(f5.1) freq(i5) ' + ' msg(a37) annot(a2)"
-      // Prepend timestamp to match normal format; replace " ~ " with " + " for consistency
       QString message = hhmmss + raw;
-      message.replace(" ~ ", " + ");  // match FT2 marker used by jt9
+      message.replace(" ~ ", " + ");
+
+      // Fast async dedup
+      QString dedupeKey = message.mid(14).trimmed();
+      if (m_asyncDedupeSet.contains(dedupeKey)) continue;
+      m_asyncDedupeSet.insert(dedupeKey);
 
       // Unified dedup: 5s window, best SNR wins
       if (isDuplicateDecode(message)) continue;
 
-      // Display in left (Band Activity) window
       DecodedText decodedtext {QString(message).replace(QChar::LineFeed, "")};
       ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
           m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
@@ -17597,10 +17590,54 @@ void MainWindow::asyncDecodeDone()
       postDecode(true, decodedtext);
       write_all("Rx", message);
 
-      // Auto-sequence — works normally with L2 decodes
+      // Task 3b: Store predictive DT hints
+      QString call = decodedtext.CQersCall();
+      if (!call.isEmpty()) {
+        StationHint hint;
+        hint.dt = decodedtext.dt();
+        hint.freq = decodedtext.frequencyOffset();
+        hint.timestamp = nowMs;
+        m_knownStationHints[call] = hint;
+      }
+
       if (m_bDXpedMode) dxpedAutoSequence(decodedtext);
       auto_sequence(decodedtext, ui->sbFtol->value(), ui->sbFtol->value());
     }
+}
+
+// Turbo async decode: fires every 187ms
+void MainWindow::asyncDecodeTimerFired()
+{
+  if (m_mode != "FT2") return;
+  if (m_transmitting) return;
+  if (m_bAsyncDecoding) return;  // previous decode still running
+  if (m_asyncAudioPos < ASYNC_DECODE_WINDOW) return;  // not enough audio yet
+
+  // Extract latest ASYNC_DECODE_WINDOW samples from ring buffer
+  static short int asyncBuf[45000];
+  int pos = m_asyncAudioPos;
+  int start = (pos - ASYNC_DECODE_WINDOW + ASYNC_RING_SIZE) % ASYNC_RING_SIZE;
+  for (int i = 0; i < ASYNC_DECODE_WINDOW; i++)
+    asyncBuf[i] = m_asyncAudio[(start + i) % ASYNC_RING_SIZE];
+
+  int nqsoprogress = m_QSOProgress;
+  int nfqso = m_wideGraph->rxFreq();
+  int nfa = m_wideGraph->nStartFreq();
+  int nfb = m_wideGraph->Fmax();
+  int ndepth = m_ndepth;
+  int ncontest = int(m_specOp);
+
+  m_bAsyncDecoding = true;
+  memset(m_asyncMsg, 0, sizeof(m_asyncMsg));
+
+  m_asyncDecodeWatcher.setFuture(QtConcurrent::run([=]() mutable {
+    int nout = 0;
+    ft2_triggered_decode_(asyncBuf, &nqsoprogress, &nfqso, &nfa, &nfb,
+                          &ndepth, &ncontest,
+                          dec_data.params.mycall, dec_data.params.hiscall,
+                          &m_asyncMsg[0][0], &nout,
+                          (FCL)12, (FCL)12, (FCL)(100*80));
+  }));
 }
 
 void MainWindow::on_ft8Button_clicked()

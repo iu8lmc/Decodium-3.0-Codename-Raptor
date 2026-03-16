@@ -219,20 +219,23 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
     if(ndepth0.ge.3) nsync_qual_min = 10
     if(nsync_qual.lt.nsync_qual_min) cycle
 
-! Scale LLRs from bitmetrics (3 metric types)
-    scalefac = 2.83
+! Scale LLRs from bitmetrics (3 metric types) — 3.2 matches FT8 for better LDPC separation
+    scalefac = 3.2
     llra(  1: 58) = bitmetrics(  9: 66, 1)
     llra( 59:116) = bitmetrics( 75:132, 1)
     llra(117:174) = bitmetrics(141:198, 1)
     llra = scalefac * llra
+    call normalizebmet(llra, 2*ND)
     llrb(  1: 58) = bitmetrics(  9: 66, 2)
     llrb( 59:116) = bitmetrics( 75:132, 2)
     llrb(117:174) = bitmetrics(141:198, 2)
     llrb = scalefac * llrb
+    call normalizebmet(llrb, 2*ND)
     llrc(  1: 58) = bitmetrics(  9: 66, 3)
     llrc( 59:116) = bitmetrics( 75:132, 3)
     llrc(117:174) = bitmetrics(141:198, 3)
     llrc = scalefac * llrc
+    call normalizebmet(llrc, 2*ND)
 
 ! Multi-metric: best-of (max |value|) and average
     do i = 1, 2*ND

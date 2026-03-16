@@ -16,6 +16,8 @@
 
 #include "revision_utils.hpp"
 
+#include <QRegularExpression>
+
 // GitHub repo — cambia se il repo cambia nome
 static constexpr char GITHUB_API_URL[] =
     "https://api.github.com/repos/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest";
@@ -45,23 +47,24 @@ UpdateChecker::UpdateChecker (QWidget * parent, bool silent)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Confronta tag remoto (es. "v3.0.2603060002") con build locale (es. "2603151750")
+// Confronta tag remoto (es. "v3.0.2603060002") con build locale (es. "2603152359")
 // Estrae la parte numerica finale e la confronta come intero.
 bool UpdateChecker::isNewerVersion (QString const& remoteTag) const
 {
   // Rimuove prefissi tipo "v3.0."
   QString cleaned = remoteTag;
-  cleaned.remove (QRegExp ("^v?[0-9]+\\.[0-9]+\\.?"));
+  cleaned.remove (QRegularExpression ("^v?[0-9]+\\.[0-9]+\\.?"));
   bool ok = false;
   qint64 remote = cleaned.toLongLong (&ok);
   if (!ok) return false;
 
   QString localTag = program_title ();
-  // program_title() restituisce "Decodium v3.0 FT2 Raptor v3.0.XXXXXXXXXX ..."
-  // Cerca il build number dopo "v3.0." (non ancorato alla fine)
-  QRegExp rx ("v3\\.0\\.(\\d{10})");
-  if (rx.indexIn (localTag) < 0) return false;
-  qint64 local = rx.cap (1).toLongLong ();
+  // program_title() restituisce "Decodium 3.0 ASYMX v3.0.XXXXXXXXXX ..."
+  // Cerca il build number dopo "v3.0."
+  QRegularExpression rx ("v3\\.0\\.(\\d{10})");
+  auto match = rx.match (localTag);
+  if (!match.hasMatch ()) return false;
+  qint64 local = match.captured (1).toLongLong ();
   return remote > local;
 }
 

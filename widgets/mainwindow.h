@@ -219,6 +219,7 @@ private slots:
   void on_cbSpeedyContest_toggled (bool checked);
   void on_cbDigitalMorse_toggled (bool checked);
   void asyncDecodeDone ();
+  void asyncDecodeTimerFired ();
   bool isDuplicateDecode (QString const& message);
   QStringList splitPackedDecodes (QString const& raw);
   void on_ft8Button_clicked();
@@ -913,19 +914,30 @@ private:
   QFuture<void> m_wav_future;
   QFutureWatcher<void> m_wav_future_watcher;
   QFutureWatcher<void> watcher3;
-  QFutureWatcher<void> m_asyncDecodeWatcher;
+  // ---- FT2 Async Decode System (Raptor Engine) ----
+  static constexpr int ASYNC_RING_SIZE = 90000;        // 7.5s ring buffer at 12kHz
+  static constexpr int ASYNC_DECODE_WINDOW = 45000;    // 3.75s decode window (= NMAX in Fortran)
   QTimer m_asyncDecodeTimer;
-  short int m_asyncAudio[90000];     // ring buffer ~7.5s at 12kHz
+  short int m_asyncAudio[90000];     // ring buffer 7.5s at 12kHz
   int m_asyncAudioPos {0};           // write position in ring buffer
+  // (unused members removed)
+  // Decoder
+  QFutureWatcher<void> m_asyncDecodeWatcher;
   bool m_bAsyncDecoding {false};     // async decode in progress
   char m_asyncMsg[100][80];          // async decode results
+  // Dedup
+  QSet<QString> m_asyncDedupeSet;    // fast dedup for async decodes
+  qint64 m_asyncDedupeLastClear {0};
   // Unified dedup: key → (best SNR, timestamp) — 5s sliding window
   struct DedupeEntry { int snr; qint64 msec; };
   QMap<QString, DedupeEntry> m_decodeDedup;
   qint64 m_decodeDedupLastPurge {0};
   bool m_bAsyncTxArmed {false};       // async TX ready after guard timer
-  QTimer m_asyncTxGuardTimer;         // 300ms guard between RX decode and TX start
+  QTimer m_asyncTxGuardTimer;         // 100ms guard between RX decode and TX start
   QMap<QString, qint64> m_qsoCooldown;  // callsign → timestamp: ignore 73 repeats for 30s
+  // Predictive DT hints (3b)
+  struct StationHint { double dt; double freq; qint64 timestamp; };
+  QMap<QString, StationHint> m_knownStationHints;
   bool m_bSpeedyContest {false};     // Speedy contest: double-click = instant TX
   bool m_bDigitalMorse {false};      // Digital Morse: Spacebar = manual TX fire
   bool m_bTxPreloaded {false};       // TX message pre-loaded, ready for manual fire

@@ -596,6 +596,7 @@ set (wsjt_FSRCS
   lib/sync65.f90
   lib/ft2/getcandidates2.f90
   lib/ft2/get_ft2_bitmetrics.f90
+  lib/ft2/normalizebmet.f90
   lib/ft4/getcandidates4.f90
   lib/ft4/get_ft4_bitmetrics.f90
   lib/ft8/sync8.f90
