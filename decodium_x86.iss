@@ -2,7 +2,7 @@
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
-#define MyBuildTag "2603160843"
+#define MyBuildTag "2603160857"
 #define DistDir "dist_32bit"
 
 [Setup]
@@ -22,6 +22,9 @@ SetupIconFile=icons\windows-icons\decodium.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
+CloseApplications=force
+CloseApplicationsFilter=decodium.exe,jt9.exe
+RestartApplications=no
 UninstallDisplayIcon={app}\decodium.exe
 PrivilegesRequired=lowest
 ; SignTool and SignedUninstaller require IDE config; exes are already signed

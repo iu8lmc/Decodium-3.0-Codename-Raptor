@@ -2,7 +2,7 @@
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
-#define MyBuildTag "2603160843"
+#define MyBuildTag "2603160857"
 #define DistDir "dist_64bit"
 
 [Setup]
@@ -22,6 +22,9 @@ SetupIconFile=icons\windows-icons\decodium.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
+CloseApplications=force
+CloseApplicationsFilter=decodium.exe,jt9.exe
+RestartApplications=no
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\decodium.exe

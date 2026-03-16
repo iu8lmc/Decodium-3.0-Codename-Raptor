@@ -64,7 +64,7 @@ public:
       lotw_downloader_.configure(network_manager_,
                                  url,
                                  csv_file_name,
-                                 "Decodium v3.0 FT2 Raptor 2603160843 LotW User Downloader");
+                                 "Decodium v3.0 FT2 Raptor 2603160857 LotW User Downloader");
       if (!connected_)
       {
         connect(&lotw_downloader_, &FileDownload::complete, [this, csv_file_name] {

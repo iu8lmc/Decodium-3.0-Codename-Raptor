@@ -14,6 +14,7 @@
 #include <QSysInfo>
 #include <QNetworkRequest>
 #include <QSettings>
+#include <QTextStream>
 #include <QDebug>
 
 #include "revision_utils.hpp"
@@ -49,7 +50,7 @@ UpdateChecker::UpdateChecker (QWidget * parent, bool silent)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Confronta tag remoto (es. "v3.0.2603060002") con build locale (es. "2603160843")
+// Confronta tag remoto (es. "v3.0.2603060002") con build locale (es. "2603160857")
 // Estrae la parte numerica finale e la confronta come intero.
 bool UpdateChecker::isNewerVersion (QString const& remoteTag) const
 {
@@ -233,8 +234,28 @@ void UpdateChecker::onDownloadFinished ()
 // ──────────────────────────────────────────────────────────────────────────────
 void UpdateChecker::launchInstaller (QString const& path)
 {
-  // Avvia l'installer in modo indipendente e chiudi l'app
-  QProcess::startDetached (path, {"/SILENT"});
+  // Chiudi prima l'app (rilascia il lock su decodium.exe),
+  // poi avvia l'installer con delay per dare tempo al processo di morire
+  QString installerPath = path;
+  // Usa un piccolo batch che aspetta 2s e poi lancia l'installer
+  QString batPath = QStandardPaths::writableLocation (QStandardPaths::TempLocation)
+                    + QDir::separator () + "decodium_update.bat";
+  QFile bat {batPath};
+  if (bat.open (QIODevice::WriteOnly | QIODevice::Text)) {
+    QTextStream ts {&bat};
+    ts << "@echo off\r\n"
+       << "timeout /t 2 /nobreak >nul\r\n"
+       << "\"" << QDir::toNativeSeparators (installerPath) << "\""
+       << " /VERYSILENT /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS"
+       << " /SUPPRESSMSGBOXES /NORESTART\r\n";
+    bat.close ();
+    QProcess::startDetached ("cmd.exe", {"/C", batPath});
+  } else {
+    // Fallback: lancia direttamente (meno affidabile)
+    QProcess::startDetached (installerPath,
+      {"/VERYSILENT", "/CLOSEAPPLICATIONS", "/FORCECLOSEAPPLICATIONS",
+       "/SUPPRESSMSGBOXES", "/NORESTART"});
+  }
   QApplication::quit ();
   deleteLater ();
 }
