@@ -8,7 +8,7 @@
 
 Fork of WSJT-X 3.0 focused on asynchronous FT2 — real-time decoding, instant TX, sensitivity close to FT8.
 
-**Build:** 2603162146 | **Author:** IU8LMC | **License:** GPL v3
+**Build:** 2603172124 | **Author:** IU8LMC | **License:** GPL v3
 
 ---
 
@@ -23,7 +23,7 @@ Digitally signed installers (SHA256 + DigiCert RFC3161 timestamp).
 
 ---
 
-## What's New — Build 2603162146
+## What's New — Build 2603172124
 
 ### [EN] English
 
@@ -170,8 +170,18 @@ The heart of Decodium Fast Track 2 is the **Raptor Engine**, an asynchronous FT2
 | **syncmin 0.82** | Lower sync threshold for weak signals | +5% candidates |
 | **Freq range 200-5500 Hz** | +600 Hz useful bandwidth | +12% space |
 | **4 subtraction passes** | Extra pass to recover hidden signals | +5-10% decodes |
+| **Adaptive Channel Estimation** | MMSE equalization from Costas pilots, SNR-weighted LLR | +0.5-1.5 dB on HF |
 
-**Estimated overall gain: +2.0 to +3.5 dB over standard FT2 decoder**
+**Estimated overall gain: +2.5 to +5.0 dB over standard FT2 decoder**
+
+### Adaptive Channel Estimation (MMSE)
+
+New in Build 2603172124 — real-time channel equalization for HF fading channels:
+
+- **`lib/ft2/ft2_channel_est.f90`** — Estimates complex channel gain H(k) from the 16 Costas sync symbols, linearly interpolates across all 103 symbols, applies MMSE equalization, and computes per-symbol SNR
+- **`lib/ft2/get_ft2_bitmetrics.f90`** — Integrates equalized metrics: detects fading (>3 dB SNR variation), blends original and equalized bit metrics proportionally to fading depth
+- **AWGN static channel** → no modification (fading <3 dB, bypass) — zero cost on clean signals
+- **HF selective fading** → MMSE equalization + SNR-weighted LLR → +0.5 to +1.5 dB improvement
 
 ### Async FT2 — Real-Time Decoding
 
@@ -309,6 +319,7 @@ FT8, FT4, JT65, JT9, JT4, Q65, MSK144, WSPR, FST4, FST4W, Echo, FreqCal
 | **Language Menu** | **10 languages** | **No** |
 | **Band Activity Colors** | **All messages** | **CQ only** |
 | **Async Visualizer** | **Sine wave + S-meter** | **No** |
+| **Channel Estimation** | **MMSE adaptive (Costas pilots)** | **No** |
 
 ---
 
@@ -344,6 +355,11 @@ build_installers.bat
 ---
 
 ## Changelog
+
+### Build 2603172124 (2026-03-17)
+- **Adaptive Channel Estimation**: MMSE equalization from 16 Costas pilot symbols, per-symbol SNR weighting, +0.5-1.5 dB on HF fading channels (bypass on AWGN)
+- **S-meter SNR fix**: feed from jt9 standard decode path (where FT2 decodes actually arrive)
+- **Remove debug logging**: decodium_smeter.log removed
 
 ### Build 2603162146 (2026-03-16)
 - **Band Activity Colors**: DXCC/B4/Grid/Continent highlighting on non-CQ messages
