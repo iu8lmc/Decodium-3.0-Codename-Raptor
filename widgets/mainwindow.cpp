@@ -17611,7 +17611,7 @@ void MainWindow::on_cbAsyncDecode_toggled (bool checked)
       m_asyncDedupeSet.clear();
       m_asyncDedupeLastClear = QDateTime::currentMSecsSinceEpoch();
       m_decodeDedup.clear();
-      m_asyncDecodeTimer.start(187);  // Turbo: 187ms = ~20 decodes/period
+      m_asyncDecodeTimer.start(100);  // Turbo: 100ms — decode as fast as possible
       ui->labelAsyncL2Active->setVisible(false);  // replaced by async visualizer
       ui->labelAsymxBadge->setVisible(false);
       if (m_asyncVis) { m_asyncVis->setVisible(true); m_asyncVis->start(); }
@@ -17632,14 +17632,16 @@ void MainWindow::asyncDecodeDone()
     auto hhmmss = now.toString("hhmmss");
     qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
 
-    // Clear async dedup set every 10s
+    // Purge station hints every 10s (lightweight)
     if (nowMs - m_asyncDedupeLastClear > 10000) {
-      m_asyncDedupeSet.clear();
       m_asyncDedupeLastClear = nowMs;
-      // Clean up station hints older than 60s
       QMutableMapIterator<QString, StationHint> it(m_knownStationHints);
       while (it.hasNext()) { it.next(); if (nowMs - it.value().timestamp > 60000) it.remove(); }
     }
+
+    // Collect decodes for deferred heavy processing
+    struct DeferredDecode { DecodedText dt; QString msg; };
+    QList<DeferredDecode> deferred;
 
     for (int i = 0; i < 100 && m_asyncMsg[i][0]; i++) {
       QString raw = QString::fromLatin1(m_asyncMsg[i], 80).trimmed();
@@ -17649,44 +17651,46 @@ void MainWindow::asyncDecodeDone()
       QString message = hhmmss + raw;
       message.replace(" ~ ", " + ");
 
-      // Fast async dedup
-      QString dedupeKey = message.mid(14).trimmed();
-      if (m_asyncDedupeSet.contains(dedupeKey)) continue;
-      m_asyncDedupeSet.insert(dedupeKey);
-
-      // Unified dedup: 5s window, best SNR wins
+      // Unified dedup: 5s window, best SNR wins (single dedup layer)
       if (isDuplicateDecode(message)) continue;
 
       DecodedText decodedtext {QString(message).replace(QChar::LineFeed, "")};
 
-      // Callsign filter removed — was blocking valid FT2 decodes
-
+      // === DISPLAY FIRST — minimal latency to Band Activity ===
       ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
           m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
           false, false, 0.0, false, -99, "", m_muted);
 
-      postDecode(true, decodedtext);
-      write_all("Rx", message);
-
-      // Update async visualizer with latest SNR
+      // Update async visualizer with latest SNR (cheap)
       if (m_asyncVis) m_asyncVis->setSnr(decodedtext.snr());
 
-      // Task 3b: Store predictive DT hints
-      QString call = decodedtext.CQersCall();
-      if (!call.isEmpty()) {
-        StationHint hint;
-        hint.dt = decodedtext.dt();
-        hint.freq = decodedtext.frequencyOffset();
-        hint.timestamp = nowMs;
-        m_knownStationHints[call] = hint;
-      }
-
+      // Auto-sequence must run synchronously (drives TX timing)
       if (m_bDXpedMode) dxpedAutoSequence(decodedtext);
       auto_sequence(decodedtext, ui->sbFtol->value(), ui->sbFtol->value());
+
+      // Store predictive DT hints (cheap)
+      QString call = decodedtext.CQersCall();
+      if (!call.isEmpty()) {
+        m_knownStationHints[call] = {decodedtext.dt(),
+                                      static_cast<double>(decodedtext.frequencyOffset()), nowMs};
+      }
+
+      // Defer heavy work: postDecode (DXCC lookup, logbook match, UDP) + write_all (file I/O)
+      deferred.append({decodedtext, message});
+    }
+
+    // Deferred heavy processing — runs after display is updated
+    if (!deferred.isEmpty()) {
+      QTimer::singleShot(0, this, [this, deferred]() {
+        for (auto const& d : deferred) {
+          postDecode(true, d.dt);
+          write_all("Rx", d.msg);
+        }
+      });
     }
 }
 
-// Turbo async decode: fires every 187ms
+// Turbo async decode: fires every 100ms
 void MainWindow::asyncDecodeTimerFired()
 {
   if (m_mode != "FT2") return;
