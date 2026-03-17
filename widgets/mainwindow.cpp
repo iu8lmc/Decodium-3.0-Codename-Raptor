@@ -7647,6 +7647,12 @@ void MainWindow::readFromStdout()                             //readFromStdout
                                                           ui->cbCQonly->isVisible() && ui->cbCQonly->isChecked(),
                                                           haveFSpread, fSpread, bDisplayPoints, m_points, distance, m_muted);
           }
+
+          // Feed S-meter from jt9 standard decode path (where FT2 decodes actually arrive)
+          if (m_mode == "FT2" && m_asyncVis && m_asyncVis->isVisible()) {
+              m_asyncVis->setSnr(decodedtext1.snr());
+          }
+
           if(m_position != 0) ui->decodedTextBrowser->horizontalScrollBar()->setValue(m_position);
           if (m_mode=="FT8" && m_multithreadFT8 && m_ft8DecoderStart<2) earlyDecodes.append(line_read); //ft8md
         }
@@ -17660,7 +17666,8 @@ void MainWindow::asyncDecodeDone()
 
       // Feed S-meter: SNR at Fortran i4 position (first 4 chars)
       {
-        int rawSnr = raw.mid(0, 4).trimmed().toInt();
+        QString snrField = raw.mid(0, 4);
+        int rawSnr = snrField.trimmed().toInt();
         if (rawSnr > bestSnr) bestSnr = rawSnr;
       }
 
