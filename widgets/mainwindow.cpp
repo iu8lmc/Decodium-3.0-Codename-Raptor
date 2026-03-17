@@ -2433,7 +2433,7 @@ void MainWindow::readSettings()
   ui->cbHoldTxFreq->setChecked (m_settings->value ("HoldTxFreq", false).toBool ());
   HoldTxFreqStatus = m_settings->value ("HoldTxFreq", false).toBool ();
   ui->cbCQonly->setChecked (m_settings->value ("CQonly", false).toBool ());
-  ui->cbSpotting->setChecked (m_settings->value ("Spotting", true).toBool ());
+  ui->cbSpotting->setChecked (m_settings->value ("Spotting", false).toBool ());
   ui->cbBypass->setChecked (m_settings->value ("BypassFilters", false).toBool ());
   m_pwrBandTxMemory=m_settings->value("pwrBandTxMemory").toHash();
   m_pwrBandTuneMemory=m_settings->value("pwrBandTuneMemory").toHash();
@@ -12518,8 +12518,10 @@ void MainWindow::acceptQSO (QDateTime const& QSO_date_off, QString const& call, 
     m_cloudlog.logQso(ADIF);
   }
 
-  // Send DX spot to cluster
-  sendDxSpot(call, dial_freq, mode);
+  // Send DX spot to cluster — only if spotting is enabled
+  if (ui->cbSpotting->isChecked()) {
+    sendDxSpot(call, dial_freq, mode);
+  }
 
   blocked=true;                                      // needed to clear DXgrid only optionally
   if (m_config.clear_DXcall ()) clearDX ();
@@ -20542,6 +20544,20 @@ void MainWindow::showStartupBanner ()
 void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString const& mode)
 {
   if (call.isEmpty() || m_config.my_callsign().isEmpty()) return;
+
+  // Rate limit: max 20 spots per hour per user
+  {
+    qint64 now = QDateTime::currentMSecsSinceEpoch();
+    static QList<qint64> spotTimestamps;
+    // Purge entries older than 1 hour
+    while (!spotTimestamps.isEmpty() && (now - spotTimestamps.first()) > 3600000)
+      spotTimestamps.removeFirst();
+    if (spotTimestamps.size() >= 20) {
+      qDebug() << "DX Spot rate limit reached (20/hour) — spot suppressed for" << call;
+      return;
+    }
+    spotTimestamps.append(now);
+  }
 
   QString clusterHost = "w3lpl.net";
   int clusterPort = 7373;
