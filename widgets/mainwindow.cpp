@@ -17644,6 +17644,7 @@ void MainWindow::asyncDecodeDone()
     // Collect decodes for deferred heavy processing
     struct DeferredDecode { DecodedText dt; QString msg; };
     QList<DeferredDecode> deferred;
+    int bestSnr = -99;
 
     for (int i = 0; i < 100 && m_asyncMsg[i][0]; i++) {
       QString raw = QString::fromLatin1(m_asyncMsg[i], 80).trimmed();
@@ -17652,6 +17653,13 @@ void MainWindow::asyncDecodeDone()
 
       QString message = hhmmss + raw;
       message.replace(" ~ ", " + ");
+
+      // Feed S-meter with SNR from ALL decodes (even dupes) for real-time display
+      {
+        int i1 = message.indexOf(' ') + 1;
+        int rawSnr = message.mid(i1, 3).trimmed().toInt();
+        if (rawSnr > bestSnr) bestSnr = rawSnr;
+      }
 
       // Unified dedup: 5s window, best SNR wins (single dedup layer)
       if (isDuplicateDecode(message)) continue;
@@ -17662,9 +17670,6 @@ void MainWindow::asyncDecodeDone()
       ui->decodedTextBrowser->displayDecodedText(decodedtext, m_config.my_callsign(),
           m_mode, m_config.DXCC(), m_logBook, m_currentBandPeriod, m_config.ppfx(),
           false, false, 0.0, false, -99, "", m_muted);
-
-      // Update async visualizer with latest SNR (cheap)
-      if (m_asyncVis) m_asyncVis->setSnr(decodedtext.snr());
 
       // Auto-sequence must run synchronously (drives TX timing)
       if (m_bDXpedMode) dxpedAutoSequence(decodedtext);
@@ -17680,6 +17685,9 @@ void MainWindow::asyncDecodeDone()
       // Defer heavy work: postDecode (DXCC lookup, logbook match, UDP) + write_all (file I/O)
       deferred.append({decodedtext, message});
     }
+
+    // Update S-meter with best SNR from this decode batch (includes dupes)
+    if (m_asyncVis && bestSnr > -99) m_asyncVis->setSnr(bestSnr);
 
     // Deferred heavy processing — runs after display is updated
     if (!deferred.isEmpty()) {
@@ -20545,15 +20553,59 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
 {
   if (call.isEmpty() || m_config.my_callsign().isEmpty()) return;
 
-  // Rate limit: max 20 spots per hour per user
+  // ── DX-only filter: only spot real DX (different continent or >3000km) ──
+  {
+    auto const& myLookup = m_logBook.countries()->lookup(m_config.my_callsign());
+    auto const& dxLookup = m_logBook.countries()->lookup(call);
+
+    // Must be a valid DXCC entity
+    if (dxLookup.entity_name.isEmpty()) {
+      qDebug() << "DX Spot suppressed: unknown DXCC entity for" << call;
+      return;
+    }
+
+    // Same continent = not DX (unless distance > 3000km via grid)
+    bool sameContinent = (myLookup.continent == dxLookup.continent);
+
+    // Check distance if we have grids
+    QString dxGrid = ui->dxGridEntry->text().trimmed();
+    QString myGrid = m_config.my_grid();
+    int nDkm = 0;
+    if (myGrid.length() >= 4 && dxGrid.length() >= 4) {
+      double utch = 0.0;
+      int nAz, nEl, nDmiles, nHotAz, nHotABetter;
+      azdist_(const_cast<char*>((myGrid + "      ").left(6).toLatin1().constData()),
+              const_cast<char*>((dxGrid + "      ").left(6).toLatin1().constData()),
+              &utch, &nAz, &nEl, &nDmiles, &nDkm, &nHotAz, &nHotABetter, (FCL)6, (FCL)6);
+    }
+
+    if (sameContinent && nDkm < 3000) {
+      qDebug() << "DX Spot suppressed: same continent and" << nDkm << "km for" << call;
+      return;
+    }
+
+    // Only spot new DXCC or new country on band (not already-worked stations)
+    bool callB4, countryB4, gridB4, continentB4, CQZoneB4, ITUZoneB4;
+    bool callB4onBand, countryB4onBand, gridB4onBand, continentB4onBand, CQZoneB4onBand, ITUZoneB4onBand;
+    m_logBook.match(call, m_mode, dxGrid, dxLookup,
+                    callB4, countryB4, gridB4, continentB4, CQZoneB4, ITUZoneB4);
+    m_logBook.match(call, m_mode, dxGrid, dxLookup,
+                    callB4onBand, countryB4onBand, gridB4onBand,
+                    continentB4onBand, CQZoneB4onBand, ITUZoneB4onBand, m_currentBand);
+    if (countryB4onBand) {
+      qDebug() << "DX Spot suppressed: country already worked on band for" << call;
+      return;
+    }
+  }
+
+  // Rate limit: max 10 spots per hour per user
   {
     qint64 now = QDateTime::currentMSecsSinceEpoch();
     static QList<qint64> spotTimestamps;
-    // Purge entries older than 1 hour
     while (!spotTimestamps.isEmpty() && (now - spotTimestamps.first()) > 3600000)
       spotTimestamps.removeFirst();
-    if (spotTimestamps.size() >= 20) {
-      qDebug() << "DX Spot rate limit reached (20/hour) — spot suppressed for" << call;
+    if (spotTimestamps.size() >= 10) {
+      qDebug() << "DX Spot rate limit reached (10/hour) — spot suppressed for" << call;
       return;
     }
     spotTimestamps.append(now);
@@ -20564,7 +20616,7 @@ void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString co
   QString myCall = m_config.my_callsign();
   double freqKHz = dial_freq / 1e3;
 
-  QString spotCmd = QString("DX %1 %2 73 Tnx %3")
+  QString spotCmd = QString("DX %1 %2 %3 via Decodium")
       .arg(freqKHz, 0, 'f', 1)
       .arg(call)
       .arg(mode);
