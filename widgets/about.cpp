@@ -18,7 +18,7 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
     "<p align=\"center\"><img src=\":/ft2logo.png\" width=\"180\" height=\"180\" /></p>"
     "<h2 align=\"center\">Decodium Fast Track 2</h2>"
     "<h3 align=\"center\"><i>" + tr("Official Release") + "</i></h3>"
-    "<p align=\"center\" style=\"font-size:14px;\"><b>Build 2603170141</b></p>"
+    "<p align=\"center\" style=\"font-size:14px;\"><b>Build 2603171317</b></p>"
     "<p align=\"center\">"
     "<a href=\"https://buymeacoffee.com/iu8lmc\" style=\""
     "background-color:#FFDD00;color:#000000;font-family:Arial,sans-serif;"
