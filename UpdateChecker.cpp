@@ -21,14 +21,13 @@
 
 #include <QRegularExpression>
 
-// GitHub repo — cambia se il repo cambia nome
+// GitHub repo
 static constexpr char GITHUB_API_URL[] =
     "https://api.github.com/repos/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest";
 
 // ──────────────────────────────────────────────────────────────────────────────
 void UpdateChecker::checkForUpdates (QWidget * parent, bool silent)
 {
-  // L'oggetto si auto-distrugge quando ha finito
   auto * checker = new UpdateChecker {parent, silent};
   Q_UNUSED (checker);
 }
@@ -50,17 +49,13 @@ UpdateChecker::UpdateChecker (QWidget * parent, bool silent)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Confronta tag remoto (es. "v3.0.") con build locale.
-// Estrae il build number (10 cifre YYMMDDHHMM) da entrambi e confronta.
 bool UpdateChecker::isNewerVersion (QString const& remoteTag) const
 {
-  // Estrai il build number dal tag remoto: cerca 10 cifre consecutive
   static QRegularExpression rxDigits {R"((\d{10}))"};
   auto remoteMatch = rxDigits.match (remoteTag);
   if (!remoteMatch.hasMatch ()) return false;
   qint64 remote = remoteMatch.captured (1).toLongLong ();
 
-  // Estrai il build number dal titolo locale
   QString localTag = program_title ();
   auto localMatch = rxDigits.match (localTag);
   if (!localMatch.hasMatch ()) return false;
@@ -81,8 +76,8 @@ void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
 
   if (reply->error () != QNetworkReply::NoError) {
     if (!m_silent)
-      QMessageBox::warning (m_parent, tr ("Aggiornamento"),
-                            tr ("Impossibile contattare il server:\n%1")
+      QMessageBox::warning (m_parent, tr ("Update"),
+                            tr ("Unable to contact the server:\n%1")
                             .arg (reply->errorString ()));
     deleteLater ();
     return;
@@ -99,27 +94,27 @@ void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
 
   if (!isNewerVersion (m_remoteVersion)) {
     if (!m_silent)
-      QMessageBox::information (m_parent, tr ("Aggiornamento"),
-                                tr ("Decodium è aggiornato all'ultima versione.\n\n"
-                                    "Versione remota: %1\n"
-                                    "Versione locale: %2")
+      QMessageBox::information (m_parent, tr ("Update"),
+                                tr ("Decodium is up to date.\n\n"
+                                    "Remote version: %1\n"
+                                    "Local version: %2")
                                 .arg (m_remoteVersion)
                                 .arg (program_title ()));
     deleteLater ();
     return;
   }
 
-  // Skip se l'utente ha già rifiutato questa versione (solo in modalità silent/auto)
+  // Skip if user already dismissed this version (silent/auto mode only)
   if (m_silent) {
     QSettings settings;
     QString skipped = settings.value ("UpdateChecker/SkippedVersion").toString ();
     if (skipped == m_remoteVersion) {
       deleteLater ();
-      return;  // utente ha scelto "Non ora" per questa versione
+      return;
     }
   }
 
-  // Cerca l'asset giusto per questa architettura
+  // Find the right asset for this architecture
   QString arch = (QSysInfo::currentCpuArchitecture () == "x86_64") ? "x64" : "x86";
   QJsonArray assets = root["assets"].toArray ();
   for (auto const& a : assets) {
@@ -131,25 +126,24 @@ void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
   }
 
   QString notes = root["body"].toString ().left (400);
-  QString msg   = tr ("Nuova versione disponibile: <b>%1</b><br><br>"
+  QString msg   = tr ("New version available: <b>%1</b><br><br>"
                       "%2<br><br>"
-                      "Vuoi scaricare e installare l'aggiornamento adesso?")
+                      "Would you like to download and install the update now?")
                   .arg (m_remoteVersion)
                   .arg (notes.toHtmlEscaped ().replace ("\n", "<br>"));
 
   QMessageBox box {m_parent};
-  box.setWindowTitle (tr ("Aggiornamento Decodium"));
+  box.setWindowTitle (tr ("Decodium Update"));
   box.setTextFormat  (Qt::RichText);
   box.setText        (msg);
-  QPushButton *btnYes  = box.addButton (tr ("Sì, aggiorna"), QMessageBox::AcceptRole);
-  QPushButton *btnSkip = box.addButton (tr ("Non ora (non chiedere più per questa versione)"), QMessageBox::RejectRole);
-  box.addButton (tr ("Più tardi"), QMessageBox::DestructiveRole);
+  QPushButton *btnYes  = box.addButton (tr ("Yes, update"), QMessageBox::AcceptRole);
+  QPushButton *btnSkip = box.addButton (tr ("Not now (don't ask again for this version)"), QMessageBox::RejectRole);
+  box.addButton (tr ("Later"), QMessageBox::DestructiveRole);
   box.setDefaultButton (btnYes);
   box.setIcon (QMessageBox::Information);
   box.exec ();
 
   if (box.clickedButton () == btnSkip) {
-    // Ricorda: non chiedere più per questa versione
     QSettings settings;
     settings.setValue ("UpdateChecker/SkippedVersion", m_remoteVersion);
     deleteLater ();
@@ -161,7 +155,6 @@ void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
     return;
   }
 
-  // Avvia il download
   QString filename = QStringLiteral ("Decodium_%1_Setup.exe").arg (m_remoteVersion);
   startDownload (m_assetUrl, filename);
 }
@@ -174,13 +167,13 @@ void UpdateChecker::startDownload (QString const& url, QString const& filename)
 
   m_outFile = new QFile {destPath, this};
   if (!m_outFile->open (QIODevice::WriteOnly)) {
-    QMessageBox::critical (m_parent, tr ("Aggiornamento"),
-                           tr ("Impossibile scrivere nella cartella temporanea:\n%1").arg (destPath));
+    QMessageBox::critical (m_parent, tr ("Update"),
+                           tr ("Unable to write to temporary folder:\n%1").arg (destPath));
     deleteLater ();
     return;
   }
 
-  m_progress = new QProgressDialog {tr ("Download aggiornamento…"), tr ("Annulla"),
+  m_progress = new QProgressDialog {tr ("Downloading update…"), tr ("Cancel"),
                                     0, 100, m_parent};
   m_progress->setWindowModality (Qt::WindowModal);
   m_progress->setMinimumDuration (0);
@@ -222,27 +215,24 @@ void UpdateChecker::onDownloadFinished ()
   if (m_outFile)  { m_outFile->close ();  }
 
   if (m_downloadReply->error () != QNetworkReply::NoError) {
-    QMessageBox::critical (m_parent, tr ("Aggiornamento"),
-                           tr ("Download fallito:\n%1").arg (m_downloadReply->errorString ()));
+    QMessageBox::critical (m_parent, tr ("Update"),
+                           tr ("Download failed:\n%1").arg (m_downloadReply->errorString ()));
     deleteLater ();
     return;
   }
 
   QString path = m_outFile->fileName ();
-  QMessageBox::information (m_parent, tr ("Aggiornamento"),
-                             tr ("Download completato.\n"
-                                 "L'installer verrà avviato.\n"
-                                 "Decodium si chiuderà automaticamente."));
+  QMessageBox::information (m_parent, tr ("Update"),
+                             tr ("Download complete.\n"
+                                 "The installer will now launch.\n"
+                                 "Decodium will close automatically."));
   launchInstaller (path);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
 void UpdateChecker::launchInstaller (QString const& path)
 {
-  // Chiudi prima l'app (rilascia il lock su decodium.exe),
-  // poi avvia l'installer con delay per dare tempo al processo di morire
   QString installerPath = path;
-  // Usa un piccolo batch che aspetta 2s e poi lancia l'installer
   QString batPath = QStandardPaths::writableLocation (QStandardPaths::TempLocation)
                     + QDir::separator () + "decodium_update.bat";
   QFile bat {batPath};
@@ -256,7 +246,6 @@ void UpdateChecker::launchInstaller (QString const& path)
     bat.close ();
     QProcess::startDetached ("cmd.exe", {"/C", batPath});
   } else {
-    // Fallback: lancia direttamente (meno affidabile)
     QProcess::startDetached (installerPath,
       {"/VERYSILENT", "/CLOSEAPPLICATIONS", "/FORCECLOSEAPPLICATIONS",
        "/SUPPRESSMSGBOXES", "/NORESTART"});
