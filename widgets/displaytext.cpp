@@ -631,15 +631,7 @@ void DisplayText::displayDecodedText(DecodedText const& decodedText, QString con
     }
   else
     {
-      if (displayDXCCEntity)
-        {
-          // apply DXCC/B4 highlighting to non-CQ messages too
-          auto currentMode = mode;
-          message = appendWorkedB4 (message, dxCall, dxGrid, &bg, &fg
-                                    , logBook, currentBand, currentMode, extra
-                                    , false /* isCQ */);
-        }
-      else if (m_config->show_country_names())
+      if (m_config->show_country_names())
         {
           auto const& looked_up = logBook.countries ()->lookup (dxCall);
           auto countryName = looked_up.entity_name;
