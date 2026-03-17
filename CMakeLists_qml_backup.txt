@@ -1,0 +1,517 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(Decodium VERSION 3.0.0 LANGUAGES CXX C Fortran)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+# Workaround: GCC 15+ moc_predefs.h generation fails with AutoMOC
+set(CMAKE_AUTOMOC_COMPILER_PREDEFINES OFF)
+
+# Workaround: Qt5 headers in /mingw64/include/QtCore conflict with Qt6.
+if(MINGW)
+    include_directories(BEFORE SYSTEM "${CMAKE_PREFIX_PATH}/../include/qt6")
+    add_compile_options("-isystem${CMAKE_PREFIX_PATH}/../include/qt6")
+endif()
+
+# CMake module path for FindHamlib, FindFFTW3, etc.
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake/Modules)
+
+# ============================================================
+# Qt6
+# ============================================================
+find_package(Qt6 REQUIRED COMPONENTS
+    Core Gui Widgets Qml Quick QuickControls2
+    Multimedia SerialPort Sql Network WebSockets Svg)
+
+if(WIN32)
+    find_package(Qt6 COMPONENTS AxContainer)
+endif()
+
+# ============================================================
+# External dependencies
+# ============================================================
+find_package(FFTW3 COMPONENTS single threads REQUIRED)
+find_package(Boost 1.62 COMPONENTS log_setup log)
+
+# Hamlib
+find_package(PkgConfig QUIET)
+if(PKG_CONFIG_FOUND)
+    pkg_check_modules(HAMLIB IMPORTED_TARGET hamlib)
+endif()
+if(NOT HAMLIB_FOUND)
+    find_library(HAMLIB_LIBRARIES NAMES hamlib)
+    find_path(HAMLIB_INCLUDE_DIRS hamlib/rig.h)
+    if(HAMLIB_LIBRARIES AND HAMLIB_INCLUDE_DIRS)
+        set(HAMLIB_FOUND TRUE)
+    endif()
+endif()
+
+# ============================================================
+# Fortran compiler flags
+# ============================================================
+if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp -fno-second-underscore -fno-range-check -ffixed-line-length-none -fallow-argument-mismatch")
+    set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
+    set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -Wall -Wno-unused-variable")
+endif()
+
+# ============================================================
+# Fortran source files - decoder backend
+# ============================================================
+file(GLOB FORT_LIB_SOURCES lib/*.f90)
+file(GLOB FORT_FT2_SOURCES lib/ft2/*.f90)
+file(GLOB FORT_FT4_SOURCES lib/ft4/*.f90)
+file(GLOB FORT_FT8_SOURCES lib/ft8/*.f90)
+file(GLOB FORT_FST4_SOURCES lib/fst4/*.f90)
+file(GLOB FORT_77BIT_SOURCES lib/77bit/*.f90)
+file(GLOB FORT_FT8VAR_SOURCES lib/ft8var/*.f90)
+file(GLOB FORT_FTRSD_SOURCES lib/ftrsd/*.f90)
+file(GLOB FORT_FTRSD_C_SOURCES lib/ftrsd/*.c)
+file(GLOB FORT_SUPERFOX_SOURCES lib/superfox/*.f90)
+file(GLOB FORT_SUPERFOX_QPC_SOURCES lib/superfox/qpc/*.f90)
+file(GLOB FORT_SUPERFOX_QPC_C_SOURCES lib/superfox/qpc/*.c)
+file(GLOB FORT_QSO50_SOURCES lib/qso50/*.f90)
+file(GLOB FORT_WSPRCODE_SOURCES lib/wsprcode/*.f90)
+file(GLOB FORT_QRA_Q65_SOURCES lib/qra/q65/*.f90)
+file(GLOB FORT_QRA_Q65_C_SOURCES lib/qra/q65/*.c)
+file(GLOB FORT_QRA_CODES_C_SOURCES lib/qra/qracodes/*.c)
+file(GLOB FORT_WSPRD_SOURCES lib/wsprd/*.f90)
+file(GLOB FORT_WSPRD_C_SOURCES lib/wsprd/*.c)
+
+# Exclude standalone test programs and sim programs from library
+list(FILTER FORT_LIB_SOURCES EXCLUDE REGEX ".*[Ss]im.*\\.f90$")
+list(FILTER FORT_LIB_SOURCES EXCLUDE REGEX ".*test.*\\.f90$")
+list(FILTER FORT_LIB_SOURCES EXCLUDE REGEX ".*allsim\\.f90$")
+list(FILTER FORT_LIB_SOURCES EXCLUDE REGEX ".*chkfft.*\\.f90$")
+list(FILTER FORT_LIB_SOURCES EXCLUDE REGEX ".*calibrate\\.f90$")
+list(FILTER FORT_LIB_SOURCES EXCLUDE REGEX ".*ldpcsim.*\\.f90$")
+
+# Exclude Fortran include/data files
+set(FORT_INCLUDE_FILES
+    constants conv232 fftw3 fil61 fmeasure jt4a jt9com jt9sync
+    pfx prcom testmsg avg4 msk144_testmsg
+    ldpc_128_90_b_generator ldpc_128_90_b_reordered_parity
+    ldpc_128_90_generator ldpc_128_90_reordered_parity
+    sfrsd fst280_decode
+)
+foreach(_f ${FORT_INCLUDE_FILES})
+    list(FILTER FORT_LIB_SOURCES EXCLUDE REGEX ".*/${_f}\\.f90$")
+endforeach()
+
+# Exclude standalone programs
+set(FORT_STANDALONE_PROGRAMS
+    allcall jt9 map65
+    cablog code426 contest72 count4
+    EchoCallSim emedop fcal fer65 fersum
+    fixwav fmtave genmet jt4code
+    jt65 jt65code jt9code jt9w
+    msk144code mskber psk_parse
+    rtty_spec q65params qra64code stats timefft
+)
+foreach(_f ${FORT_STANDALONE_PROGRAMS})
+    list(FILTER FORT_LIB_SOURCES EXCLUDE REGEX ".*/${_f}\\.f90$")
+endforeach()
+
+# Exclude sim/test from subdirectories
+list(FILTER FORT_FT8_SOURCES EXCLUDE REGEX ".*[Ss]im.*\\.f90$")
+list(FILTER FORT_FT8_SOURCES EXCLUDE REGEX ".*test.*\\.f90$")
+list(FILTER FORT_FT4_SOURCES EXCLUDE REGEX ".*[Ss]im.*\\.f90$")
+list(FILTER FORT_FT4_SOURCES EXCLUDE REGEX ".*test.*\\.f90$")
+list(FILTER FORT_FT2_SOURCES EXCLUDE REGEX ".*[Ss]im.*\\.f90$")
+list(FILTER FORT_FST4_SOURCES EXCLUDE REGEX ".*[Ss]im.*\\.f90$")
+list(FILTER FORT_FST4_SOURCES EXCLUDE REGEX ".*ldpcsim.*\\.f90$")
+
+# Exclude Fortran include/parameter files from ALL subdirectories
+set(FORT_SUBDIR_INCLUDE_FILES
+    ft2_params gcom1 cdatetime
+    ft4_params ft4_testmsg
+    ft8_params ft8_testmsg h1
+    ldpc_174_87_params ldpc_174_91_c_colorder
+    ldpc_174_91_c_generator ldpc_174_91_c_parity
+    baddatavar call_q callsign_q syncdist
+    ldpc_174_91_c_reordered_parity
+    fst4_params
+    gtag
+    ldpc_240_101_generator ldpc_240_101_parity
+    ldpc_240_74_generator ldpc_240_74_parity
+)
+foreach(_f ${FORT_SUBDIR_INCLUDE_FILES})
+    list(FILTER FORT_FT2_SOURCES EXCLUDE REGEX ".*/${_f}\\.f90$")
+    list(FILTER FORT_FT4_SOURCES EXCLUDE REGEX ".*/${_f}\\.f90$")
+    list(FILTER FORT_FT8_SOURCES EXCLUDE REGEX ".*/${_f}\\.f90$")
+    list(FILTER FORT_FST4_SOURCES EXCLUDE REGEX ".*/${_f}\\.f90$")
+    list(FILTER FORT_FT8VAR_SOURCES EXCLUDE REGEX ".*/${_f}\\.f90$")
+    list(FILTER FORT_SUPERFOX_SOURCES EXCLUDE REGEX ".*/${_f}\\.f90$")
+endforeach()
+
+# Exclude sim/test from additional subdirectories
+list(FILTER FORT_FT8VAR_SOURCES EXCLUDE REGEX ".*[Ss]im.*\\.f90$")
+list(FILTER FORT_SUPERFOX_SOURCES EXCLUDE REGEX ".*[Ss]im.*\\.f90$")
+list(FILTER FORT_FTRSD_SOURCES EXCLUDE REGEX ".*test\\.f90$")
+
+# Exclude standalone programs from subdirectories
+list(FILTER FORT_FT2_SOURCES EXCLUDE REGEX ".*/ft2\\.f90$")
+list(FILTER FORT_FT4_SOURCES EXCLUDE REGEX ".*/ft4code\\.f90$")
+list(FILTER FORT_FT8_SOURCES EXCLUDE REGEX ".*/ft8code\\.f90$")
+list(FILTER FORT_FT8_SOURCES EXCLUDE REGEX ".*/ft8d\\.f90$")
+list(FILTER FORT_FT8_SOURCES EXCLUDE REGEX ".*/chkdec\\.f90$")
+list(FILTER FORT_QSO50_SOURCES EXCLUDE REGEX ".*/twq\\.f90$")
+list(FILTER FORT_QRA_Q65_SOURCES EXCLUDE REGEX ".*/q65code\\.f90$")
+list(FILTER FORT_SUPERFOX_SOURCES EXCLUDE REGEX ".*/sfrx\\.f90$")
+list(FILTER FORT_SUPERFOX_SOURCES EXCLUDE REGEX ".*/sftx\\.f90$")
+list(FILTER FORT_WSPRCODE_SOURCES EXCLUDE REGEX ".*/wsprcode\\.f90$")
+list(FILTER FORT_WSPRCODE_SOURCES EXCLUDE REGEX ".*/wspr_old_subs\\.f90$")
+list(FILTER FORT_WSPRD_SOURCES EXCLUDE REGEX ".*/genmet\\.f90$")
+list(FILTER FORT_WSPRD_SOURCES EXCLUDE REGEX ".*/t2\\.f90$")
+list(FILTER FORT_WSPRD_SOURCES EXCLUDE REGEX ".*/WSPRcode\\.f90$")
+list(FILTER FORT_FTRSD_SOURCES EXCLUDE REGEX ".*/bodide\\.f90$")
+list(FILTER FORT_FTRSD_SOURCES EXCLUDE REGEX ".*/mfsk\\.f90$")
+list(FILTER FORT_FTRSD_SOURCES EXCLUDE REGEX ".*/prob\\.f90$")
+list(FILTER FORT_77BIT_SOURCES EXCLUDE REGEX ".*/encode77\\.f90$")
+list(FILTER FORT_77BIT_SOURCES EXCLUDE REGEX ".*/call_to_c28\\.f90$")
+list(FILTER FORT_77BIT_SOURCES EXCLUDE REGEX ".*/hash22calc\\.f90$")
+list(FILTER FORT_77BIT_SOURCES EXCLUDE REGEX ".*/nonstd_to_c58\\.f90$")
+list(FILTER FORT_77BIT_SOURCES EXCLUDE REGEX ".*/test28\\.f90$")
+list(FILTER FORT_77BIT_SOURCES EXCLUDE REGEX ".*/free_text\\.f90$")
+
+# qra/q65: exclude sim/test
+list(FILTER FORT_QRA_Q65_SOURCES EXCLUDE REGEX ".*sim\\.f90$")
+list(FILTER FORT_QRA_Q65_SOURCES EXCLUDE REGEX ".*test.*\\.f90$")
+list(FILTER FORT_QRA_Q65_C_SOURCES EXCLUDE REGEX ".*test.*\\.c$")
+list(FILTER FORT_QRA_CODES_C_SOURCES EXCLUDE REGEX ".*/main\\.c$")
+list(FILTER FORT_QRA_CODES_C_SOURCES EXCLUDE REGEX ".*/normrnd\\.c$")
+list(FILTER FORT_QRA_CODES_C_SOURCES EXCLUDE REGEX ".*/npfwht\\.c$")
+list(FILTER FORT_QRA_CODES_C_SOURCES EXCLUDE REGEX ".*/pdmath\\.c$")
+list(FILTER FORT_QRA_CODES_C_SOURCES EXCLUDE REGEX ".*/qracodes\\.c$")
+list(FILTER FORT_WSPRD_SOURCES EXCLUDE REGEX ".*sim.*\\.f90$")
+list(FILTER FORT_WSPRD_SOURCES EXCLUDE REGEX ".*test.*\\.f90$")
+list(FILTER FORT_WSPRD_SOURCES EXCLUDE REGEX ".*/wspr_params\\.f90$")
+list(FILTER FORT_WSPRD_C_SOURCES EXCLUDE REGEX ".*sim.*\\.c$")
+list(FILTER FORT_WSPRD_C_SOURCES EXCLUDE REGEX ".*/wsprd\\.c$")
+list(FILTER FORT_WSPRD_C_SOURCES EXCLUDE REGEX ".*/gran\\.c$")
+list(FILTER FORT_WSPRD_C_SOURCES EXCLUDE REGEX ".*/tab\\.c$")
+
+# C sources in lib (exclude standalone test programs)
+file(GLOB FORT_C_SOURCES lib/*.c)
+list(FILTER FORT_C_SOURCES EXCLUDE REGEX ".*sim.*\\.c$")
+list(FILTER FORT_C_SOURCES EXCLUDE REGEX ".*/tstrig\\.c$")
+list(FILTER FORT_C_SOURCES EXCLUDE REGEX ".*/ptt\\.c$")
+list(FILTER FORT_C_SOURCES EXCLUDE REGEX ".*/rig_control\\.c$")
+# Exclude lib/ RS codec files — ftrsd/ versions are used instead
+list(FILTER FORT_C_SOURCES EXCLUDE REGEX ".*/init_rs\\.c$")
+list(FILTER FORT_C_SOURCES EXCLUDE REGEX ".*/encode_rs\\.c$")
+list(FILTER FORT_C_SOURCES EXCLUDE REGEX ".*/decode_rs\\.c$")
+
+# ============================================================
+# Target 1: wsjt_fort (Fortran/C static library)
+# ============================================================
+add_library(wsjt_fort STATIC
+    lib/crc14.cpp
+    ${FORT_LIB_SOURCES}
+    ${FORT_FT2_SOURCES}
+    ${FORT_FT4_SOURCES}
+    ${FORT_FT8_SOURCES}
+    ${FORT_FST4_SOURCES}
+    ${FORT_77BIT_SOURCES}
+    ${FORT_FT8VAR_SOURCES}
+    ${FORT_FTRSD_SOURCES}
+    ${FORT_FTRSD_C_SOURCES}
+    ${FORT_SUPERFOX_SOURCES}
+    ${FORT_SUPERFOX_QPC_SOURCES}
+    ${FORT_SUPERFOX_QPC_C_SOURCES}
+    ${FORT_QSO50_SOURCES}
+    ${FORT_WSPRCODE_SOURCES}
+    ${FORT_QRA_Q65_SOURCES}
+    ${FORT_QRA_Q65_C_SOURCES}
+    ${FORT_QRA_CODES_C_SOURCES}
+    ${FORT_WSPRD_SOURCES}
+    ${FORT_WSPRD_C_SOURCES}
+    ${FORT_C_SOURCES}
+)
+set_target_properties(wsjt_fort PROPERTIES AUTOMOC OFF AUTORCC OFF)
+target_include_directories(wsjt_fort PUBLIC
+    ${CMAKE_SOURCE_DIR}/lib
+    ${CMAKE_SOURCE_DIR}/lib/ft2
+    ${CMAKE_SOURCE_DIR}/lib/ft4
+    ${CMAKE_SOURCE_DIR}/lib/ft8
+    ${CMAKE_SOURCE_DIR}/lib/ft8var
+    ${CMAKE_SOURCE_DIR}/lib/fst4
+    ${CMAKE_SOURCE_DIR}/lib/77bit
+    ${CMAKE_SOURCE_DIR}/lib/ftrsd
+    ${CMAKE_SOURCE_DIR}/lib/superfox
+    ${CMAKE_SOURCE_DIR}/lib/superfox/qpc
+    ${CMAKE_SOURCE_DIR}/lib/qso50
+    ${CMAKE_SOURCE_DIR}/lib/wsprcode
+    ${CMAKE_SOURCE_DIR}/lib/wsprd
+    ${CMAKE_SOURCE_DIR}/lib/qra/q65
+    ${CMAKE_SOURCE_DIR}/lib/qra/qracodes
+)
+
+if(Boost_FOUND)
+    target_include_directories(wsjt_fort PRIVATE ${Boost_INCLUDE_DIRS})
+endif()
+
+# BIGSYM=1: RS codec uses int symbols
+target_compile_definitions(wsjt_fort PRIVATE BIGSYM=1)
+
+# Legacy C code needs C89 mode for GCC 15+
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    target_compile_options(wsjt_fort PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:-std=gnu89 -Wno-implicit-function-declaration -Wno-int-conversion -Wno-incompatible-pointer-types>)
+endif()
+
+# ============================================================
+# Target 2: wsjt_backend (C++ Qt6 static library)
+# ============================================================
+set(BACKEND_SOURCES
+    # Audio subsystem
+    Audio/AudioDevice.cpp
+    Audio/BWFFile.cpp
+    Audio/soundin.cpp
+    Audio/soundout.cpp
+
+    # Network Audio (WiFi bridge)
+    Audio/NetworkAudioInput.cpp
+    Audio/NetworkAudioOutput.cpp
+    bridge/DiscoveryService.cpp
+
+    # Detector / Modulator
+    Detector/Detector.cpp
+    Modulator/Modulator.cpp
+
+    # Decoder
+    Decoder/decodedtext.cpp
+
+    # Core utilities
+    Radio.cpp
+    RadioMetaType.cpp
+    helper_functions.cpp
+    qt_helpers.cpp
+    revision_utils.cpp
+    TraceFile.cpp
+    getfile.cpp
+    otpgenerator.cpp
+
+    # NTP
+    Network/NtpClient.cpp
+
+    # Network
+    Network/Cloudlog.cpp
+    Network/FileDownload.cpp
+    Network/FoxVerifier.cpp
+    Network/LotWUsers.cpp
+    Network/MessageClient.cpp
+    Network/NetworkAccessManager.cpp
+    Network/NetworkMessage.cpp
+    Network/NetworkServerLookup.cpp
+    Network/PSKReporter.cpp
+    Network/wsprnet.cpp
+
+    # Models
+    models/Bands.cpp
+    models/CabrilloLog.cpp
+    models/DecodeHighlightingModel.cpp
+    models/FoxLog.cpp
+    models/FrequencyList.cpp
+    models/IARURegions.cpp
+    models/Modes.cpp
+    models/StationList.cpp
+
+    # Logbook
+    logbook/AD1CCty.cpp
+    logbook/countriesworked.cpp
+    logbook/logbook.cpp
+    logbook/Multiplier.cpp
+    logbook/WorkedBefore.cpp
+
+    # Validators
+    validators/CallsignValidator.cpp
+    validators/LiveFrequencyValidator.cpp
+    validators/MaidenheadLocatorValidator.cpp
+
+    # Item delegates
+    item_delegates/CallsignDelegate.cpp
+    item_delegates/CandidateKeyFilter.cpp
+    item_delegates/ForeignKeyDelegate.cpp
+    item_delegates/FrequencyDelegate.cpp
+    item_delegates/FrequencyDeltaDelegate.cpp
+    item_delegates/MaidenheadLocatorDelegate.cpp
+    item_delegates/MessageItemDelegate.cpp
+    item_delegates/SQLiteDateTimeDelegate.cpp
+
+    # Transceiver
+    Transceiver/Transceiver.cpp
+    Transceiver/TransceiverBase.cpp
+    Transceiver/TransceiverFactory.cpp
+    Transceiver/PollingTransceiver.cpp
+    Transceiver/HRDTransceiver.cpp
+    Transceiver/DXLabSuiteCommanderTransceiver.cpp
+    Transceiver/EmulateSplitTransceiver.cpp
+    Transceiver/TCITransceiver.cpp
+
+    # SampleDownloader
+    SampleDownloader/Directory.cpp
+    SampleDownloader/DirectoryDelegate.cpp
+    SampleDownloader/FileNode.cpp
+    SampleDownloader/RemoteFile.cpp
+
+    # Top-level backend
+    Configuration.cpp
+    Logger.cpp
+    MetaDataRegistry.cpp
+    MultiSettings.cpp
+    GetUserId.cpp
+    NonInheritingProcess.cpp
+    killbyname.cpp
+    L10nLoader.cpp
+    WFPalette.cpp
+    DisplayManual.cpp
+
+    # Widgets with painting logic
+    widgets/plotter.cpp
+    widgets/meterwidget.cpp
+    widgets/signalmeter.cpp
+    widgets/displaytext.cpp
+)
+
+# Add OmniRig on Windows
+if(WIN32)
+    list(APPEND BACKEND_SOURCES Transceiver/OmniRigTransceiver.cpp)
+endif()
+
+add_library(wsjt_backend STATIC ${BACKEND_SOURCES})
+target_include_directories(wsjt_backend PUBLIC
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/Audio
+    ${CMAKE_SOURCE_DIR}/Detector
+    ${CMAKE_SOURCE_DIR}/Modulator
+    ${CMAKE_SOURCE_DIR}/Network
+    ${CMAKE_SOURCE_DIR}/models
+    ${CMAKE_SOURCE_DIR}/logbook
+    ${CMAKE_SOURCE_DIR}/Decoder
+    ${CMAKE_SOURCE_DIR}/Transceiver
+    ${CMAKE_SOURCE_DIR}/validators
+    ${CMAKE_SOURCE_DIR}/item_delegates
+    ${CMAKE_SOURCE_DIR}/SampleDownloader
+    ${CMAKE_SOURCE_DIR}/widgets
+    ${CMAKE_SOURCE_DIR}/contrib
+)
+
+if(HAMLIB_FOUND)
+    target_sources(wsjt_backend PRIVATE Transceiver/HamlibTransceiver.cpp)
+    if(TARGET PkgConfig::HAMLIB)
+        target_link_libraries(wsjt_backend PUBLIC PkgConfig::HAMLIB)
+    else()
+        target_include_directories(wsjt_backend PUBLIC ${HAMLIB_INCLUDE_DIRS})
+        target_link_libraries(wsjt_backend PUBLIC ${HAMLIB_LIBRARIES})
+    endif()
+    target_compile_definitions(wsjt_backend PUBLIC HAVE_HAMLIB)
+endif()
+
+target_link_libraries(wsjt_backend PUBLIC
+    Qt6::Core Qt6::Gui Qt6::Multimedia Qt6::SerialPort
+    Qt6::Sql Qt6::Network Qt6::WebSockets Qt6::Svg
+    Qt6::Widgets
+)
+
+if(Boost_FOUND)
+    target_link_libraries(wsjt_backend PUBLIC Boost::log_setup Boost::log)
+endif()
+
+if(WIN32 AND TARGET Qt6::AxContainer)
+    target_link_libraries(wsjt_backend PUBLIC Qt6::AxContainer)
+endif()
+
+if(FFTW3_FOUND)
+    target_link_libraries(wsjt_backend PUBLIC ${FFTW3_LIBRARIES})
+    target_include_directories(wsjt_backend PUBLIC ${FFTW3_INCLUDE_DIRS})
+elseif(FFTW3F_FOUND)
+    target_link_libraries(wsjt_backend PUBLIC ${FFTW3F_LIBRARIES})
+endif()
+
+# ============================================================
+# QML Resources
+# ============================================================
+qt6_add_resources(QML_RESOURCES qml/qml.qrc)
+
+# ============================================================
+# Target 3: decodium (QML application)
+# ============================================================
+set(APP_SOURCES
+    main_qml.cpp
+
+    # Controllers
+    controllers/AppController.cpp
+    controllers/RadioController.cpp
+    controllers/DecoderController.cpp
+    controllers/AudioController.cpp
+    controllers/TxController.cpp
+    controllers/LogController.cpp
+    controllers/WaterfallController.cpp
+    controllers/DecodeListModel.cpp
+    controllers/PSKReporterLite.cpp
+    controllers/ActiveStationsModel.cpp
+
+    # QML items
+    qmlitems/WaterfallItem.cpp
+
+    ${QML_RESOURCES}
+)
+
+qt_add_executable(decodium ${APP_SOURCES})
+
+target_include_directories(decodium PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/controllers
+    ${CMAKE_SOURCE_DIR}/qmlitems
+)
+
+target_link_libraries(decodium PRIVATE
+    wsjt_backend
+    -Wl,--start-group wsjt_fort -Wl,--end-group
+    Qt6::Quick
+    Qt6::QuickControls2
+    Qt6::Qml
+    Qt6::Gui
+    Qt6::Core
+)
+
+# Windows-specific libraries
+if(WIN32)
+    target_link_libraries(decodium PRIVATE ws2_32 winmm)
+    target_link_libraries(wsjt_fort PRIVATE ws2_32)
+endif()
+
+# OpenMP for decoder
+find_package(OpenMP QUIET)
+if(OpenMP_Fortran_FOUND)
+    target_link_libraries(wsjt_fort PUBLIC OpenMP::OpenMP_Fortran)
+else()
+    target_link_libraries(decodium PRIVATE -lgomp)
+endif()
+
+# ============================================================
+# Install
+# ============================================================
+install(TARGETS decodium
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+)
+
+# ============================================================
+# Version info
+# ============================================================
+target_compile_definitions(decodium PRIVATE
+    DECODIUM_VERSION="${PROJECT_VERSION}"
+    DECODIUM_NAME="Decodium FT2"
+)
+target_compile_definitions(wsjt_backend PRIVATE
+    DECODIUM_VERSION="${PROJECT_VERSION}"
+    WSJT_RIG_NONE_CAN_SPLIT=0
+    WSJT_SSID_NONE=0
+    WSJT_STANDARD_FILE_LOCATIONS=1
+)

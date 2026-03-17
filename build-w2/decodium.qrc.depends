@@ -1,0 +1,49 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource>
+    <file alias="/icon_128x128.png">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/icons/Darwin/decodium.iconset/icon_128x128.png</file>
+    <file alias="/ft2logo.png">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/artwork/ft2logo.png</file>
+    <file alias="/gpl-v3-logo.svg">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/contrib/gpl-v3-logo.svg</file>
+    <file alias="/splash.png">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/artwork/splash.png</file>
+    <file alias="/Palettes/Banana.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Banana.pal</file>
+    <file alias="/Palettes/Blue1.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Blue1.pal</file>
+    <file alias="/Palettes/Blue2.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Blue2.pal</file>
+    <file alias="/Palettes/Blue3.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Blue3.pal</file>
+    <file alias="/Palettes/Brown.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Brown.pal</file>
+    <file alias="/Palettes/Cyan1.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Cyan1.pal</file>
+    <file alias="/Palettes/Cyan2.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Cyan2.pal</file>
+    <file alias="/Palettes/Cyan3.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Cyan3.pal</file>
+    <file alias="/Palettes/Default.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Default.pal</file>
+    <file alias="/Palettes/Digipan.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Digipan.pal</file>
+    <file alias="/Palettes/Fldigi.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Fldigi.pal</file>
+    <file alias="/Palettes/Gray1.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Gray1.pal</file>
+    <file alias="/Palettes/Gray2.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Gray2.pal</file>
+    <file alias="/Palettes/Green1.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Green1.pal</file>
+    <file alias="/Palettes/Green2.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Green2.pal</file>
+    <file alias="/Palettes/Jungle.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Jungle.pal</file>
+    <file alias="/Palettes/Linrad.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Linrad.pal</file>
+    <file alias="/Palettes/W9MDB.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/W9MDB.pal</file>
+    <file alias="/Palettes/Negative.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Negative.pal</file>
+    <file alias="/Palettes/Orange.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Orange.pal</file>
+    <file alias="/Palettes/Pink.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Pink.pal</file>
+    <file alias="/Palettes/Rainbow.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Rainbow.pal</file>
+    <file alias="/Palettes/Raptor.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Raptor.pal</file>
+    <file alias="/Palettes/Scope.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Scope.pal</file>
+    <file alias="/Palettes/Sunburst.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Sunburst.pal</file>
+    <file alias="/Palettes/VK4BDJ.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/VK4BDJ.pal</file>
+    <file alias="/Palettes/YL2KF.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/YL2KF.pal</file>
+    <file alias="/Palettes/Yellow1.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Yellow1.pal</file>
+    <file alias="/Palettes/Yellow2.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/Yellow2.pal</file>
+    <file alias="/Palettes/ZL1FZ.pal">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Palettes/ZL1FZ.pal</file>
+    <file alias="/Translations/decodium_ca.qm">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_ca.qm</file>
+    <file alias="/Translations/decodium_da.qm">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_da.qm</file>
+    <file alias="/Translations/decodium_en.qm">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_en.qm</file>
+    <file alias="/Translations/decodium_en_GB.qm">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_en_GB.qm</file>
+    <file alias="/Translations/decodium_es.qm">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_es.qm</file>
+    <file alias="/Translations/decodium_it.qm">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_it.qm</file>
+    <file alias="/Translations/decodium_ja.qm">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_ja.qm</file>
+    <file alias="/Translations/decodium_ru.qm">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_ru.qm</file>
+    <file alias="/Translations/decodium_zh.qm">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_zh.qm</file>
+    <file alias="/Translations/decodium_zh_TW.qm">C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_zh_TW.qm</file>
+  </qresource>
+</RCC>

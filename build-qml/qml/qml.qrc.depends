@@ -1,0 +1,36 @@
+<RCC>
+    <qresource prefix="/qml">
+        <file>main.qml</file>
+        <file>Theme.qml</file>
+        <file>qmldir</file>
+        <file>components/HeaderBar.qml</file>
+        <file>components/FrequencyDisplay.qml</file>
+        <file>components/AudioMeter.qml</file>
+        <file>components/BandButton.qml</file>
+        <file>components/ModeButton.qml</file>
+        <file>components/FeatureToggle.qml</file>
+        <file>components/DecodeLine.qml</file>
+        <file>components/StatusBadge.qml</file>
+        <file>components/TxButton.qml</file>
+        <file>components/CountdownTimer.qml</file>
+        <file>components/MoonClock.qml</file>
+        <file>components/AnalogClock.qml</file>
+        <file>panels/WaterfallPanel.qml</file>
+        <file>panels/DecodePanel.qml</file>
+        <file>panels/DecodePanelRow.qml</file>
+        <file>panels/BottomToolbar.qml</file>
+        <file>panels/StatusBar.qml</file>
+        <file>panels/TxButtonRow.qml</file>
+        <file>panels/TimeSyncPanel.qml</file>
+        <file>panels/CallerQueuePanel.qml</file>
+        <file>panels/ActiveStationsPanel.qml</file>
+        <file>dialogs/SettingsDialog.qml</file>
+        <file>dialogs/LogQSODialog.qml</file>
+        <file>dialogs/AboutDialog.qml</file>
+        <file>dialogs/ColorHighlightingDialog.qml</file>
+        <file>dialogs/QSYDialog.qml</file>
+        <file>panels/AstroPanel.qml</file>
+        <file>panels/MessageAvgPanel.qml</file>
+        <file>panels/QSOPanel.qml</file>
+    </qresource>
+</RCC>

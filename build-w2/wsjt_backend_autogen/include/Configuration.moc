@@ -1,0 +1,909 @@
+/****************************************************************************
+** Meta object code from reading C++ file 'Configuration.cpp'
+**
+** Created by: The Qt Meta Object Compiler version 69 (Qt 6.10.1)
+**
+** WARNING! All changes made in this file will be lost!
+*****************************************************************************/
+
+#include <QtCore/qmetatype.h>
+
+#include <QtCore/qtmochelpers.h>
+
+#include <memory>
+
+
+#include <QtCore/qxptype_traits.h>
+#if !defined(Q_MOC_OUTPUT_REVISION)
+#error "The header file 'Configuration.cpp' doesn't include <QObject>."
+#elif Q_MOC_OUTPUT_REVISION != 69
+#error "This file was generated using the moc from 6.10.1. It"
+#error "cannot be used with the include files from this version of Qt."
+#error "(The moc has changed too much.)"
+#endif
+
+#ifndef Q_CONSTINIT
+#define Q_CONSTINIT
+#endif
+
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+QT_WARNING_DISABLE_GCC("-Wuseless-cast")
+namespace {
+struct qt_meta_tag_ZN15FrequencyDialogE_t {};
+} // unnamed namespace
+
+template <> constexpr inline auto FrequencyDialog::qt_create_metaobjectdata<qt_meta_tag_ZN15FrequencyDialogE_t>()
+{
+    namespace QMC = QtMocConstants;
+    QtMocHelpers::StringRefStorage qt_stringData {
+        "FrequencyDialog"
+    };
+
+    QtMocHelpers::UintData qt_methods {
+    };
+    QtMocHelpers::UintData qt_properties {
+    };
+    QtMocHelpers::UintData qt_enums {
+    };
+    return QtMocHelpers::metaObjectData<FrequencyDialog, qt_meta_tag_ZN15FrequencyDialogE_t>(QMC::MetaObjectFlag{}, qt_stringData,
+            qt_methods, qt_properties, qt_enums);
+}
+Q_CONSTINIT const QMetaObject FrequencyDialog::staticMetaObject = { {
+    QMetaObject::SuperData::link<QDialog::staticMetaObject>(),
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN15FrequencyDialogE_t>.stringdata,
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN15FrequencyDialogE_t>.data,
+    qt_static_metacall,
+    nullptr,
+    qt_staticMetaObjectRelocatingContent<qt_meta_tag_ZN15FrequencyDialogE_t>.metaTypes,
+    nullptr
+} };
+
+void FrequencyDialog::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    auto *_t = static_cast<FrequencyDialog *>(_o);
+    (void)_t;
+    (void)_c;
+    (void)_id;
+    (void)_a;
+}
+
+const QMetaObject *FrequencyDialog::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *FrequencyDialog::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_staticMetaObjectStaticContent<qt_meta_tag_ZN15FrequencyDialogE_t>.strings))
+        return static_cast<void*>(this);
+    return QDialog::qt_metacast(_clname);
+}
+
+int FrequencyDialog::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = QDialog::qt_metacall(_c, _id, _a);
+    return _id;
+}
+namespace {
+struct qt_meta_tag_ZN13StationDialogE_t {};
+} // unnamed namespace
+
+template <> constexpr inline auto StationDialog::qt_create_metaobjectdata<qt_meta_tag_ZN13StationDialogE_t>()
+{
+    namespace QMC = QtMocConstants;
+    QtMocHelpers::StringRefStorage qt_stringData {
+        "StationDialog"
+    };
+
+    QtMocHelpers::UintData qt_methods {
+    };
+    QtMocHelpers::UintData qt_properties {
+    };
+    QtMocHelpers::UintData qt_enums {
+    };
+    return QtMocHelpers::metaObjectData<StationDialog, qt_meta_tag_ZN13StationDialogE_t>(QMC::MetaObjectFlag{}, qt_stringData,
+            qt_methods, qt_properties, qt_enums);
+}
+Q_CONSTINIT const QMetaObject StationDialog::staticMetaObject = { {
+    QMetaObject::SuperData::link<QDialog::staticMetaObject>(),
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN13StationDialogE_t>.stringdata,
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN13StationDialogE_t>.data,
+    qt_static_metacall,
+    nullptr,
+    qt_staticMetaObjectRelocatingContent<qt_meta_tag_ZN13StationDialogE_t>.metaTypes,
+    nullptr
+} };
+
+void StationDialog::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    auto *_t = static_cast<StationDialog *>(_o);
+    (void)_t;
+    (void)_c;
+    (void)_id;
+    (void)_a;
+}
+
+const QMetaObject *StationDialog::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *StationDialog::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_staticMetaObjectStaticContent<qt_meta_tag_ZN13StationDialogE_t>.strings))
+        return static_cast<void*>(this);
+    return QDialog::qt_metacast(_clname);
+}
+
+int StationDialog::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = QDialog::qt_metacall(_c, _id, _a);
+    return _id;
+}
+namespace {
+struct qt_meta_tag_ZN13Configuration4implE_t {};
+} // unnamed namespace
+
+template <> constexpr inline auto Configuration::impl::qt_create_metaobjectdata<qt_meta_tag_ZN13Configuration4implE_t>()
+{
+    namespace QMC = QtMocConstants;
+    QtMocHelpers::StringRefStorage qt_stringData {
+        "Configuration::impl",
+        "start_transceiver",
+        "",
+        "seqeunce_number",
+        "set_transceiver",
+        "Transceiver::TransceiverState",
+        "sequence_number",
+        "stop_transceiver",
+        "exec",
+        "accept",
+        "reject",
+        "done",
+        "validate_network_interfaces",
+        "host_info_results",
+        "QHostInfo",
+        "on_font_push_button_clicked",
+        "on_decoded_text_font_push_button_clicked",
+        "on_PTT_port_combo_box_activated",
+        "on_CAT_port_combo_box_activated",
+        "on_CAT_serial_baud_combo_box_currentIndexChanged",
+        "on_CAT_data_bits_button_group_buttonClicked",
+        "on_CAT_stop_bits_button_group_buttonClicked",
+        "on_CAT_handshake_button_group_buttonClicked",
+        "on_CAT_poll_interval_spin_box_valueChanged",
+        "on_split_mode_button_group_buttonClicked",
+        "on_test_CAT_push_button_clicked",
+        "on_test_PTT_push_button_clicked",
+        "checked",
+        "on_pbTestCloudlog_clicked",
+        "on_gbCloudlog_clicked",
+        "on_force_DTR_combo_box_currentIndexChanged",
+        "on_force_RTS_combo_box_currentIndexChanged",
+        "on_rig_combo_box_currentIndexChanged",
+        "on_refresh_push_button_clicked",
+        "on_tci_audio_check_box_clicked",
+        "on_TCI_spin_box_valueChanged",
+        "a",
+        "on_add_macro_push_button_clicked",
+        "on_delete_macro_push_button_clicked",
+        "on_PTT_method_button_group_buttonClicked",
+        "on_add_macro_line_edit_editingFinished",
+        "delete_macro",
+        "on_udp_server_line_edit_textChanged",
+        "on_udp_server_line_edit_editingFinished",
+        "on_save_path_select_push_button_clicked",
+        "on_azel_path_select_push_button_clicked",
+        "on_calibration_intercept_spin_box_valueChanged",
+        "handle_leavingSettings",
+        "on_calibration_slope_ppm_spin_box_valueChanged",
+        "handle_transceiver_tciframeswritten",
+        "handle_transceiver_tci_mod_active",
+        "handle_transceiver_update",
+        "TransceiverState",
+        "handle_transceiver_failure",
+        "reason",
+        "on_DXCC_check_box_clicked",
+        "on_PWR_and_SWR_check_box_clicked",
+        "on_cbHighDPI_clicked",
+        "on_reset_highlighting_to_defaults_push_button_clicked",
+        "on_reset_highlighting_to_defaults2_push_button_clicked",
+        "on_rescan_log_push_button_clicked",
+        "on_CTY_download_button_clicked",
+        "on_CALL3_download_button_clicked",
+        "on_CALL3_EME_download_button_clicked",
+        "on_LotW_CSV_fetch_push_button_clicked",
+        "on_hamlib_download_button_clicked",
+        "on_revert_update_button_clicked",
+        "on_gbSpecialOpActivity_clicked",
+        "on_rbFox_clicked",
+        "on_rbHound_clicked",
+        "on_rbNA_VHF_Contest_clicked",
+        "on_rbEU_VHF_Contest_clicked",
+        "on_rbWW_DIGI_clicked",
+        "on_rbQ65pileup_clicked",
+        "on_rbField_Day_clicked",
+        "on_rbRTTY_Roundup_clicked",
+        "on_rbARRL_Digi_clicked",
+        "on_cbSuperFox_clicked",
+        "on_cbContestName_clicked",
+        "on_cbOTP_clicked",
+        "on_cbShowOTP_clicked",
+        "on_cb_NCCC_Sprint_clicked",
+        "on_cbx2ToneSpacing_clicked",
+        "on_cbx4ToneSpacing_clicked",
+        "on_prompt_to_log_check_box_clicked",
+        "on_cbAutoLog_clicked",
+        "on_Field_Day_Exchange_editingFinished",
+        "on_RTTY_Exchange_editingFinished",
+        "on_OTPUrl_textEdited",
+        "on_OTPSeed_textEdited",
+        "on_cbSortAlphabetically_clicked",
+        "on_cbHideCARD_clicked",
+        "on_Contest_Name_editingFinished",
+        "on_Blacklist1_editingFinished",
+        "on_Blacklist2_editingFinished",
+        "on_Blacklist3_editingFinished",
+        "on_Blacklist4_editingFinished",
+        "on_Blacklist5_editingFinished",
+        "on_Blacklist6_editingFinished",
+        "on_Blacklist7_editingFinished",
+        "on_Blacklist8_editingFinished",
+        "on_Blacklist9_editingFinished",
+        "on_Blacklist10_editingFinished",
+        "on_Blacklist11_editingFinished",
+        "on_Blacklist12_editingFinished",
+        "on_Whitelist1_editingFinished",
+        "on_Whitelist2_editingFinished",
+        "on_Whitelist3_editingFinished",
+        "on_Whitelist4_editingFinished",
+        "on_Whitelist5_editingFinished",
+        "on_Whitelist6_editingFinished",
+        "on_Whitelist7_editingFinished",
+        "on_Whitelist8_editingFinished",
+        "on_Whitelist9_editingFinished",
+        "on_Whitelist10_editingFinished",
+        "on_Whitelist11_editingFinished",
+        "on_Whitelist12_editingFinished",
+        "on_Pass1_editingFinished",
+        "on_Pass2_editingFinished",
+        "on_Pass3_editingFinished",
+        "on_Pass4_editingFinished",
+        "on_Pass5_editingFinished",
+        "on_Pass6_editingFinished",
+        "on_Pass7_editingFinished",
+        "on_Pass8_editingFinished",
+        "on_Pass9_editingFinished",
+        "on_Pass10_editingFinished",
+        "on_Pass11_editingFinished",
+        "on_Pass12_editingFinished",
+        "on_Territory1_editingFinished",
+        "on_Territory2_editingFinished",
+        "on_Territory3_editingFinished",
+        "on_Territory4_editingFinished",
+        "on_highlight_orange_callsigns_editingFinished",
+        "on_highlight_blue_callsigns_editingFinished"
+    };
+
+    QtMocHelpers::UintData qt_methods {
+        // Signal 'start_transceiver'
+        QtMocHelpers::SignalData<void(unsigned ) const>(1, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::UInt, 3 },
+        }}),
+        // Signal 'set_transceiver'
+        QtMocHelpers::SignalData<void(Transceiver::TransceiverState const &, unsigned ) const>(4, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { 0x80000000 | 5, 2 }, { QMetaType::UInt, 6 },
+        }}),
+        // Signal 'stop_transceiver'
+        QtMocHelpers::SignalData<void() const>(7, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'exec'
+        QtMocHelpers::SlotData<int()>(8, 2, QMC::AccessPublic, QMetaType::Int),
+        // Slot 'accept'
+        QtMocHelpers::SlotData<void()>(9, 2, QMC::AccessPublic, QMetaType::Void),
+        // Slot 'reject'
+        QtMocHelpers::SlotData<void()>(10, 2, QMC::AccessPublic, QMetaType::Void),
+        // Slot 'done'
+        QtMocHelpers::SlotData<void(int)>(11, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'validate_network_interfaces'
+        QtMocHelpers::SlotData<void(QString const &)>(12, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::QString, 2 },
+        }}),
+        // Slot 'host_info_results'
+        QtMocHelpers::SlotData<void(QHostInfo)>(13, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { 0x80000000 | 14, 2 },
+        }}),
+        // Slot 'on_font_push_button_clicked'
+        QtMocHelpers::SlotData<void()>(15, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_decoded_text_font_push_button_clicked'
+        QtMocHelpers::SlotData<void()>(16, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_PTT_port_combo_box_activated'
+        QtMocHelpers::SlotData<void(int)>(17, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_CAT_port_combo_box_activated'
+        QtMocHelpers::SlotData<void(int)>(18, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_CAT_serial_baud_combo_box_currentIndexChanged'
+        QtMocHelpers::SlotData<void(int)>(19, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_CAT_data_bits_button_group_buttonClicked'
+        QtMocHelpers::SlotData<void(int)>(20, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_CAT_stop_bits_button_group_buttonClicked'
+        QtMocHelpers::SlotData<void(int)>(21, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_CAT_handshake_button_group_buttonClicked'
+        QtMocHelpers::SlotData<void(int)>(22, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_CAT_poll_interval_spin_box_valueChanged'
+        QtMocHelpers::SlotData<void(int)>(23, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_split_mode_button_group_buttonClicked'
+        QtMocHelpers::SlotData<void(int)>(24, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_test_CAT_push_button_clicked'
+        QtMocHelpers::SlotData<void()>(25, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_test_PTT_push_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(26, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 27 },
+        }}),
+        // Slot 'on_pbTestCloudlog_clicked'
+        QtMocHelpers::SlotData<void()>(28, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_gbCloudlog_clicked'
+        QtMocHelpers::SlotData<void()>(29, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_force_DTR_combo_box_currentIndexChanged'
+        QtMocHelpers::SlotData<void(int)>(30, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_force_RTS_combo_box_currentIndexChanged'
+        QtMocHelpers::SlotData<void(int)>(31, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_rig_combo_box_currentIndexChanged'
+        QtMocHelpers::SlotData<void(int)>(32, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_refresh_push_button_clicked'
+        QtMocHelpers::SlotData<void()>(33, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_tci_audio_check_box_clicked'
+        QtMocHelpers::SlotData<void(bool)>(34, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 27 },
+        }}),
+        // Slot 'on_TCI_spin_box_valueChanged'
+        QtMocHelpers::SlotData<void(double)>(35, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Double, 36 },
+        }}),
+        // Slot 'on_add_macro_push_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(37, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_add_macro_push_button_clicked'
+        QtMocHelpers::SlotData<void()>(37, 2, QMC::AccessPrivate | QMC::MethodCloned, QMetaType::Void),
+        // Slot 'on_delete_macro_push_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(38, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_delete_macro_push_button_clicked'
+        QtMocHelpers::SlotData<void()>(38, 2, QMC::AccessPrivate | QMC::MethodCloned, QMetaType::Void),
+        // Slot 'on_PTT_method_button_group_buttonClicked'
+        QtMocHelpers::SlotData<void(int)>(39, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Int, 2 },
+        }}),
+        // Slot 'on_add_macro_line_edit_editingFinished'
+        QtMocHelpers::SlotData<void()>(40, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'delete_macro'
+        QtMocHelpers::SlotData<void()>(41, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_udp_server_line_edit_textChanged'
+        QtMocHelpers::SlotData<void(QString const &)>(42, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::QString, 2 },
+        }}),
+        // Slot 'on_udp_server_line_edit_editingFinished'
+        QtMocHelpers::SlotData<void()>(43, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_save_path_select_push_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(44, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_azel_path_select_push_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(45, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_calibration_intercept_spin_box_valueChanged'
+        QtMocHelpers::SlotData<void(double)>(46, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Double, 2 },
+        }}),
+        // Slot 'handle_leavingSettings'
+        QtMocHelpers::SlotData<void()>(47, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_calibration_slope_ppm_spin_box_valueChanged'
+        QtMocHelpers::SlotData<void(double)>(48, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Double, 2 },
+        }}),
+        // Slot 'handle_transceiver_tciframeswritten'
+        QtMocHelpers::SlotData<void(qint64)>(49, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::LongLong, 2 },
+        }}),
+        // Slot 'handle_transceiver_tci_mod_active'
+        QtMocHelpers::SlotData<void(bool)>(50, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'handle_transceiver_update'
+        QtMocHelpers::SlotData<void(TransceiverState const &, unsigned )>(51, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { 0x80000000 | 52, 2 }, { QMetaType::UInt, 6 },
+        }}),
+        // Slot 'handle_transceiver_failure'
+        QtMocHelpers::SlotData<void(QString const &)>(53, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::QString, 54 },
+        }}),
+        // Slot 'on_DXCC_check_box_clicked'
+        QtMocHelpers::SlotData<void(bool)>(55, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 27 },
+        }}),
+        // Slot 'on_PWR_and_SWR_check_box_clicked'
+        QtMocHelpers::SlotData<void(bool)>(56, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 27 },
+        }}),
+        // Slot 'on_cbHighDPI_clicked'
+        QtMocHelpers::SlotData<void(bool)>(57, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 27 },
+        }}),
+        // Slot 'on_reset_highlighting_to_defaults_push_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(58, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_reset_highlighting_to_defaults2_push_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(59, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_rescan_log_push_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(60, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_CTY_download_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(61, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_CALL3_download_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(62, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_CALL3_EME_download_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(63, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_LotW_CSV_fetch_push_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(64, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_hamlib_download_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(65, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_revert_update_button_clicked'
+        QtMocHelpers::SlotData<void(bool)>(66, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_gbSpecialOpActivity_clicked'
+        QtMocHelpers::SlotData<void(bool)>(67, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_rbFox_clicked'
+        QtMocHelpers::SlotData<void(bool)>(68, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_rbHound_clicked'
+        QtMocHelpers::SlotData<void(bool)>(69, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_rbNA_VHF_Contest_clicked'
+        QtMocHelpers::SlotData<void(bool)>(70, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_rbEU_VHF_Contest_clicked'
+        QtMocHelpers::SlotData<void(bool)>(71, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_rbWW_DIGI_clicked'
+        QtMocHelpers::SlotData<void(bool)>(72, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_rbQ65pileup_clicked'
+        QtMocHelpers::SlotData<void(bool)>(73, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_rbField_Day_clicked'
+        QtMocHelpers::SlotData<void(bool)>(74, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_rbRTTY_Roundup_clicked'
+        QtMocHelpers::SlotData<void(bool)>(75, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_rbARRL_Digi_clicked'
+        QtMocHelpers::SlotData<void(bool)>(76, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_cbSuperFox_clicked'
+        QtMocHelpers::SlotData<void(bool)>(77, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_cbContestName_clicked'
+        QtMocHelpers::SlotData<void(bool)>(78, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_cbOTP_clicked'
+        QtMocHelpers::SlotData<void(bool)>(79, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_cbShowOTP_clicked'
+        QtMocHelpers::SlotData<void(bool)>(80, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_cb_NCCC_Sprint_clicked'
+        QtMocHelpers::SlotData<void(bool)>(81, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_cbx2ToneSpacing_clicked'
+        QtMocHelpers::SlotData<void(bool)>(82, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_cbx4ToneSpacing_clicked'
+        QtMocHelpers::SlotData<void(bool)>(83, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_prompt_to_log_check_box_clicked'
+        QtMocHelpers::SlotData<void(bool)>(84, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_cbAutoLog_clicked'
+        QtMocHelpers::SlotData<void(bool)>(85, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_Field_Day_Exchange_editingFinished'
+        QtMocHelpers::SlotData<void()>(86, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_RTTY_Exchange_editingFinished'
+        QtMocHelpers::SlotData<void()>(87, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_OTPUrl_textEdited'
+        QtMocHelpers::SlotData<void(QString const &)>(88, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::QString, 2 },
+        }}),
+        // Slot 'on_OTPSeed_textEdited'
+        QtMocHelpers::SlotData<void(QString const &)>(89, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::QString, 2 },
+        }}),
+        // Slot 'on_cbSortAlphabetically_clicked'
+        QtMocHelpers::SlotData<void(bool)>(90, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_cbHideCARD_clicked'
+        QtMocHelpers::SlotData<void(bool)>(91, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::Bool, 2 },
+        }}),
+        // Slot 'on_Contest_Name_editingFinished'
+        QtMocHelpers::SlotData<void()>(92, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist1_editingFinished'
+        QtMocHelpers::SlotData<void()>(93, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist2_editingFinished'
+        QtMocHelpers::SlotData<void()>(94, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist3_editingFinished'
+        QtMocHelpers::SlotData<void()>(95, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist4_editingFinished'
+        QtMocHelpers::SlotData<void()>(96, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist5_editingFinished'
+        QtMocHelpers::SlotData<void()>(97, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist6_editingFinished'
+        QtMocHelpers::SlotData<void()>(98, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist7_editingFinished'
+        QtMocHelpers::SlotData<void()>(99, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist8_editingFinished'
+        QtMocHelpers::SlotData<void()>(100, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist9_editingFinished'
+        QtMocHelpers::SlotData<void()>(101, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist10_editingFinished'
+        QtMocHelpers::SlotData<void()>(102, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist11_editingFinished'
+        QtMocHelpers::SlotData<void()>(103, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Blacklist12_editingFinished'
+        QtMocHelpers::SlotData<void()>(104, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist1_editingFinished'
+        QtMocHelpers::SlotData<void()>(105, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist2_editingFinished'
+        QtMocHelpers::SlotData<void()>(106, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist3_editingFinished'
+        QtMocHelpers::SlotData<void()>(107, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist4_editingFinished'
+        QtMocHelpers::SlotData<void()>(108, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist5_editingFinished'
+        QtMocHelpers::SlotData<void()>(109, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist6_editingFinished'
+        QtMocHelpers::SlotData<void()>(110, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist7_editingFinished'
+        QtMocHelpers::SlotData<void()>(111, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist8_editingFinished'
+        QtMocHelpers::SlotData<void()>(112, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist9_editingFinished'
+        QtMocHelpers::SlotData<void()>(113, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist10_editingFinished'
+        QtMocHelpers::SlotData<void()>(114, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist11_editingFinished'
+        QtMocHelpers::SlotData<void()>(115, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Whitelist12_editingFinished'
+        QtMocHelpers::SlotData<void()>(116, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass1_editingFinished'
+        QtMocHelpers::SlotData<void()>(117, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass2_editingFinished'
+        QtMocHelpers::SlotData<void()>(118, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass3_editingFinished'
+        QtMocHelpers::SlotData<void()>(119, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass4_editingFinished'
+        QtMocHelpers::SlotData<void()>(120, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass5_editingFinished'
+        QtMocHelpers::SlotData<void()>(121, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass6_editingFinished'
+        QtMocHelpers::SlotData<void()>(122, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass7_editingFinished'
+        QtMocHelpers::SlotData<void()>(123, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass8_editingFinished'
+        QtMocHelpers::SlotData<void()>(124, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass9_editingFinished'
+        QtMocHelpers::SlotData<void()>(125, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass10_editingFinished'
+        QtMocHelpers::SlotData<void()>(126, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass11_editingFinished'
+        QtMocHelpers::SlotData<void()>(127, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Pass12_editingFinished'
+        QtMocHelpers::SlotData<void()>(128, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Territory1_editingFinished'
+        QtMocHelpers::SlotData<void()>(129, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Territory2_editingFinished'
+        QtMocHelpers::SlotData<void()>(130, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Territory3_editingFinished'
+        QtMocHelpers::SlotData<void()>(131, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_Territory4_editingFinished'
+        QtMocHelpers::SlotData<void()>(132, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_highlight_orange_callsigns_editingFinished'
+        QtMocHelpers::SlotData<void()>(133, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_highlight_blue_callsigns_editingFinished'
+        QtMocHelpers::SlotData<void()>(134, 2, QMC::AccessPrivate, QMetaType::Void),
+    };
+    QtMocHelpers::UintData qt_properties {
+    };
+    QtMocHelpers::UintData qt_enums {
+    };
+    return QtMocHelpers::metaObjectData<impl, qt_meta_tag_ZN13Configuration4implE_t>(QMC::MetaObjectFlag{}, qt_stringData,
+            qt_methods, qt_properties, qt_enums);
+}
+Q_CONSTINIT const QMetaObject Configuration::impl::staticMetaObject = { {
+    QMetaObject::SuperData::link<QDialog::staticMetaObject>(),
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN13Configuration4implE_t>.stringdata,
+    qt_staticMetaObjectStaticContent<qt_meta_tag_ZN13Configuration4implE_t>.data,
+    qt_static_metacall,
+    nullptr,
+    qt_staticMetaObjectRelocatingContent<qt_meta_tag_ZN13Configuration4implE_t>.metaTypes,
+    nullptr
+} };
+
+void Configuration::impl::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    auto *_t = static_cast<impl *>(_o);
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        switch (_id) {
+        case 0: _t->start_transceiver((*reinterpret_cast<std::add_pointer_t<uint>>(_a[1]))); break;
+        case 1: _t->set_transceiver((*reinterpret_cast<std::add_pointer_t<Transceiver::TransceiverState>>(_a[1])),(*reinterpret_cast<std::add_pointer_t<uint>>(_a[2]))); break;
+        case 2: _t->stop_transceiver(); break;
+        case 3: { int _r = _t->exec();
+            if (_a[0]) *reinterpret_cast<int*>(_a[0]) = std::move(_r); }  break;
+        case 4: _t->accept(); break;
+        case 5: _t->reject(); break;
+        case 6: _t->done((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 7: _t->validate_network_interfaces((*reinterpret_cast<std::add_pointer_t<QString>>(_a[1]))); break;
+        case 8: _t->host_info_results((*reinterpret_cast<std::add_pointer_t<QHostInfo>>(_a[1]))); break;
+        case 9: _t->on_font_push_button_clicked(); break;
+        case 10: _t->on_decoded_text_font_push_button_clicked(); break;
+        case 11: _t->on_PTT_port_combo_box_activated((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 12: _t->on_CAT_port_combo_box_activated((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 13: _t->on_CAT_serial_baud_combo_box_currentIndexChanged((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 14: _t->on_CAT_data_bits_button_group_buttonClicked((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 15: _t->on_CAT_stop_bits_button_group_buttonClicked((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 16: _t->on_CAT_handshake_button_group_buttonClicked((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 17: _t->on_CAT_poll_interval_spin_box_valueChanged((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 18: _t->on_split_mode_button_group_buttonClicked((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 19: _t->on_test_CAT_push_button_clicked(); break;
+        case 20: _t->on_test_PTT_push_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 21: _t->on_pbTestCloudlog_clicked(); break;
+        case 22: _t->on_gbCloudlog_clicked(); break;
+        case 23: _t->on_force_DTR_combo_box_currentIndexChanged((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 24: _t->on_force_RTS_combo_box_currentIndexChanged((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 25: _t->on_rig_combo_box_currentIndexChanged((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 26: _t->on_refresh_push_button_clicked(); break;
+        case 27: _t->on_tci_audio_check_box_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 28: _t->on_TCI_spin_box_valueChanged((*reinterpret_cast<std::add_pointer_t<double>>(_a[1]))); break;
+        case 29: _t->on_add_macro_push_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 30: _t->on_add_macro_push_button_clicked(); break;
+        case 31: _t->on_delete_macro_push_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 32: _t->on_delete_macro_push_button_clicked(); break;
+        case 33: _t->on_PTT_method_button_group_buttonClicked((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
+        case 34: _t->on_add_macro_line_edit_editingFinished(); break;
+        case 35: _t->delete_macro(); break;
+        case 36: _t->on_udp_server_line_edit_textChanged((*reinterpret_cast<std::add_pointer_t<QString>>(_a[1]))); break;
+        case 37: _t->on_udp_server_line_edit_editingFinished(); break;
+        case 38: _t->on_save_path_select_push_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 39: _t->on_azel_path_select_push_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 40: _t->on_calibration_intercept_spin_box_valueChanged((*reinterpret_cast<std::add_pointer_t<double>>(_a[1]))); break;
+        case 41: _t->handle_leavingSettings(); break;
+        case 42: _t->on_calibration_slope_ppm_spin_box_valueChanged((*reinterpret_cast<std::add_pointer_t<double>>(_a[1]))); break;
+        case 43: _t->handle_transceiver_tciframeswritten((*reinterpret_cast<std::add_pointer_t<qint64>>(_a[1]))); break;
+        case 44: _t->handle_transceiver_tci_mod_active((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 45: _t->handle_transceiver_update((*reinterpret_cast<std::add_pointer_t<TransceiverState>>(_a[1])),(*reinterpret_cast<std::add_pointer_t<uint>>(_a[2]))); break;
+        case 46: _t->handle_transceiver_failure((*reinterpret_cast<std::add_pointer_t<QString>>(_a[1]))); break;
+        case 47: _t->on_DXCC_check_box_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 48: _t->on_PWR_and_SWR_check_box_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 49: _t->on_cbHighDPI_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 50: _t->on_reset_highlighting_to_defaults_push_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 51: _t->on_reset_highlighting_to_defaults2_push_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 52: _t->on_rescan_log_push_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 53: _t->on_CTY_download_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 54: _t->on_CALL3_download_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 55: _t->on_CALL3_EME_download_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 56: _t->on_LotW_CSV_fetch_push_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 57: _t->on_hamlib_download_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 58: _t->on_revert_update_button_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 59: _t->on_gbSpecialOpActivity_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 60: _t->on_rbFox_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 61: _t->on_rbHound_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 62: _t->on_rbNA_VHF_Contest_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 63: _t->on_rbEU_VHF_Contest_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 64: _t->on_rbWW_DIGI_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 65: _t->on_rbQ65pileup_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 66: _t->on_rbField_Day_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 67: _t->on_rbRTTY_Roundup_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 68: _t->on_rbARRL_Digi_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 69: _t->on_cbSuperFox_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 70: _t->on_cbContestName_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 71: _t->on_cbOTP_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 72: _t->on_cbShowOTP_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 73: _t->on_cb_NCCC_Sprint_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 74: _t->on_cbx2ToneSpacing_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 75: _t->on_cbx4ToneSpacing_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 76: _t->on_prompt_to_log_check_box_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 77: _t->on_cbAutoLog_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 78: _t->on_Field_Day_Exchange_editingFinished(); break;
+        case 79: _t->on_RTTY_Exchange_editingFinished(); break;
+        case 80: _t->on_OTPUrl_textEdited((*reinterpret_cast<std::add_pointer_t<QString>>(_a[1]))); break;
+        case 81: _t->on_OTPSeed_textEdited((*reinterpret_cast<std::add_pointer_t<QString>>(_a[1]))); break;
+        case 82: _t->on_cbSortAlphabetically_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 83: _t->on_cbHideCARD_clicked((*reinterpret_cast<std::add_pointer_t<bool>>(_a[1]))); break;
+        case 84: _t->on_Contest_Name_editingFinished(); break;
+        case 85: _t->on_Blacklist1_editingFinished(); break;
+        case 86: _t->on_Blacklist2_editingFinished(); break;
+        case 87: _t->on_Blacklist3_editingFinished(); break;
+        case 88: _t->on_Blacklist4_editingFinished(); break;
+        case 89: _t->on_Blacklist5_editingFinished(); break;
+        case 90: _t->on_Blacklist6_editingFinished(); break;
+        case 91: _t->on_Blacklist7_editingFinished(); break;
+        case 92: _t->on_Blacklist8_editingFinished(); break;
+        case 93: _t->on_Blacklist9_editingFinished(); break;
+        case 94: _t->on_Blacklist10_editingFinished(); break;
+        case 95: _t->on_Blacklist11_editingFinished(); break;
+        case 96: _t->on_Blacklist12_editingFinished(); break;
+        case 97: _t->on_Whitelist1_editingFinished(); break;
+        case 98: _t->on_Whitelist2_editingFinished(); break;
+        case 99: _t->on_Whitelist3_editingFinished(); break;
+        case 100: _t->on_Whitelist4_editingFinished(); break;
+        case 101: _t->on_Whitelist5_editingFinished(); break;
+        case 102: _t->on_Whitelist6_editingFinished(); break;
+        case 103: _t->on_Whitelist7_editingFinished(); break;
+        case 104: _t->on_Whitelist8_editingFinished(); break;
+        case 105: _t->on_Whitelist9_editingFinished(); break;
+        case 106: _t->on_Whitelist10_editingFinished(); break;
+        case 107: _t->on_Whitelist11_editingFinished(); break;
+        case 108: _t->on_Whitelist12_editingFinished(); break;
+        case 109: _t->on_Pass1_editingFinished(); break;
+        case 110: _t->on_Pass2_editingFinished(); break;
+        case 111: _t->on_Pass3_editingFinished(); break;
+        case 112: _t->on_Pass4_editingFinished(); break;
+        case 113: _t->on_Pass5_editingFinished(); break;
+        case 114: _t->on_Pass6_editingFinished(); break;
+        case 115: _t->on_Pass7_editingFinished(); break;
+        case 116: _t->on_Pass8_editingFinished(); break;
+        case 117: _t->on_Pass9_editingFinished(); break;
+        case 118: _t->on_Pass10_editingFinished(); break;
+        case 119: _t->on_Pass11_editingFinished(); break;
+        case 120: _t->on_Pass12_editingFinished(); break;
+        case 121: _t->on_Territory1_editingFinished(); break;
+        case 122: _t->on_Territory2_editingFinished(); break;
+        case 123: _t->on_Territory3_editingFinished(); break;
+        case 124: _t->on_Territory4_editingFinished(); break;
+        case 125: _t->on_highlight_orange_callsigns_editingFinished(); break;
+        case 126: _t->on_highlight_blue_callsigns_editingFinished(); break;
+        default: ;
+        }
+    }
+    if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        switch (_id) {
+        default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+        case 1:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+            case 0:
+                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< Transceiver::TransceiverState >(); break;
+            }
+            break;
+        case 8:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+            case 0:
+                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< QHostInfo >(); break;
+            }
+            break;
+        }
+    }
+    if (_c == QMetaObject::IndexOfMethod) {
+        if (QtMocHelpers::indexOfMethod<void (impl::*)(unsigned  ) const>(_a, &impl::start_transceiver, 0))
+            return;
+        if (QtMocHelpers::indexOfMethod<void (impl::*)(Transceiver::TransceiverState const & , unsigned  ) const>(_a, &impl::set_transceiver, 1))
+            return;
+        if (QtMocHelpers::indexOfMethod<void (impl::*)() const>(_a, &impl::stop_transceiver, 2))
+            return;
+    }
+}
+
+const QMetaObject *Configuration::impl::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *Configuration::impl::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_staticMetaObjectStaticContent<qt_meta_tag_ZN13Configuration4implE_t>.strings))
+        return static_cast<void*>(this);
+    return QDialog::qt_metacast(_clname);
+}
+
+int Configuration::impl::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = QDialog::qt_metacall(_c, _id, _a);
+    if (_id < 0)
+        return _id;
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        if (_id < 127)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 127;
+    }
+    if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        if (_id < 127)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 127;
+    }
+    return _id;
+}
+
+// SIGNAL 0
+void Configuration::impl::start_transceiver(unsigned  _t1)const
+{
+    QMetaObject::activate<void>(const_cast< Configuration::impl *>(this), &staticMetaObject, 0, nullptr, _t1);
+}
+
+// SIGNAL 1
+void Configuration::impl::set_transceiver(Transceiver::TransceiverState const & _t1, unsigned  _t2)const
+{
+    QMetaObject::activate<void>(const_cast< Configuration::impl *>(this), &staticMetaObject, 1, nullptr, _t1, _t2);
+}
+
+// SIGNAL 2
+void Configuration::impl::stop_transceiver()const
+{
+    QMetaObject::activate(const_cast< Configuration::impl *>(this), &staticMetaObject, 2, nullptr);
+}
+QT_WARNING_POP

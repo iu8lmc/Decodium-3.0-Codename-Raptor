@@ -1,0 +1,9 @@
+-rootPath
+C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source
+-cmake-output
+-output-file
+C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-qml/.qt/qml_imports/decodium_conf.cmake
+-importPath
+C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-qml
+-importPath
+C:/msys64/mingw64/share/qt6/qml

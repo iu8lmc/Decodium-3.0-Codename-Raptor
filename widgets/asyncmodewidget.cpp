@@ -4,6 +4,8 @@
 #include <QPainterPath>
 #include <QPen>
 #include <QLinearGradient>
+#include <QMenu>
+#include <QContextMenuEvent>
 #include <QtMath>
 
 namespace {
@@ -35,6 +37,16 @@ void AsyncModeWidget::setTransmitting (bool tx)
   if (m_transmitting != tx) { m_transmitting = tx; update (); }
 }
 
+void AsyncModeWidget::setWaveEnabled (bool on)
+{
+  if (m_showWave != on) { m_showWave = on; update (); }
+}
+
+void AsyncModeWidget::setMeterEnabled (bool on)
+{
+  if (m_showMeter != on) { m_showMeter = on; update (); }
+}
+
 void AsyncModeWidget::start ()
 {
   m_running = true;
@@ -48,6 +60,24 @@ void AsyncModeWidget::stop ()
   m_running = false;
   m_animTimer.stop ();
   update ();
+}
+
+void AsyncModeWidget::contextMenuEvent (QContextMenuEvent *ev)
+{
+  QMenu menu (this);
+  auto *actWave = menu.addAction (tr ("Sine Wave"));
+  actWave->setCheckable (true);
+  actWave->setChecked (m_showWave);
+  auto *actMeter = menu.addAction (tr ("S-Meter"));
+  actMeter->setCheckable (true);
+  actMeter->setChecked (m_showMeter);
+  menu.addSeparator ();
+  auto *actHide = menu.addAction (tr ("Hide Widget"));
+
+  auto *chosen = menu.exec (ev->globalPos ());
+  if (chosen == actWave) setWaveEnabled (!m_showWave);
+  else if (chosen == actMeter) setMeterEnabled (!m_showMeter);
+  else if (chosen == actHide) setVisible (false);
 }
 
 void AsyncModeWidget::paintEvent (QPaintEvent *)
@@ -72,49 +102,54 @@ void AsyncModeWidget::paintEvent (QPaintEvent *)
 
   QColor waveColor = m_transmitting ? QColor (0xff, 0x44, 0x44) : QColor (0x00, 0xe6, 0x76);
 
-  // --- "ASINCRONO" header ---
+  // --- header ---
   p.setFont (QFont {"Segoe UI", 6, QFont::Bold});
   p.setPen (waveColor);
-  p.drawText (QRect (0, 1, w, 10), Qt::AlignCenter, "ASINCRONO");
+  QString label = m_transmitting ? "TX" : "ASYNC";
+  p.drawText (QRect (0, 1, w, 10), Qt::AlignCenter, label);
 
-  // --- Sine wave: y=12..34 (22px) ---
-  int waveTop = 12;
-  int waveBot = h - 16;
-  if (waveBot < waveTop + 6) waveBot = waveTop + 6;
-  int waveH = waveBot - waveTop;
-  int waveMid = waveTop + waveH / 2;
-  qreal amp = waveH * 0.42;
+  // --- Sine wave ---
+  if (m_showWave) {
+    int waveTop = 12;
+    int waveBot = m_showMeter ? h - 16 : h - 4;
+    if (waveBot < waveTop + 6) waveBot = waveTop + 6;
+    int waveH = waveBot - waveTop;
+    int waveMid = waveTop + waveH / 2;
+    qreal amp = waveH * 0.42;
 
-  QPainterPath wavePath;
-  for (int x = 1; x <= w - 1; ++x) {
-    qreal t = static_cast<qreal>(x) / w;
-    qreal y = waveMid - amp * qSin (TWO_PI * 2.5 * t + m_phase);
-    if (x == 1) wavePath.moveTo (x, y);
-    else wavePath.lineTo (x, y);
+    QPainterPath wavePath;
+    for (int x = 1; x <= w - 1; ++x) {
+      qreal t = static_cast<qreal>(x) / w;
+      qreal y = waveMid - amp * qSin (TWO_PI * 2.5 * t + m_phase);
+      if (x == 1) wavePath.moveTo (x, y);
+      else wavePath.lineTo (x, y);
+    }
+
+    // glow
+    QPainterPath fillPath = wavePath;
+    fillPath.lineTo (w - 1, waveMid);
+    fillPath.lineTo (1, waveMid);
+    fillPath.closeSubpath ();
+    QColor fillCol = waveColor;
+    fillCol.setAlpha (25);
+    p.fillPath (fillPath, fillCol);
+
+    // wave line
+    p.setPen (QPen (waveColor, 1.5));
+    p.drawPath (wavePath);
   }
 
-  // glow
-  QPainterPath fillPath = wavePath;
-  fillPath.lineTo (w - 1, waveMid);
-  fillPath.lineTo (1, waveMid);
-  fillPath.closeSubpath ();
-  QColor fillCol = waveColor;
-  fillCol.setAlpha (25);
-  p.fillPath (fillPath, fillCol);
+  // --- S-Meter always at bottom ---
+  if (m_showMeter) {
+    int meterH = 5;
+    int meterY = h - meterH - 2;
+    int meterX = 2;
+    int meterW = w - 4;
 
-  // wave line
-  p.setPen (QPen (waveColor, 1.5));
-  p.drawPath (wavePath);
+    // Background bar
+    p.fillRect (meterX, meterY, meterW, meterH, QColor (0x28, 0x28, 0x28));
 
-  // --- S-Meter + dB at bottom ---
-  int meterH = 5;
-  int meterY = h - meterH - 2;
-  int meterX = 2;
-  int meterW = w - 4;
-
-  p.fillRect (meterX, meterY, meterW, meterH, QColor (0x28, 0x28, 0x28));
-
-  if (m_snr > -99) {
+    // Gradient fill based on SNR
     qreal norm = qBound (0.0, static_cast<qreal>(m_snr - SNR_MIN) / (SNR_MAX - SNR_MIN), 1.0);
     int barW = qMax (1, static_cast<int>(norm * meterW));
 
@@ -125,9 +160,10 @@ void AsyncModeWidget::paintEvent (QPaintEvent *)
     grad.setColorAt (1.0, QColor (0x00, 0xff, 0x88));
     p.fillRect (meterX, meterY, barW, meterH, grad);
 
-    // dB value
+    // dB value text
     p.setFont (QFont {"Segoe UI", 6});
     p.setPen (Qt::white);
-    p.drawText (QRect (0, meterY - 9, w, 9), Qt::AlignCenter, QString ("%1 dB").arg (m_snr));
+    QString dbText = (m_snr <= -99) ? "--- dB" : QString ("%1 dB").arg (m_snr);
+    p.drawText (QRect (0, meterY - 9, w, 9), Qt::AlignCenter, dbText);
   }
 }

@@ -22,8 +22,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_AsyncModeWidget_t {
-    QByteArrayData data[10];
-    char stringdata0[77];
+    QByteArrayData data[13];
+    char stringdata0[111];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -38,14 +38,18 @@ QT_MOC_LITERAL(2, 23, 0), // ""
 QT_MOC_LITERAL(3, 24, 5), // "value"
 QT_MOC_LITERAL(4, 30, 15), // "setTransmitting"
 QT_MOC_LITERAL(5, 46, 2), // "tx"
-QT_MOC_LITERAL(6, 49, 5), // "start"
-QT_MOC_LITERAL(7, 55, 4), // "stop"
-QT_MOC_LITERAL(8, 60, 3), // "snr"
-QT_MOC_LITERAL(9, 64, 12) // "transmitting"
+QT_MOC_LITERAL(6, 49, 14), // "setWaveEnabled"
+QT_MOC_LITERAL(7, 64, 2), // "on"
+QT_MOC_LITERAL(8, 67, 15), // "setMeterEnabled"
+QT_MOC_LITERAL(9, 83, 5), // "start"
+QT_MOC_LITERAL(10, 89, 4), // "stop"
+QT_MOC_LITERAL(11, 94, 3), // "snr"
+QT_MOC_LITERAL(12, 98, 12) // "transmitting"
 
     },
     "AsyncModeWidget\0setSnr\0\0value\0"
-    "setTransmitting\0tx\0start\0stop\0snr\0"
+    "setTransmitting\0tx\0setWaveEnabled\0on\0"
+    "setMeterEnabled\0start\0stop\0snr\0"
     "transmitting"
 };
 #undef QT_MOC_LITERAL
@@ -56,28 +60,32 @@ static const uint qt_meta_data_AsyncModeWidget[] = {
        8,       // revision
        0,       // classname
        0,    0, // classinfo
-       4,   14, // methods
-       2,   42, // properties
+       6,   14, // methods
+       2,   58, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    1,   34,    2, 0x0a /* Public */,
-       4,    1,   37,    2, 0x0a /* Public */,
-       6,    0,   40,    2, 0x0a /* Public */,
-       7,    0,   41,    2, 0x0a /* Public */,
+       1,    1,   44,    2, 0x0a /* Public */,
+       4,    1,   47,    2, 0x0a /* Public */,
+       6,    1,   50,    2, 0x0a /* Public */,
+       8,    1,   53,    2, 0x0a /* Public */,
+       9,    0,   56,    2, 0x0a /* Public */,
+      10,    0,   57,    2, 0x0a /* Public */,
 
  // slots: parameters
     QMetaType::Void, QMetaType::Int,    3,
     QMetaType::Void, QMetaType::Bool,    5,
+    QMetaType::Void, QMetaType::Bool,    7,
+    QMetaType::Void, QMetaType::Bool,    7,
     QMetaType::Void,
     QMetaType::Void,
 
  // properties: name, type, flags
-       8, QMetaType::Int, 0x00095103,
-       9, QMetaType::Bool, 0x00095103,
+      11, QMetaType::Int, 0x00095103,
+      12, QMetaType::Bool, 0x00095103,
 
        0        // eod
 };
@@ -90,8 +98,10 @@ void AsyncModeWidget::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int 
         switch (_id) {
         case 0: _t->setSnr((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 1: _t->setTransmitting((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 2: _t->start(); break;
-        case 3: _t->stop(); break;
+        case 2: _t->setWaveEnabled((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 3: _t->setMeterEnabled((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 4: _t->start(); break;
+        case 5: _t->stop(); break;
         default: ;
         }
     }
@@ -148,13 +158,13 @@ int AsyncModeWidget::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 4)
+        if (_id < 6)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 4;
+        _id -= 6;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 4)
+        if (_id < 6)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 4;
+        _id -= 6;
     }
 #ifndef QT_NO_PROPERTIES
     else if (_c == QMetaObject::ReadProperty || _c == QMetaObject::WriteProperty

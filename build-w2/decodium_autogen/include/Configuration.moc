@@ -1,0 +1,946 @@
+/****************************************************************************
+** Meta object code from reading C++ file 'Configuration.cpp'
+**
+** Created by: The Qt Meta Object Compiler version 67 (Qt 5.15.18)
+**
+** WARNING! All changes made in this file will be lost!
+*****************************************************************************/
+
+#include <memory>
+#include <QtCore/qbytearray.h>
+#include <QtCore/qmetatype.h>
+#if !defined(Q_MOC_OUTPUT_REVISION)
+#error "The header file 'Configuration.cpp' doesn't include <QObject>."
+#elif Q_MOC_OUTPUT_REVISION != 67
+#error "This file was generated using the moc from 5.15.18. It"
+#error "cannot be used with the include files from this version of Qt."
+#error "(The moc has changed too much.)"
+#endif
+
+QT_BEGIN_MOC_NAMESPACE
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+struct qt_meta_stringdata_FrequencyDialog_t {
+    QByteArrayData data[1];
+    char stringdata0[16];
+};
+#define QT_MOC_LITERAL(idx, ofs, len) \
+    Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
+    qptrdiff(offsetof(qt_meta_stringdata_FrequencyDialog_t, stringdata0) + ofs \
+        - idx * sizeof(QByteArrayData)) \
+    )
+static const qt_meta_stringdata_FrequencyDialog_t qt_meta_stringdata_FrequencyDialog = {
+    {
+QT_MOC_LITERAL(0, 0, 15) // "FrequencyDialog"
+
+    },
+    "FrequencyDialog"
+};
+#undef QT_MOC_LITERAL
+
+static const uint qt_meta_data_FrequencyDialog[] = {
+
+ // content:
+       8,       // revision
+       0,       // classname
+       0,    0, // classinfo
+       0,    0, // methods
+       0,    0, // properties
+       0,    0, // enums/sets
+       0,    0, // constructors
+       0,       // flags
+       0,       // signalCount
+
+       0        // eod
+};
+
+void FrequencyDialog::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    (void)_o;
+    (void)_id;
+    (void)_c;
+    (void)_a;
+}
+
+QT_INIT_METAOBJECT const QMetaObject FrequencyDialog::staticMetaObject = { {
+    QMetaObject::SuperData::link<QDialog::staticMetaObject>(),
+    qt_meta_stringdata_FrequencyDialog.data,
+    qt_meta_data_FrequencyDialog,
+    qt_static_metacall,
+    nullptr,
+    nullptr
+} };
+
+
+const QMetaObject *FrequencyDialog::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *FrequencyDialog::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_meta_stringdata_FrequencyDialog.stringdata0))
+        return static_cast<void*>(this);
+    return QDialog::qt_metacast(_clname);
+}
+
+int FrequencyDialog::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = QDialog::qt_metacall(_c, _id, _a);
+    return _id;
+}
+struct qt_meta_stringdata_StationDialog_t {
+    QByteArrayData data[1];
+    char stringdata0[14];
+};
+#define QT_MOC_LITERAL(idx, ofs, len) \
+    Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
+    qptrdiff(offsetof(qt_meta_stringdata_StationDialog_t, stringdata0) + ofs \
+        - idx * sizeof(QByteArrayData)) \
+    )
+static const qt_meta_stringdata_StationDialog_t qt_meta_stringdata_StationDialog = {
+    {
+QT_MOC_LITERAL(0, 0, 13) // "StationDialog"
+
+    },
+    "StationDialog"
+};
+#undef QT_MOC_LITERAL
+
+static const uint qt_meta_data_StationDialog[] = {
+
+ // content:
+       8,       // revision
+       0,       // classname
+       0,    0, // classinfo
+       0,    0, // methods
+       0,    0, // properties
+       0,    0, // enums/sets
+       0,    0, // constructors
+       0,       // flags
+       0,       // signalCount
+
+       0        // eod
+};
+
+void StationDialog::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    (void)_o;
+    (void)_id;
+    (void)_c;
+    (void)_a;
+}
+
+QT_INIT_METAOBJECT const QMetaObject StationDialog::staticMetaObject = { {
+    QMetaObject::SuperData::link<QDialog::staticMetaObject>(),
+    qt_meta_stringdata_StationDialog.data,
+    qt_meta_data_StationDialog,
+    qt_static_metacall,
+    nullptr,
+    nullptr
+} };
+
+
+const QMetaObject *StationDialog::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *StationDialog::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_meta_stringdata_StationDialog.stringdata0))
+        return static_cast<void*>(this);
+    return QDialog::qt_metacast(_clname);
+}
+
+int StationDialog::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = QDialog::qt_metacall(_c, _id, _a);
+    return _id;
+}
+struct qt_meta_stringdata_Configuration__impl_t {
+    QByteArrayData data[135];
+    char stringdata0[3857];
+};
+#define QT_MOC_LITERAL(idx, ofs, len) \
+    Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
+    qptrdiff(offsetof(qt_meta_stringdata_Configuration__impl_t, stringdata0) + ofs \
+        - idx * sizeof(QByteArrayData)) \
+    )
+static const qt_meta_stringdata_Configuration__impl_t qt_meta_stringdata_Configuration__impl = {
+    {
+QT_MOC_LITERAL(0, 0, 19), // "Configuration::impl"
+QT_MOC_LITERAL(1, 20, 17), // "start_transceiver"
+QT_MOC_LITERAL(2, 38, 0), // ""
+QT_MOC_LITERAL(3, 39, 15), // "seqeunce_number"
+QT_MOC_LITERAL(4, 55, 15), // "set_transceiver"
+QT_MOC_LITERAL(5, 71, 29), // "Transceiver::TransceiverState"
+QT_MOC_LITERAL(6, 101, 15), // "sequence_number"
+QT_MOC_LITERAL(7, 117, 16), // "stop_transceiver"
+QT_MOC_LITERAL(8, 134, 4), // "exec"
+QT_MOC_LITERAL(9, 139, 6), // "accept"
+QT_MOC_LITERAL(10, 146, 6), // "reject"
+QT_MOC_LITERAL(11, 153, 4), // "done"
+QT_MOC_LITERAL(12, 158, 27), // "validate_network_interfaces"
+QT_MOC_LITERAL(13, 186, 17), // "host_info_results"
+QT_MOC_LITERAL(14, 204, 9), // "QHostInfo"
+QT_MOC_LITERAL(15, 214, 27), // "on_font_push_button_clicked"
+QT_MOC_LITERAL(16, 242, 40), // "on_decoded_text_font_push_but..."
+QT_MOC_LITERAL(17, 283, 31), // "on_PTT_port_combo_box_activated"
+QT_MOC_LITERAL(18, 315, 31), // "on_CAT_port_combo_box_activated"
+QT_MOC_LITERAL(19, 347, 48), // "on_CAT_serial_baud_combo_box_..."
+QT_MOC_LITERAL(20, 396, 43), // "on_CAT_data_bits_button_group..."
+QT_MOC_LITERAL(21, 440, 43), // "on_CAT_stop_bits_button_group..."
+QT_MOC_LITERAL(22, 484, 43), // "on_CAT_handshake_button_group..."
+QT_MOC_LITERAL(23, 528, 42), // "on_CAT_poll_interval_spin_box..."
+QT_MOC_LITERAL(24, 571, 40), // "on_split_mode_button_group_bu..."
+QT_MOC_LITERAL(25, 612, 31), // "on_test_CAT_push_button_clicked"
+QT_MOC_LITERAL(26, 644, 31), // "on_test_PTT_push_button_clicked"
+QT_MOC_LITERAL(27, 676, 7), // "checked"
+QT_MOC_LITERAL(28, 684, 25), // "on_pbTestCloudlog_clicked"
+QT_MOC_LITERAL(29, 710, 21), // "on_gbCloudlog_clicked"
+QT_MOC_LITERAL(30, 732, 42), // "on_force_DTR_combo_box_curren..."
+QT_MOC_LITERAL(31, 775, 42), // "on_force_RTS_combo_box_curren..."
+QT_MOC_LITERAL(32, 818, 36), // "on_rig_combo_box_currentIndex..."
+QT_MOC_LITERAL(33, 855, 30), // "on_refresh_push_button_clicked"
+QT_MOC_LITERAL(34, 886, 30), // "on_tci_audio_check_box_clicked"
+QT_MOC_LITERAL(35, 917, 28), // "on_TCI_spin_box_valueChanged"
+QT_MOC_LITERAL(36, 946, 1), // "a"
+QT_MOC_LITERAL(37, 948, 32), // "on_add_macro_push_button_clicked"
+QT_MOC_LITERAL(38, 981, 35), // "on_delete_macro_push_button_c..."
+QT_MOC_LITERAL(39, 1017, 40), // "on_PTT_method_button_group_bu..."
+QT_MOC_LITERAL(40, 1058, 38), // "on_add_macro_line_edit_editin..."
+QT_MOC_LITERAL(41, 1097, 12), // "delete_macro"
+QT_MOC_LITERAL(42, 1110, 35), // "on_udp_server_line_edit_textC..."
+QT_MOC_LITERAL(43, 1146, 39), // "on_udp_server_line_edit_editi..."
+QT_MOC_LITERAL(44, 1186, 39), // "on_save_path_select_push_butt..."
+QT_MOC_LITERAL(45, 1226, 39), // "on_azel_path_select_push_butt..."
+QT_MOC_LITERAL(46, 1266, 46), // "on_calibration_intercept_spin..."
+QT_MOC_LITERAL(47, 1313, 22), // "handle_leavingSettings"
+QT_MOC_LITERAL(48, 1336, 46), // "on_calibration_slope_ppm_spin..."
+QT_MOC_LITERAL(49, 1383, 35), // "handle_transceiver_tciframesw..."
+QT_MOC_LITERAL(50, 1419, 33), // "handle_transceiver_tci_mod_ac..."
+QT_MOC_LITERAL(51, 1453, 25), // "handle_transceiver_update"
+QT_MOC_LITERAL(52, 1479, 16), // "TransceiverState"
+QT_MOC_LITERAL(53, 1496, 26), // "handle_transceiver_failure"
+QT_MOC_LITERAL(54, 1523, 6), // "reason"
+QT_MOC_LITERAL(55, 1530, 25), // "on_DXCC_check_box_clicked"
+QT_MOC_LITERAL(56, 1556, 32), // "on_PWR_and_SWR_check_box_clicked"
+QT_MOC_LITERAL(57, 1589, 20), // "on_cbHighDPI_clicked"
+QT_MOC_LITERAL(58, 1610, 53), // "on_reset_highlighting_to_defa..."
+QT_MOC_LITERAL(59, 1664, 54), // "on_reset_highlighting_to_defa..."
+QT_MOC_LITERAL(60, 1719, 33), // "on_rescan_log_push_button_cli..."
+QT_MOC_LITERAL(61, 1753, 30), // "on_CTY_download_button_clicked"
+QT_MOC_LITERAL(62, 1784, 32), // "on_CALL3_download_button_clicked"
+QT_MOC_LITERAL(63, 1817, 36), // "on_CALL3_EME_download_button_..."
+QT_MOC_LITERAL(64, 1854, 37), // "on_LotW_CSV_fetch_push_button..."
+QT_MOC_LITERAL(65, 1892, 33), // "on_hamlib_download_button_cli..."
+QT_MOC_LITERAL(66, 1926, 31), // "on_revert_update_button_clicked"
+QT_MOC_LITERAL(67, 1958, 30), // "on_gbSpecialOpActivity_clicked"
+QT_MOC_LITERAL(68, 1989, 16), // "on_rbFox_clicked"
+QT_MOC_LITERAL(69, 2006, 18), // "on_rbHound_clicked"
+QT_MOC_LITERAL(70, 2025, 27), // "on_rbNA_VHF_Contest_clicked"
+QT_MOC_LITERAL(71, 2053, 27), // "on_rbEU_VHF_Contest_clicked"
+QT_MOC_LITERAL(72, 2081, 20), // "on_rbWW_DIGI_clicked"
+QT_MOC_LITERAL(73, 2102, 22), // "on_rbQ65pileup_clicked"
+QT_MOC_LITERAL(74, 2125, 22), // "on_rbField_Day_clicked"
+QT_MOC_LITERAL(75, 2148, 25), // "on_rbRTTY_Roundup_clicked"
+QT_MOC_LITERAL(76, 2174, 22), // "on_rbARRL_Digi_clicked"
+QT_MOC_LITERAL(77, 2197, 21), // "on_cbSuperFox_clicked"
+QT_MOC_LITERAL(78, 2219, 24), // "on_cbContestName_clicked"
+QT_MOC_LITERAL(79, 2244, 16), // "on_cbOTP_clicked"
+QT_MOC_LITERAL(80, 2261, 20), // "on_cbShowOTP_clicked"
+QT_MOC_LITERAL(81, 2282, 25), // "on_cb_NCCC_Sprint_clicked"
+QT_MOC_LITERAL(82, 2308, 26), // "on_cbx2ToneSpacing_clicked"
+QT_MOC_LITERAL(83, 2335, 26), // "on_cbx4ToneSpacing_clicked"
+QT_MOC_LITERAL(84, 2362, 34), // "on_prompt_to_log_check_box_cl..."
+QT_MOC_LITERAL(85, 2397, 20), // "on_cbAutoLog_clicked"
+QT_MOC_LITERAL(86, 2418, 37), // "on_Field_Day_Exchange_editing..."
+QT_MOC_LITERAL(87, 2456, 32), // "on_RTTY_Exchange_editingFinished"
+QT_MOC_LITERAL(88, 2489, 20), // "on_OTPUrl_textEdited"
+QT_MOC_LITERAL(89, 2510, 21), // "on_OTPSeed_textEdited"
+QT_MOC_LITERAL(90, 2532, 31), // "on_cbSortAlphabetically_clicked"
+QT_MOC_LITERAL(91, 2564, 21), // "on_cbHideCARD_clicked"
+QT_MOC_LITERAL(92, 2586, 31), // "on_Contest_Name_editingFinished"
+QT_MOC_LITERAL(93, 2618, 29), // "on_Blacklist1_editingFinished"
+QT_MOC_LITERAL(94, 2648, 29), // "on_Blacklist2_editingFinished"
+QT_MOC_LITERAL(95, 2678, 29), // "on_Blacklist3_editingFinished"
+QT_MOC_LITERAL(96, 2708, 29), // "on_Blacklist4_editingFinished"
+QT_MOC_LITERAL(97, 2738, 29), // "on_Blacklist5_editingFinished"
+QT_MOC_LITERAL(98, 2768, 29), // "on_Blacklist6_editingFinished"
+QT_MOC_LITERAL(99, 2798, 29), // "on_Blacklist7_editingFinished"
+QT_MOC_LITERAL(100, 2828, 29), // "on_Blacklist8_editingFinished"
+QT_MOC_LITERAL(101, 2858, 29), // "on_Blacklist9_editingFinished"
+QT_MOC_LITERAL(102, 2888, 30), // "on_Blacklist10_editingFinished"
+QT_MOC_LITERAL(103, 2919, 30), // "on_Blacklist11_editingFinished"
+QT_MOC_LITERAL(104, 2950, 30), // "on_Blacklist12_editingFinished"
+QT_MOC_LITERAL(105, 2981, 29), // "on_Whitelist1_editingFinished"
+QT_MOC_LITERAL(106, 3011, 29), // "on_Whitelist2_editingFinished"
+QT_MOC_LITERAL(107, 3041, 29), // "on_Whitelist3_editingFinished"
+QT_MOC_LITERAL(108, 3071, 29), // "on_Whitelist4_editingFinished"
+QT_MOC_LITERAL(109, 3101, 29), // "on_Whitelist5_editingFinished"
+QT_MOC_LITERAL(110, 3131, 29), // "on_Whitelist6_editingFinished"
+QT_MOC_LITERAL(111, 3161, 29), // "on_Whitelist7_editingFinished"
+QT_MOC_LITERAL(112, 3191, 29), // "on_Whitelist8_editingFinished"
+QT_MOC_LITERAL(113, 3221, 29), // "on_Whitelist9_editingFinished"
+QT_MOC_LITERAL(114, 3251, 30), // "on_Whitelist10_editingFinished"
+QT_MOC_LITERAL(115, 3282, 30), // "on_Whitelist11_editingFinished"
+QT_MOC_LITERAL(116, 3313, 30), // "on_Whitelist12_editingFinished"
+QT_MOC_LITERAL(117, 3344, 24), // "on_Pass1_editingFinished"
+QT_MOC_LITERAL(118, 3369, 24), // "on_Pass2_editingFinished"
+QT_MOC_LITERAL(119, 3394, 24), // "on_Pass3_editingFinished"
+QT_MOC_LITERAL(120, 3419, 24), // "on_Pass4_editingFinished"
+QT_MOC_LITERAL(121, 3444, 24), // "on_Pass5_editingFinished"
+QT_MOC_LITERAL(122, 3469, 24), // "on_Pass6_editingFinished"
+QT_MOC_LITERAL(123, 3494, 24), // "on_Pass7_editingFinished"
+QT_MOC_LITERAL(124, 3519, 24), // "on_Pass8_editingFinished"
+QT_MOC_LITERAL(125, 3544, 24), // "on_Pass9_editingFinished"
+QT_MOC_LITERAL(126, 3569, 25), // "on_Pass10_editingFinished"
+QT_MOC_LITERAL(127, 3595, 25), // "on_Pass11_editingFinished"
+QT_MOC_LITERAL(128, 3621, 25), // "on_Pass12_editingFinished"
+QT_MOC_LITERAL(129, 3647, 29), // "on_Territory1_editingFinished"
+QT_MOC_LITERAL(130, 3677, 29), // "on_Territory2_editingFinished"
+QT_MOC_LITERAL(131, 3707, 29), // "on_Territory3_editingFinished"
+QT_MOC_LITERAL(132, 3737, 29), // "on_Territory4_editingFinished"
+QT_MOC_LITERAL(133, 3767, 45), // "on_highlight_orange_callsigns..."
+QT_MOC_LITERAL(134, 3813, 43) // "on_highlight_blue_callsigns_e..."
+
+    },
+    "Configuration::impl\0start_transceiver\0"
+    "\0seqeunce_number\0set_transceiver\0"
+    "Transceiver::TransceiverState\0"
+    "sequence_number\0stop_transceiver\0exec\0"
+    "accept\0reject\0done\0validate_network_interfaces\0"
+    "host_info_results\0QHostInfo\0"
+    "on_font_push_button_clicked\0"
+    "on_decoded_text_font_push_button_clicked\0"
+    "on_PTT_port_combo_box_activated\0"
+    "on_CAT_port_combo_box_activated\0"
+    "on_CAT_serial_baud_combo_box_currentIndexChanged\0"
+    "on_CAT_data_bits_button_group_buttonClicked\0"
+    "on_CAT_stop_bits_button_group_buttonClicked\0"
+    "on_CAT_handshake_button_group_buttonClicked\0"
+    "on_CAT_poll_interval_spin_box_valueChanged\0"
+    "on_split_mode_button_group_buttonClicked\0"
+    "on_test_CAT_push_button_clicked\0"
+    "on_test_PTT_push_button_clicked\0checked\0"
+    "on_pbTestCloudlog_clicked\0"
+    "on_gbCloudlog_clicked\0"
+    "on_force_DTR_combo_box_currentIndexChanged\0"
+    "on_force_RTS_combo_box_currentIndexChanged\0"
+    "on_rig_combo_box_currentIndexChanged\0"
+    "on_refresh_push_button_clicked\0"
+    "on_tci_audio_check_box_clicked\0"
+    "on_TCI_spin_box_valueChanged\0a\0"
+    "on_add_macro_push_button_clicked\0"
+    "on_delete_macro_push_button_clicked\0"
+    "on_PTT_method_button_group_buttonClicked\0"
+    "on_add_macro_line_edit_editingFinished\0"
+    "delete_macro\0on_udp_server_line_edit_textChanged\0"
+    "on_udp_server_line_edit_editingFinished\0"
+    "on_save_path_select_push_button_clicked\0"
+    "on_azel_path_select_push_button_clicked\0"
+    "on_calibration_intercept_spin_box_valueChanged\0"
+    "handle_leavingSettings\0"
+    "on_calibration_slope_ppm_spin_box_valueChanged\0"
+    "handle_transceiver_tciframeswritten\0"
+    "handle_transceiver_tci_mod_active\0"
+    "handle_transceiver_update\0TransceiverState\0"
+    "handle_transceiver_failure\0reason\0"
+    "on_DXCC_check_box_clicked\0"
+    "on_PWR_and_SWR_check_box_clicked\0"
+    "on_cbHighDPI_clicked\0"
+    "on_reset_highlighting_to_defaults_push_button_clicked\0"
+    "on_reset_highlighting_to_defaults2_push_button_clicked\0"
+    "on_rescan_log_push_button_clicked\0"
+    "on_CTY_download_button_clicked\0"
+    "on_CALL3_download_button_clicked\0"
+    "on_CALL3_EME_download_button_clicked\0"
+    "on_LotW_CSV_fetch_push_button_clicked\0"
+    "on_hamlib_download_button_clicked\0"
+    "on_revert_update_button_clicked\0"
+    "on_gbSpecialOpActivity_clicked\0"
+    "on_rbFox_clicked\0on_rbHound_clicked\0"
+    "on_rbNA_VHF_Contest_clicked\0"
+    "on_rbEU_VHF_Contest_clicked\0"
+    "on_rbWW_DIGI_clicked\0on_rbQ65pileup_clicked\0"
+    "on_rbField_Day_clicked\0on_rbRTTY_Roundup_clicked\0"
+    "on_rbARRL_Digi_clicked\0on_cbSuperFox_clicked\0"
+    "on_cbContestName_clicked\0on_cbOTP_clicked\0"
+    "on_cbShowOTP_clicked\0on_cb_NCCC_Sprint_clicked\0"
+    "on_cbx2ToneSpacing_clicked\0"
+    "on_cbx4ToneSpacing_clicked\0"
+    "on_prompt_to_log_check_box_clicked\0"
+    "on_cbAutoLog_clicked\0"
+    "on_Field_Day_Exchange_editingFinished\0"
+    "on_RTTY_Exchange_editingFinished\0"
+    "on_OTPUrl_textEdited\0on_OTPSeed_textEdited\0"
+    "on_cbSortAlphabetically_clicked\0"
+    "on_cbHideCARD_clicked\0"
+    "on_Contest_Name_editingFinished\0"
+    "on_Blacklist1_editingFinished\0"
+    "on_Blacklist2_editingFinished\0"
+    "on_Blacklist3_editingFinished\0"
+    "on_Blacklist4_editingFinished\0"
+    "on_Blacklist5_editingFinished\0"
+    "on_Blacklist6_editingFinished\0"
+    "on_Blacklist7_editingFinished\0"
+    "on_Blacklist8_editingFinished\0"
+    "on_Blacklist9_editingFinished\0"
+    "on_Blacklist10_editingFinished\0"
+    "on_Blacklist11_editingFinished\0"
+    "on_Blacklist12_editingFinished\0"
+    "on_Whitelist1_editingFinished\0"
+    "on_Whitelist2_editingFinished\0"
+    "on_Whitelist3_editingFinished\0"
+    "on_Whitelist4_editingFinished\0"
+    "on_Whitelist5_editingFinished\0"
+    "on_Whitelist6_editingFinished\0"
+    "on_Whitelist7_editingFinished\0"
+    "on_Whitelist8_editingFinished\0"
+    "on_Whitelist9_editingFinished\0"
+    "on_Whitelist10_editingFinished\0"
+    "on_Whitelist11_editingFinished\0"
+    "on_Whitelist12_editingFinished\0"
+    "on_Pass1_editingFinished\0"
+    "on_Pass2_editingFinished\0"
+    "on_Pass3_editingFinished\0"
+    "on_Pass4_editingFinished\0"
+    "on_Pass5_editingFinished\0"
+    "on_Pass6_editingFinished\0"
+    "on_Pass7_editingFinished\0"
+    "on_Pass8_editingFinished\0"
+    "on_Pass9_editingFinished\0"
+    "on_Pass10_editingFinished\0"
+    "on_Pass11_editingFinished\0"
+    "on_Pass12_editingFinished\0"
+    "on_Territory1_editingFinished\0"
+    "on_Territory2_editingFinished\0"
+    "on_Territory3_editingFinished\0"
+    "on_Territory4_editingFinished\0"
+    "on_highlight_orange_callsigns_editingFinished\0"
+    "on_highlight_blue_callsigns_editingFinished"
+};
+#undef QT_MOC_LITERAL
+
+static const uint qt_meta_data_Configuration__impl[] = {
+
+ // content:
+       8,       // revision
+       0,       // classname
+       0,    0, // classinfo
+     127,   14, // methods
+       0,    0, // properties
+       0,    0, // enums/sets
+       0,    0, // constructors
+       0,       // flags
+       3,       // signalCount
+
+ // signals: name, argc, parameters, tag, flags
+       1,    1,  649,    2, 0x04 /* Private */,
+       4,    2,  652,    2, 0x04 /* Private */,
+       7,    0,  657,    2, 0x04 /* Private */,
+
+ // slots: name, argc, parameters, tag, flags
+       8,    0,  658,    2, 0x0a /* Public */,
+       9,    0,  659,    2, 0x0a /* Public */,
+      10,    0,  660,    2, 0x0a /* Public */,
+      11,    1,  661,    2, 0x0a /* Public */,
+      12,    1,  664,    2, 0x08 /* Private */,
+      13,    1,  667,    2, 0x08 /* Private */,
+      15,    0,  670,    2, 0x08 /* Private */,
+      16,    0,  671,    2, 0x08 /* Private */,
+      17,    1,  672,    2, 0x08 /* Private */,
+      18,    1,  675,    2, 0x08 /* Private */,
+      19,    1,  678,    2, 0x08 /* Private */,
+      20,    1,  681,    2, 0x08 /* Private */,
+      21,    1,  684,    2, 0x08 /* Private */,
+      22,    1,  687,    2, 0x08 /* Private */,
+      23,    1,  690,    2, 0x08 /* Private */,
+      24,    1,  693,    2, 0x08 /* Private */,
+      25,    0,  696,    2, 0x08 /* Private */,
+      26,    1,  697,    2, 0x08 /* Private */,
+      28,    0,  700,    2, 0x08 /* Private */,
+      29,    0,  701,    2, 0x08 /* Private */,
+      30,    1,  702,    2, 0x08 /* Private */,
+      31,    1,  705,    2, 0x08 /* Private */,
+      32,    1,  708,    2, 0x08 /* Private */,
+      33,    0,  711,    2, 0x08 /* Private */,
+      34,    1,  712,    2, 0x08 /* Private */,
+      35,    1,  715,    2, 0x08 /* Private */,
+      37,    1,  718,    2, 0x08 /* Private */,
+      37,    0,  721,    2, 0x28 /* Private | MethodCloned */,
+      38,    1,  722,    2, 0x08 /* Private */,
+      38,    0,  725,    2, 0x28 /* Private | MethodCloned */,
+      39,    1,  726,    2, 0x08 /* Private */,
+      40,    0,  729,    2, 0x08 /* Private */,
+      41,    0,  730,    2, 0x08 /* Private */,
+      42,    1,  731,    2, 0x08 /* Private */,
+      43,    0,  734,    2, 0x08 /* Private */,
+      44,    1,  735,    2, 0x08 /* Private */,
+      45,    1,  738,    2, 0x08 /* Private */,
+      46,    1,  741,    2, 0x08 /* Private */,
+      47,    0,  744,    2, 0x08 /* Private */,
+      48,    1,  745,    2, 0x08 /* Private */,
+      49,    1,  748,    2, 0x08 /* Private */,
+      50,    1,  751,    2, 0x08 /* Private */,
+      51,    2,  754,    2, 0x08 /* Private */,
+      53,    1,  759,    2, 0x08 /* Private */,
+      55,    1,  762,    2, 0x08 /* Private */,
+      56,    1,  765,    2, 0x08 /* Private */,
+      57,    1,  768,    2, 0x08 /* Private */,
+      58,    1,  771,    2, 0x08 /* Private */,
+      59,    1,  774,    2, 0x08 /* Private */,
+      60,    1,  777,    2, 0x08 /* Private */,
+      61,    1,  780,    2, 0x08 /* Private */,
+      62,    1,  783,    2, 0x08 /* Private */,
+      63,    1,  786,    2, 0x08 /* Private */,
+      64,    1,  789,    2, 0x08 /* Private */,
+      65,    1,  792,    2, 0x08 /* Private */,
+      66,    1,  795,    2, 0x08 /* Private */,
+      67,    1,  798,    2, 0x08 /* Private */,
+      68,    1,  801,    2, 0x08 /* Private */,
+      69,    1,  804,    2, 0x08 /* Private */,
+      70,    1,  807,    2, 0x08 /* Private */,
+      71,    1,  810,    2, 0x08 /* Private */,
+      72,    1,  813,    2, 0x08 /* Private */,
+      73,    1,  816,    2, 0x08 /* Private */,
+      74,    1,  819,    2, 0x08 /* Private */,
+      75,    1,  822,    2, 0x08 /* Private */,
+      76,    1,  825,    2, 0x08 /* Private */,
+      77,    1,  828,    2, 0x08 /* Private */,
+      78,    1,  831,    2, 0x08 /* Private */,
+      79,    1,  834,    2, 0x08 /* Private */,
+      80,    1,  837,    2, 0x08 /* Private */,
+      81,    1,  840,    2, 0x08 /* Private */,
+      82,    1,  843,    2, 0x08 /* Private */,
+      83,    1,  846,    2, 0x08 /* Private */,
+      84,    1,  849,    2, 0x08 /* Private */,
+      85,    1,  852,    2, 0x08 /* Private */,
+      86,    0,  855,    2, 0x08 /* Private */,
+      87,    0,  856,    2, 0x08 /* Private */,
+      88,    1,  857,    2, 0x08 /* Private */,
+      89,    1,  860,    2, 0x08 /* Private */,
+      90,    1,  863,    2, 0x08 /* Private */,
+      91,    1,  866,    2, 0x08 /* Private */,
+      92,    0,  869,    2, 0x08 /* Private */,
+      93,    0,  870,    2, 0x08 /* Private */,
+      94,    0,  871,    2, 0x08 /* Private */,
+      95,    0,  872,    2, 0x08 /* Private */,
+      96,    0,  873,    2, 0x08 /* Private */,
+      97,    0,  874,    2, 0x08 /* Private */,
+      98,    0,  875,    2, 0x08 /* Private */,
+      99,    0,  876,    2, 0x08 /* Private */,
+     100,    0,  877,    2, 0x08 /* Private */,
+     101,    0,  878,    2, 0x08 /* Private */,
+     102,    0,  879,    2, 0x08 /* Private */,
+     103,    0,  880,    2, 0x08 /* Private */,
+     104,    0,  881,    2, 0x08 /* Private */,
+     105,    0,  882,    2, 0x08 /* Private */,
+     106,    0,  883,    2, 0x08 /* Private */,
+     107,    0,  884,    2, 0x08 /* Private */,
+     108,    0,  885,    2, 0x08 /* Private */,
+     109,    0,  886,    2, 0x08 /* Private */,
+     110,    0,  887,    2, 0x08 /* Private */,
+     111,    0,  888,    2, 0x08 /* Private */,
+     112,    0,  889,    2, 0x08 /* Private */,
+     113,    0,  890,    2, 0x08 /* Private */,
+     114,    0,  891,    2, 0x08 /* Private */,
+     115,    0,  892,    2, 0x08 /* Private */,
+     116,    0,  893,    2, 0x08 /* Private */,
+     117,    0,  894,    2, 0x08 /* Private */,
+     118,    0,  895,    2, 0x08 /* Private */,
+     119,    0,  896,    2, 0x08 /* Private */,
+     120,    0,  897,    2, 0x08 /* Private */,
+     121,    0,  898,    2, 0x08 /* Private */,
+     122,    0,  899,    2, 0x08 /* Private */,
+     123,    0,  900,    2, 0x08 /* Private */,
+     124,    0,  901,    2, 0x08 /* Private */,
+     125,    0,  902,    2, 0x08 /* Private */,
+     126,    0,  903,    2, 0x08 /* Private */,
+     127,    0,  904,    2, 0x08 /* Private */,
+     128,    0,  905,    2, 0x08 /* Private */,
+     129,    0,  906,    2, 0x08 /* Private */,
+     130,    0,  907,    2, 0x08 /* Private */,
+     131,    0,  908,    2, 0x08 /* Private */,
+     132,    0,  909,    2, 0x08 /* Private */,
+     133,    0,  910,    2, 0x08 /* Private */,
+     134,    0,  911,    2, 0x08 /* Private */,
+
+ // signals: parameters
+    QMetaType::Void, QMetaType::UInt,    3,
+    QMetaType::Void, 0x80000000 | 5, QMetaType::UInt,    2,    6,
+    QMetaType::Void,
+
+ // slots: parameters
+    QMetaType::Int,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void, QMetaType::QString,    2,
+    QMetaType::Void, 0x80000000 | 14,    2,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Bool,   27,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Bool,   27,
+    QMetaType::Void, QMetaType::Double,   36,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Int,    2,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::QString,    2,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Double,    2,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Double,    2,
+    QMetaType::Void, QMetaType::LongLong,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, 0x80000000 | 52, QMetaType::UInt,    2,    6,
+    QMetaType::Void, QMetaType::QString,   54,
+    QMetaType::Void, QMetaType::Bool,   27,
+    QMetaType::Void, QMetaType::Bool,   27,
+    QMetaType::Void, QMetaType::Bool,   27,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::QString,    2,
+    QMetaType::Void, QMetaType::QString,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void, QMetaType::Bool,    2,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+
+       0        // eod
+};
+
+void Configuration::impl::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        auto *_t = static_cast<impl *>(_o);
+        (void)_t;
+        switch (_id) {
+        case 0: _t->start_transceiver((*reinterpret_cast< uint(*)>(_a[1]))); break;
+        case 1: _t->set_transceiver((*reinterpret_cast< const Transceiver::TransceiverState(*)>(_a[1])),(*reinterpret_cast< uint(*)>(_a[2]))); break;
+        case 2: _t->stop_transceiver(); break;
+        case 3: { int _r = _t->exec();
+            if (_a[0]) *reinterpret_cast< int*>(_a[0]) = std::move(_r); }  break;
+        case 4: _t->accept(); break;
+        case 5: _t->reject(); break;
+        case 6: _t->done((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 7: _t->validate_network_interfaces((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 8: _t->host_info_results((*reinterpret_cast< QHostInfo(*)>(_a[1]))); break;
+        case 9: _t->on_font_push_button_clicked(); break;
+        case 10: _t->on_decoded_text_font_push_button_clicked(); break;
+        case 11: _t->on_PTT_port_combo_box_activated((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 12: _t->on_CAT_port_combo_box_activated((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 13: _t->on_CAT_serial_baud_combo_box_currentIndexChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 14: _t->on_CAT_data_bits_button_group_buttonClicked((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 15: _t->on_CAT_stop_bits_button_group_buttonClicked((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 16: _t->on_CAT_handshake_button_group_buttonClicked((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 17: _t->on_CAT_poll_interval_spin_box_valueChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 18: _t->on_split_mode_button_group_buttonClicked((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 19: _t->on_test_CAT_push_button_clicked(); break;
+        case 20: _t->on_test_PTT_push_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 21: _t->on_pbTestCloudlog_clicked(); break;
+        case 22: _t->on_gbCloudlog_clicked(); break;
+        case 23: _t->on_force_DTR_combo_box_currentIndexChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 24: _t->on_force_RTS_combo_box_currentIndexChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 25: _t->on_rig_combo_box_currentIndexChanged((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 26: _t->on_refresh_push_button_clicked(); break;
+        case 27: _t->on_tci_audio_check_box_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 28: _t->on_TCI_spin_box_valueChanged((*reinterpret_cast< double(*)>(_a[1]))); break;
+        case 29: _t->on_add_macro_push_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 30: _t->on_add_macro_push_button_clicked(); break;
+        case 31: _t->on_delete_macro_push_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 32: _t->on_delete_macro_push_button_clicked(); break;
+        case 33: _t->on_PTT_method_button_group_buttonClicked((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 34: _t->on_add_macro_line_edit_editingFinished(); break;
+        case 35: _t->delete_macro(); break;
+        case 36: _t->on_udp_server_line_edit_textChanged((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 37: _t->on_udp_server_line_edit_editingFinished(); break;
+        case 38: _t->on_save_path_select_push_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 39: _t->on_azel_path_select_push_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 40: _t->on_calibration_intercept_spin_box_valueChanged((*reinterpret_cast< double(*)>(_a[1]))); break;
+        case 41: _t->handle_leavingSettings(); break;
+        case 42: _t->on_calibration_slope_ppm_spin_box_valueChanged((*reinterpret_cast< double(*)>(_a[1]))); break;
+        case 43: _t->handle_transceiver_tciframeswritten((*reinterpret_cast< qint64(*)>(_a[1]))); break;
+        case 44: _t->handle_transceiver_tci_mod_active((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 45: _t->handle_transceiver_update((*reinterpret_cast< const TransceiverState(*)>(_a[1])),(*reinterpret_cast< uint(*)>(_a[2]))); break;
+        case 46: _t->handle_transceiver_failure((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 47: _t->on_DXCC_check_box_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 48: _t->on_PWR_and_SWR_check_box_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 49: _t->on_cbHighDPI_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 50: _t->on_reset_highlighting_to_defaults_push_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 51: _t->on_reset_highlighting_to_defaults2_push_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 52: _t->on_rescan_log_push_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 53: _t->on_CTY_download_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 54: _t->on_CALL3_download_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 55: _t->on_CALL3_EME_download_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 56: _t->on_LotW_CSV_fetch_push_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 57: _t->on_hamlib_download_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 58: _t->on_revert_update_button_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 59: _t->on_gbSpecialOpActivity_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 60: _t->on_rbFox_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 61: _t->on_rbHound_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 62: _t->on_rbNA_VHF_Contest_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 63: _t->on_rbEU_VHF_Contest_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 64: _t->on_rbWW_DIGI_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 65: _t->on_rbQ65pileup_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 66: _t->on_rbField_Day_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 67: _t->on_rbRTTY_Roundup_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 68: _t->on_rbARRL_Digi_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 69: _t->on_cbSuperFox_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 70: _t->on_cbContestName_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 71: _t->on_cbOTP_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 72: _t->on_cbShowOTP_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 73: _t->on_cb_NCCC_Sprint_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 74: _t->on_cbx2ToneSpacing_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 75: _t->on_cbx4ToneSpacing_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 76: _t->on_prompt_to_log_check_box_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 77: _t->on_cbAutoLog_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 78: _t->on_Field_Day_Exchange_editingFinished(); break;
+        case 79: _t->on_RTTY_Exchange_editingFinished(); break;
+        case 80: _t->on_OTPUrl_textEdited((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 81: _t->on_OTPSeed_textEdited((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 82: _t->on_cbSortAlphabetically_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 83: _t->on_cbHideCARD_clicked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 84: _t->on_Contest_Name_editingFinished(); break;
+        case 85: _t->on_Blacklist1_editingFinished(); break;
+        case 86: _t->on_Blacklist2_editingFinished(); break;
+        case 87: _t->on_Blacklist3_editingFinished(); break;
+        case 88: _t->on_Blacklist4_editingFinished(); break;
+        case 89: _t->on_Blacklist5_editingFinished(); break;
+        case 90: _t->on_Blacklist6_editingFinished(); break;
+        case 91: _t->on_Blacklist7_editingFinished(); break;
+        case 92: _t->on_Blacklist8_editingFinished(); break;
+        case 93: _t->on_Blacklist9_editingFinished(); break;
+        case 94: _t->on_Blacklist10_editingFinished(); break;
+        case 95: _t->on_Blacklist11_editingFinished(); break;
+        case 96: _t->on_Blacklist12_editingFinished(); break;
+        case 97: _t->on_Whitelist1_editingFinished(); break;
+        case 98: _t->on_Whitelist2_editingFinished(); break;
+        case 99: _t->on_Whitelist3_editingFinished(); break;
+        case 100: _t->on_Whitelist4_editingFinished(); break;
+        case 101: _t->on_Whitelist5_editingFinished(); break;
+        case 102: _t->on_Whitelist6_editingFinished(); break;
+        case 103: _t->on_Whitelist7_editingFinished(); break;
+        case 104: _t->on_Whitelist8_editingFinished(); break;
+        case 105: _t->on_Whitelist9_editingFinished(); break;
+        case 106: _t->on_Whitelist10_editingFinished(); break;
+        case 107: _t->on_Whitelist11_editingFinished(); break;
+        case 108: _t->on_Whitelist12_editingFinished(); break;
+        case 109: _t->on_Pass1_editingFinished(); break;
+        case 110: _t->on_Pass2_editingFinished(); break;
+        case 111: _t->on_Pass3_editingFinished(); break;
+        case 112: _t->on_Pass4_editingFinished(); break;
+        case 113: _t->on_Pass5_editingFinished(); break;
+        case 114: _t->on_Pass6_editingFinished(); break;
+        case 115: _t->on_Pass7_editingFinished(); break;
+        case 116: _t->on_Pass8_editingFinished(); break;
+        case 117: _t->on_Pass9_editingFinished(); break;
+        case 118: _t->on_Pass10_editingFinished(); break;
+        case 119: _t->on_Pass11_editingFinished(); break;
+        case 120: _t->on_Pass12_editingFinished(); break;
+        case 121: _t->on_Territory1_editingFinished(); break;
+        case 122: _t->on_Territory2_editingFinished(); break;
+        case 123: _t->on_Territory3_editingFinished(); break;
+        case 124: _t->on_Territory4_editingFinished(); break;
+        case 125: _t->on_highlight_orange_callsigns_editingFinished(); break;
+        case 126: _t->on_highlight_blue_callsigns_editingFinished(); break;
+        default: ;
+        }
+    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        switch (_id) {
+        default: *reinterpret_cast<int*>(_a[0]) = -1; break;
+        case 1:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<int*>(_a[0]) = -1; break;
+            case 0:
+                *reinterpret_cast<int*>(_a[0]) = qRegisterMetaType< Transceiver::TransceiverState >(); break;
+            }
+            break;
+        case 8:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<int*>(_a[0]) = -1; break;
+            case 0:
+                *reinterpret_cast<int*>(_a[0]) = qRegisterMetaType< QHostInfo >(); break;
+            }
+            break;
+        }
+    } else if (_c == QMetaObject::IndexOfMethod) {
+        int *result = reinterpret_cast<int *>(_a[0]);
+        {
+            using _t = void (impl::*)(unsigned  ) const;
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&impl::start_transceiver)) {
+                *result = 0;
+                return;
+            }
+        }
+        {
+            using _t = void (impl::*)(Transceiver::TransceiverState const & , unsigned  ) const;
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&impl::set_transceiver)) {
+                *result = 1;
+                return;
+            }
+        }
+        {
+            using _t = void (impl::*)() const;
+            if (*reinterpret_cast<_t *>(_a[1]) == static_cast<_t>(&impl::stop_transceiver)) {
+                *result = 2;
+                return;
+            }
+        }
+    }
+}
+
+QT_INIT_METAOBJECT const QMetaObject Configuration::impl::staticMetaObject = { {
+    QMetaObject::SuperData::link<QDialog::staticMetaObject>(),
+    qt_meta_stringdata_Configuration__impl.data,
+    qt_meta_data_Configuration__impl,
+    qt_static_metacall,
+    nullptr,
+    nullptr
+} };
+
+
+const QMetaObject *Configuration::impl::metaObject() const
+{
+    return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
+}
+
+void *Configuration::impl::qt_metacast(const char *_clname)
+{
+    if (!_clname) return nullptr;
+    if (!strcmp(_clname, qt_meta_stringdata_Configuration__impl.stringdata0))
+        return static_cast<void*>(this);
+    return QDialog::qt_metacast(_clname);
+}
+
+int Configuration::impl::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+{
+    _id = QDialog::qt_metacall(_c, _id, _a);
+    if (_id < 0)
+        return _id;
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        if (_id < 127)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 127;
+    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        if (_id < 127)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 127;
+    }
+    return _id;
+}
+
+// SIGNAL 0
+void Configuration::impl::start_transceiver(unsigned  _t1)const
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(const_cast< Configuration::impl *>(this), &staticMetaObject, 0, _a);
+}
+
+// SIGNAL 1
+void Configuration::impl::set_transceiver(Transceiver::TransceiverState const & _t1, unsigned  _t2)const
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
+    QMetaObject::activate(const_cast< Configuration::impl *>(this), &staticMetaObject, 1, _a);
+}
+
+// SIGNAL 2
+void Configuration::impl::stop_transceiver()const
+{
+    QMetaObject::activate(const_cast< Configuration::impl *>(this), &staticMetaObject, 2, nullptr);
+}
+QT_WARNING_POP
+QT_END_MOC_NAMESPACE
