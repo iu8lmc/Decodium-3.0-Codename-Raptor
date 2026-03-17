@@ -17647,19 +17647,28 @@ void MainWindow::asyncDecodeDone()
     int bestSnr = -99;
 
     for (int i = 0; i < 100 && m_asyncMsg[i][0]; i++) {
-      QString raw = QString::fromLatin1(m_asyncMsg[i], 80).trimmed();
+      QString rawFull = QString::fromLatin1(m_asyncMsg[i], 80);
       m_asyncMsg[i][0] = 0;
-      if (raw.isEmpty()) continue;
 
-      QString message = hhmmss + raw;
-      message.replace(" ~ ", " + ");
+      // Strip only TRAILING whitespace — preserve leading spaces!
+      // Fortran i4 format: "  -7  0.2  314 ~ CQ IU8LMC JN70         "
+      // Leading spaces are critical for DecodedText column parsing.
+      int end = rawFull.size();
+      while (end > 0 && rawFull[end - 1].isSpace()) --end;
+      QString raw = rawFull.left(end);
+      if (raw.trimmed().isEmpty()) continue;
 
-      // Feed S-meter with SNR from ALL decodes (even dupes) for real-time display
+      // Feed S-meter: SNR at Fortran i4 position (first 4 chars)
       {
-        int i1 = message.indexOf(' ') + 1;
-        int rawSnr = message.mid(i1, 3).trimmed().toInt();
+        int rawSnr = raw.mid(0, 4).trimmed().toInt();
         if (rawSnr > bestSnr) bestSnr = rawSnr;
       }
+
+      // Prepend hhmmss — leading spaces preserved from Fortran i4
+      // Result: "141500  -7  0.2  314 ~ CQ IU8LMC JN70"
+      //          col 0   6  7                            → indexOf(" ")=6, snr at mid(7,3)
+      QString message = hhmmss + raw;
+      message.replace(" ~ ", " + ");
 
       // Unified dedup: 5s window, best SNR wins (single dedup layer)
       if (isDuplicateDecode(message)) continue;
