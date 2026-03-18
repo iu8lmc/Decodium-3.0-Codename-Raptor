@@ -327,6 +327,9 @@ public:
     QLabel *labelAsymxBadge;
     QCheckBox *cbSpeedyContest;
     QCheckBox *cbDigitalMorse;
+    QHBoxLayout *hboxLayout;
+    QLabel *labelQsoMsgs;
+    QComboBox *cbQsoMsgCount;
     QPushButton *btnTxNow;
     QStackedWidget *opt_controls_stack;
     QWidget *page_0;
@@ -1914,6 +1917,27 @@ public:
         cbDigitalMorse->setVisible(false);
 
         verticalLayout_13->addWidget(cbDigitalMorse);
+
+        hboxLayout = new QHBoxLayout();
+        hboxLayout->setSpacing(6);
+        hboxLayout->setObjectName(QString::fromUtf8("hboxLayout"));
+        labelQsoMsgs = new QLabel(QSO_controls_widget);
+        labelQsoMsgs->setObjectName(QString::fromUtf8("labelQsoMsgs"));
+        labelQsoMsgs->setVisible(false);
+
+        hboxLayout->addWidget(labelQsoMsgs);
+
+        cbQsoMsgCount = new QComboBox(QSO_controls_widget);
+        cbQsoMsgCount->addItem(QString());
+        cbQsoMsgCount->addItem(QString());
+        cbQsoMsgCount->addItem(QString());
+        cbQsoMsgCount->setObjectName(QString::fromUtf8("cbQsoMsgCount"));
+        cbQsoMsgCount->setVisible(false);
+
+        hboxLayout->addWidget(cbQsoMsgCount);
+
+
+        verticalLayout_13->addLayout(hboxLayout);
 
         btnTxNow = new QPushButton(QSO_controls_widget);
         btnTxNow->setObjectName(QString::fromUtf8("btnTxNow"));
@@ -4049,6 +4073,14 @@ public:
         cbDigitalMorse->setToolTip(QCoreApplication::translate("MainWindow", "Digital Morse: Spacebar = TX manuale del messaggio pre-caricato", nullptr));
 #endif // QT_CONFIG(tooltip)
         cbDigitalMorse->setText(QCoreApplication::translate("MainWindow", "D-CW", nullptr));
+        labelQsoMsgs->setText(QCoreApplication::translate("MainWindow", "QSO:", nullptr));
+        cbQsoMsgCount->setItemText(0, QCoreApplication::translate("MainWindow", "2 msg", nullptr));
+        cbQsoMsgCount->setItemText(1, QCoreApplication::translate("MainWindow", "3 msg", nullptr));
+        cbQsoMsgCount->setItemText(2, QCoreApplication::translate("MainWindow", "5 msg", nullptr));
+
+#if QT_CONFIG(tooltip)
+        cbQsoMsgCount->setToolTip(QCoreApplication::translate("MainWindow", "Number of TX messages per QSO: 2=ultra-fast, 3=normal, 5=full exchange", nullptr));
+#endif // QT_CONFIG(tooltip)
         btnTxNow->setText(QCoreApplication::translate("MainWindow", "TX NOW", nullptr));
         btnTxNow->setStyleSheet(QCoreApplication::translate("MainWindow", "QPushButton { background-color: #cc0000; color: #ffffff; font-weight: bold; font-size: 16px; border-radius: 6px; padding: 4px 16px; min-height: 28px; } QPushButton:hover { background-color: #ff2222; } QPushButton:pressed { background-color: #990000; }", nullptr));
 #if QT_CONFIG(tooltip)

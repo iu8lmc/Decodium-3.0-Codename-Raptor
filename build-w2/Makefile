@@ -7467,6 +7467,33 @@ lib/ft2/ft2_baseline.f90.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort_omp.dir\build.make CMakeFiles/wsjt_fort_omp.dir/lib/ft2/ft2_baseline.f90.s
 .PHONY : lib/ft2/ft2_baseline.f90.s
 
+lib/ft2/ft2_channel_est.obj: lib/ft2/ft2_channel_est.f90.obj
+.PHONY : lib/ft2/ft2_channel_est.obj
+
+# target to build an object file
+lib/ft2/ft2_channel_est.f90.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort.dir\build.make CMakeFiles/wsjt_fort.dir/lib/ft2/ft2_channel_est.f90.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort_omp.dir\build.make CMakeFiles/wsjt_fort_omp.dir/lib/ft2/ft2_channel_est.f90.obj
+.PHONY : lib/ft2/ft2_channel_est.f90.obj
+
+lib/ft2/ft2_channel_est.i: lib/ft2/ft2_channel_est.f90.i
+.PHONY : lib/ft2/ft2_channel_est.i
+
+# target to preprocess a source file
+lib/ft2/ft2_channel_est.f90.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort.dir\build.make CMakeFiles/wsjt_fort.dir/lib/ft2/ft2_channel_est.f90.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort_omp.dir\build.make CMakeFiles/wsjt_fort_omp.dir/lib/ft2/ft2_channel_est.f90.i
+.PHONY : lib/ft2/ft2_channel_est.f90.i
+
+lib/ft2/ft2_channel_est.s: lib/ft2/ft2_channel_est.f90.s
+.PHONY : lib/ft2/ft2_channel_est.s
+
+# target to generate assembly for a file
+lib/ft2/ft2_channel_est.f90.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort.dir\build.make CMakeFiles/wsjt_fort.dir/lib/ft2/ft2_channel_est.f90.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort_omp.dir\build.make CMakeFiles/wsjt_fort_omp.dir/lib/ft2/ft2_channel_est.f90.s
+.PHONY : lib/ft2/ft2_channel_est.f90.s
+
 lib/ft2/ft2_downsample.obj: lib/ft2/ft2_downsample.f90.obj
 .PHONY : lib/ft2/ft2_downsample.obj
 
@@ -18353,6 +18380,9 @@ help:
 	@echo ... lib/ft2/ft2_baseline.obj
 	@echo ... lib/ft2/ft2_baseline.i
 	@echo ... lib/ft2/ft2_baseline.s
+	@echo ... lib/ft2/ft2_channel_est.obj
+	@echo ... lib/ft2/ft2_channel_est.i
+	@echo ... lib/ft2/ft2_channel_est.s
 	@echo ... lib/ft2/ft2_downsample.obj
 	@echo ... lib/ft2/ft2_downsample.i
 	@echo ... lib/ft2/ft2_downsample.s

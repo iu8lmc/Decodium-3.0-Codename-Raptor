@@ -63,7 +63,7 @@
 #endif
 
 #ifndef PRODUCT_COMMENTS
-#define PRODUCT_COMMENTS           "Decodium v3.0 Raptor 2603060001 : Digital Modes for Weak Signal Communications in Amateur Radio\0"
+#define PRODUCT_COMMENTS           "Decodium v3.0 Raptor 2603180019 : Digital Modes for Weak Signal Communications in Amateur Radio\0"
 #endif
 
 #ifndef PRODUCT_VENDOR_NAME
@@ -75,7 +75,7 @@
 #endif
 
 #ifndef PRODUCT_FILE_DESCRIPTION
-#define PRODUCT_FILE_DESCRIPTION   "Decodium v3.0 Raptor 2603060001 : Digital Modes for Weak Signal Communications in Amateur Radio\0"
+#define PRODUCT_FILE_DESCRIPTION   "Decodium v3.0 Raptor 2603180019 : Digital Modes for Weak Signal Communications in Amateur Radio\0"
 #endif
 
 #ifndef PRODUCT_INTERNAL_NAME
@@ -87,7 +87,7 @@
 #endif
 
 #ifndef PRODUCT_BUNDLE
-#define PRODUCT_BUNDLE             "Decodium v3.0 Raptor 2603060001\0"
+#define PRODUCT_BUNDLE             "Decodium v3.0 Raptor 2603180019\0"
 #endif
 
 #endif

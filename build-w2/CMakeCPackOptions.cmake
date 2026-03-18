@@ -49,7 +49,7 @@ if (CPACK_GENERATOR MATCHES "NSIS")
 VIFileVersion 3.0.0.0
 VIAddVersionKey /LANG=0 \"ProductName\" \"decodium\"
 VIAddVersionKey /LANG=0 \"ProductVersion\" \"v3.0.0\"
-VIAddVersionKey /LANG=0 \"Comments\" \"Decodium v3.0 Raptor 2603060001 : Digital Modes for Weak Signal Communications in Amateur Radio\"
+VIAddVersionKey /LANG=0 \"Comments\" \"Decodium v3.0 Raptor 2603180019 : Digital Modes for Weak Signal Communications in Amateur Radio\"
 VIAddVersionKey /LANG=0 \"CompanyName\" \"IU8LMC\"
 VIAddVersionKey /LANG=0 \"LegalCopyright\" \"See Help | Copyright info\"
 VIAddVersionKey /LANG=0 \"FileDescription\" \"decodium Installer\"
@@ -64,7 +64,7 @@ if ("${CPACK_GENERATOR}" STREQUAL "PackageMaker")
 endif ()
 
 if ("${CPACK_GENERATOR}" STREQUAL "DragNDrop")
-  set (CPACK_DMG_VOLUME_NAME "Decodium v3.0 Raptor 2603060001")
+  set (CPACK_DMG_VOLUME_NAME "Decodium v3.0 Raptor 2603180019")
   set (CPACK_DMG_BACKGROUND_IMAGE "C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/icons/Darwin/DragNDrop Background.png")
   set (CPACK_DMG_DS_STORE "C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Darwin/wsjtx_DMG.DS_Store")
   set (CPACK_BUNDLE_NAME "")

@@ -10600,6 +10600,15 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
       }
       // 3-msg and 2-msg: skip TX5 (73) → log and go to CQ
       if (m_ntx == 5) {
+        // Set sentFirst73 to block auto_sequence from processing late
+        // messages from the old QSO partner (mirrors the sentFirst73
+        // protection that 5-msg mode gets when TX4/RR73 is transmitted)
+        m_sentFirst73 = true;
+        // Add cooldown for the old partner (m_QSOProgress may be < ROGER_REPORT
+        // because TX3 was skipped, so auto_sequence's cooldown guard misses it)
+        if (m_mode == "FT2" && !m_hisCall.isEmpty()) {
+          m_qsoCooldown[m_hisCall] = QDateTime::currentMSecsSinceEpoch();
+        }
         if (m_config.prompt_to_log() || m_config.autoLog()) {
           logQSOTimer.start(0);
         }

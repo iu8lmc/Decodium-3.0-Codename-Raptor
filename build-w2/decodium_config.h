@@ -27,7 +27,7 @@ extern "C"  {
 #define PROJECT_HOMEPAGE "qrz.com/db/IU8LMC"
 #define PROJECT_MANUAL_DIRECTORY_URL "https://wsjt.sourceforge.io/wsjtx-doc/"
 #define PROJECT_SAMPLES_URL "http://downloads.sourceforge.net/project/wsjt/"
-#define PROJECT_DESCRIPTION "Decodium v3.0 Raptor 2603060001 : Digital Modes for Weak Signal Communications in Amateur Radio"
+#define PROJECT_DESCRIPTION "Decodium v3.0 Raptor 2603180019 : Digital Modes for Weak Signal Communications in Amateur Radio"
 
 #define HAVE_HAMLIB_OLD_CACHING 0
 #define HAVE_HAMLIB_CACHING 0
