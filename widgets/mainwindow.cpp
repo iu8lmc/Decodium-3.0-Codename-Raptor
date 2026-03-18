@@ -8270,6 +8270,19 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
 
     //debugToFile(QString{"auto_seq:    m_bAutoReply:%1 m_bCallingCQ:%2 message:%3"}.arg(m_bAutoReply).arg(m_bCallingCQ).arg(message.string().trimmed()));   //avt 1/4/24
     //debugToFile(QString{"             cbAutoSeq->isVisible:%1 cbAutoSeq->isEnabled:%2 cbAutoSeq->isChecked:%3"}.arg(ui->cbAutoSeq->isVisible()).arg(ui->cbAutoSeq->isEnabled()).arg(ui->cbAutoSeq->isChecked()));   //avt 1/4/24
+
+    // Watchdog rescue: if WD just fired but a valid reply arrives with our
+    // callsign, reset the WD and re-enable auto TX so the QSO can continue.
+    // Without this, the WD kills m_auto and the reply is silently dropped.
+    if (m_tx_watchdog && !m_autoCQ
+        && m_QSOProgress > CALLING
+        && message_words.size () > 3
+        && (message_words.at (2).contains (m_baseCall)
+            || message_words.at (1) == m_baseCall)) {
+      tx_watchdog (false);       // reset WD + m_idleMinutes = 0
+      auto_tx_mode (true);       // re-enable auto TX
+    }
+
     if (m_auto
         && (m_QSOProgress==REPLYING  or (!ui->tx1->isEnabled () and m_QSOProgress==REPORT))
         && SpecOp::HOUND != m_specOp && qAbs (ui->TxFreqSpinBox->value () - df) <= int (stop_tolerance) //

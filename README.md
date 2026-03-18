@@ -8,7 +8,7 @@
 
 Fork of WSJT-X 3.0 focused on asynchronous FT2 — real-time decoding, instant TX, sensitivity close to FT8.
 
-**Build:** 2603181634 | **Author:** IU8LMC | **License:** GPL v3
+**Build:** 2603182218 | **Author:** IU8LMC | **License:** GPL v3
 
 ---
 
@@ -23,7 +23,7 @@ Digitally signed installers (SHA256 + DigiCert RFC3161 timestamp).
 
 ---
 
-## What's New — Build 2603181634
+## What's New — Build 2603182218
 
 ### [EN] English
 
@@ -413,7 +413,7 @@ build_installers.bat
 
 ## Changelog
 
-### Build 2603181634 (2026-03-18)
+### Build 2603182218 (2026-03-18)
 - **Normalized Min-Sum LDPC**: FT2-specific decoder (`decode174_91_ft2.f90`) replaces Sum-Product with sign()*min(|msg|)*alpha (alpha=0.75) — +0.2-0.4 dB, faster, does NOT touch shared FT8/FT4/Q65 backend
 - **QSO message count auto-sequence fix**: m_sentFirst73 protection + qsoCooldown injection in 2/3-msg re-route path — prevents phantom QSOs from late messages
 
