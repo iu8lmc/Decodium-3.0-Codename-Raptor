@@ -8,7 +8,7 @@
 
 Fork of WSJT-X 3.0 focused on asynchronous FT2 — real-time decoding, instant TX, sensitivity close to FT8.
 
-**Build:** 2603182218 | **Author:** IU8LMC | **License:** GPL v3
+**Build:** 2603182239 | **Author:** IU8LMC | **License:** GPL v3
 
 ---
 
@@ -23,7 +23,7 @@ Digitally signed installers (SHA256 + DigiCert RFC3161 timestamp).
 
 ---
 
-## What's New — Build 2603182218
+## What's New — Build 2603182239
 
 ### [EN] English
 
@@ -31,7 +31,7 @@ Digitally signed installers (SHA256 + DigiCert RFC3161 timestamp).
 The LDPC(174,91) decoder now uses **Normalized Min-Sum** algorithm instead of Sum-Product (tanh/atanh). Replaces the expensive `tanh()` / `product()` / `atanh()` chain with `sign() * min(|msg|) * alpha` (alpha=0.75). Benefits:
 - **+0.2-0.4 dB** sensitivity improvement on weak signals
 - **Faster computation** — `min()` is cheaper than `tanh()/atanh()`
-- Isolated in FT2-specific decoder (`decode174_91_ft2.f90`) — does NOT touch the shared FT8/FT4/Q65 backend
+- Applied to all three BP decoders (`decode174_91`, `bpdecode174_91`, `bpdecode174_91var`)
 
 #### QSO Message Count Auto-Sequence Fix
 Fixed inconsistency between 2/3/5-msg modes and auto-sequencing:
@@ -67,7 +67,7 @@ Full multilingual support with 10 languages selectable from the menu bar:
 El decodificador LDPC(174,91) ahora usa el algoritmo **Min-Sum Normalizado** en lugar de Sum-Product (tanh/atanh). Reemplaza la cadena costosa `tanh()` / `product()` / `atanh()` con `sign() * min(|msg|) * alpha` (alpha=0.75):
 - **+0.2-0.4 dB** de mejora en sensibilidad
 - **Cálculo más rápido** — `min()` es más barato que `tanh()/atanh()`
-- Aislado en decoder FT2-específico (`decode174_91_ft2.f90`) — NO toca el backend compartido FT8/FT4/Q65
+- Aplicado a los tres decodificadores BP (`decode174_91`, `bpdecode174_91`, `bpdecode174_91var`)
 
 #### Corrección de Auto-Secuencia con Conteo de Mensajes QSO
 Corregida inconsistencia entre los modos 2/3/5 mensajes y la auto-secuencia:
@@ -103,7 +103,7 @@ Soporte multilingüe completo con 10 idiomas seleccionables desde la barra de me
 Il decoder LDPC(174,91) ora usa l'algoritmo **Min-Sum Normalizzato** al posto del Sum-Product (tanh/atanh). Sostituisce la catena costosa `tanh()` / `product()` / `atanh()` con `sign() * min(|msg|) * alpha` (alpha=0.75):
 - **+0.2-0.4 dB** di miglioramento sensibilità sui segnali deboli
 - **Calcolo più veloce** — `min()` è più economico di `tanh()/atanh()`
-- Isolato nel decoder FT2-specifico (`decode174_91_ft2.f90`) — NON tocca il backend condiviso FT8/FT4/Q65
+- Applicato a tutti e tre i decoder BP (`decode174_91`, `bpdecode174_91`, `bpdecode174_91var`)
 
 #### Fix Auto-Sequenza con Conteggio Messaggi QSO
 Corretta incongruenza tra le modalità 2/3/5 messaggi e l'auto-sequenza:
@@ -139,7 +139,7 @@ Supporto multilingua completo con 10 lingue selezionabili dalla barra menu:
 Der LDPC(174,91)-Decoder verwendet jetzt den **Normalisierten Min-Sum**-Algorithmus anstelle von Sum-Product (tanh/atanh). Ersetzt die teure `tanh()` / `product()` / `atanh()`-Kette durch `sign() * min(|msg|) * alpha` (alpha=0.75):
 - **+0,2-0,4 dB** Empfindlichkeitsverbesserung bei schwachen Signalen
 - **Schnellere Berechnung** — `min()` ist günstiger als `tanh()/atanh()`
-- Isoliert im FT2-spezifischen Decoder (`decode174_91_ft2.f90`) — berührt NICHT das gemeinsame FT8/FT4/Q65-Backend
+- Auf alle drei BP-Decoder angewendet (`decode174_91`, `bpdecode174_91`, `bpdecode174_91var`)
 
 #### QSO-Nachrichtenzählung Auto-Sequenz-Fix
 Inkonsistenz zwischen 2/3/5-Nachrichtenmodi und Auto-Sequenzierung behoben:
@@ -175,7 +175,7 @@ Vollständige Mehrsprachunterstützung mit 10 Sprachen, auswählbar über die Me
 LDPC(174,91) kod çözücü artık Sum-Product (tanh/atanh) yerine **Normalleştirilmiş Min-Sum** algoritmasını kullanıyor. Pahalı `tanh()` / `product()` / `atanh()` zincirini `sign() * min(|msg|) * alpha` (alpha=0.75) ile değiştirir:
 - **+0,2-0,4 dB** zayıf sinyallerde hassasiyet iyileştirmesi
 - **Daha hızlı hesaplama** — `min()`, `tanh()/atanh()`'den daha ucuzdur
-- FT2'ye özel kod çözücüde izole edildi (`decode174_91_ft2.f90`) — paylaşılan FT8/FT4/Q65 arka ucuna dokunmaz
+- Üç BP kod çözücüye de uygulandı (`decode174_91`, `bpdecode174_91`, `bpdecode174_91var`)
 
 #### QSO Mesaj Sayısı Otomatik Sıralama Düzeltmesi
 2/3/5 mesaj modları ile otomatik sıralama arasındaki tutarsızlık düzeltildi:
@@ -413,8 +413,8 @@ build_installers.bat
 
 ## Changelog
 
-### Build 2603182218 (2026-03-18)
-- **Normalized Min-Sum LDPC**: FT2-specific decoder (`decode174_91_ft2.f90`) replaces Sum-Product with sign()*min(|msg|)*alpha (alpha=0.75) — +0.2-0.4 dB, faster, does NOT touch shared FT8/FT4/Q65 backend
+### Build 2603182239 (2026-03-18)
+- **Normalized Min-Sum LDPC (all decoders)**: all three BP decoders (`decode174_91`, `bpdecode174_91`, `bpdecode174_91var`) replace Sum-Product (tanh/product/atanh) with sign()*min(|msg|)*alpha (alpha=0.75) — +0.2-0.4 dB, faster computation
 - **QSO message count auto-sequence fix**: m_sentFirst73 protection + qsoCooldown injection in 2/3-msg re-route path — prevents phantom QSOs from late messages
 
 ### Build 2603180019 (2026-03-18)
