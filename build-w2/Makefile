@@ -7359,6 +7359,33 @@ lib/fst4_decode.f90.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort_omp.dir\build.make CMakeFiles/wsjt_fort_omp.dir/lib/fst4_decode.f90.s
 .PHONY : lib/fst4_decode.f90.s
 
+lib/ft2/decode174_91_ft2.obj: lib/ft2/decode174_91_ft2.f90.obj
+.PHONY : lib/ft2/decode174_91_ft2.obj
+
+# target to build an object file
+lib/ft2/decode174_91_ft2.f90.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort.dir\build.make CMakeFiles/wsjt_fort.dir/lib/ft2/decode174_91_ft2.f90.obj
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort_omp.dir\build.make CMakeFiles/wsjt_fort_omp.dir/lib/ft2/decode174_91_ft2.f90.obj
+.PHONY : lib/ft2/decode174_91_ft2.f90.obj
+
+lib/ft2/decode174_91_ft2.i: lib/ft2/decode174_91_ft2.f90.i
+.PHONY : lib/ft2/decode174_91_ft2.i
+
+# target to preprocess a source file
+lib/ft2/decode174_91_ft2.f90.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort.dir\build.make CMakeFiles/wsjt_fort.dir/lib/ft2/decode174_91_ft2.f90.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort_omp.dir\build.make CMakeFiles/wsjt_fort_omp.dir/lib/ft2/decode174_91_ft2.f90.i
+.PHONY : lib/ft2/decode174_91_ft2.f90.i
+
+lib/ft2/decode174_91_ft2.s: lib/ft2/decode174_91_ft2.f90.s
+.PHONY : lib/ft2/decode174_91_ft2.s
+
+# target to generate assembly for a file
+lib/ft2/decode174_91_ft2.f90.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort.dir\build.make CMakeFiles/wsjt_fort.dir/lib/ft2/decode174_91_ft2.f90.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_fort_omp.dir\build.make CMakeFiles/wsjt_fort_omp.dir/lib/ft2/decode174_91_ft2.f90.s
+.PHONY : lib/ft2/decode174_91_ft2.f90.s
+
 lib/ft2/foxfiltft2.obj: lib/ft2/foxfiltft2.f90.obj
 .PHONY : lib/ft2/foxfiltft2.obj
 
@@ -18368,6 +18395,9 @@ help:
 	@echo ... lib/fst4_decode.obj
 	@echo ... lib/fst4_decode.i
 	@echo ... lib/fst4_decode.s
+	@echo ... lib/ft2/decode174_91_ft2.obj
+	@echo ... lib/ft2/decode174_91_ft2.i
+	@echo ... lib/ft2/decode174_91_ft2.s
 	@echo ... lib/ft2/foxfiltft2.obj
 	@echo ... lib/ft2/foxfiltft2.i
 	@echo ... lib/ft2/foxfiltft2.s

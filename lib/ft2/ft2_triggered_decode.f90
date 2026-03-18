@@ -266,8 +266,8 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
       if(.not.doosd) maxosd = -1
 
       Keff = 91
-      call decode174_91(llr, Keff, maxosd, 3, apmask, message91, cw, &
-                        ntype, nharderror, dmin)
+      call decode174_91_ft2(llr, Keff, maxosd, 3, apmask, message91, cw, &
+                            ntype, nharderror, dmin)
       message77 = message91(1:77)
 
       if(sum(message77).eq.0) cycle
