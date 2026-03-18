@@ -15,10 +15,10 @@ integer Mn(3,N)  ! 3 checks per bit
 integer synd(M)
 real tov(3,N)
 real toc(7,M)
-real tanhtoc(7,M)
 real zn(N)
 real, intent(in) :: llr(N)
-real Tmn
+real, parameter :: alpha_ms = 0.75  ! Min-Sum normalization factor
+real sign_prod, min_abs
 
 include "ldpc_174_91_c_reordered_parity.f90"
 
@@ -26,7 +26,6 @@ nclast=0
 decoded=0
 toc=0
 tov=0
-tanhtoc=0
 ! initialize messages to checks
 do j=1,M
   do i=1,nrw(j)
@@ -96,18 +95,19 @@ do iter=0,maxiterations
     enddo
   enddo
 
-! send messages from check nodes to variable nodes
-  do i=1,M
-    tanhtoc(1:7,i)=tanh(-toc(1:7,i)/2)
-  enddo
-
+! send messages from check nodes to variable nodes (Normalized Min-Sum)
   do j=1,N
     do i=1,ncw
       ichk=Mn(i,j)  ! Mn(:,j) are the checks that include bit j
-      Tmn=product(tanhtoc(1:nrw(ichk),ichk),mask=Nm(1:nrw(ichk),ichk).ne.j)
-      call platanh(-Tmn,y)
-!      y=atanh(-Tmn)
-      tov(i,j)=2*y
+      sign_prod=1.0
+      min_abs=1.0e30
+      do kk=1,nrw(ichk)
+        if(Nm(kk,ichk).ne.j) then
+          sign_prod=sign_prod*sign(1.0,-toc(kk,ichk))
+          if(abs(toc(kk,ichk)).lt.min_abs) min_abs=abs(toc(kk,ichk))
+        endif
+      enddo
+      tov(i,j)=alpha_ms*sign_prod*min_abs
     enddo
   enddo
 
