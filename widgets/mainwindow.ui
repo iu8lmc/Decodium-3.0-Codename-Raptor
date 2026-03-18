@@ -2181,6 +2181,39 @@ When not checked you can view the calibration results.</string>
                      </widget>
                     </item>
                     <item>
+                     <layout class="QHBoxLayout">
+                      <item>
+                       <widget class="QLabel" name="labelQsoMsgs">
+                        <property name="text">
+                         <string>QSO:</string>
+                        </property>
+                        <property name="visible">
+                         <bool>false</bool>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QComboBox" name="cbQsoMsgCount">
+                        <property name="toolTip">
+                         <string>Number of TX messages per QSO: 2=ultra-fast, 3=normal, 5=full exchange</string>
+                        </property>
+                        <property name="visible">
+                         <bool>false</bool>
+                        </property>
+                        <item>
+                         <property name="text"><string>2 msg</string></property>
+                        </item>
+                        <item>
+                         <property name="text"><string>3 msg</string></property>
+                        </item>
+                        <item>
+                         <property name="text"><string>5 msg</string></property>
+                        </item>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+                    <item>
                      <widget class="QPushButton" name="btnTxNow">
                       <property name="text">
                        <string>TX NOW</string>

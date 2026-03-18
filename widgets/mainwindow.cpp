@@ -619,6 +619,21 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_asymxPulse->setLoopCount (-1);  // infinite
   // don't start — replaced by async visualizer below
 
+  // FT2 QSO message count selector (2/3/5)
+  {
+    int saved = m_settings->value ("FT2QsoMsgCount", 3).toInt ();
+    if (saved == 2) ui->cbQsoMsgCount->setCurrentIndex (0);
+    else if (saved == 5) ui->cbQsoMsgCount->setCurrentIndex (2);
+    else ui->cbQsoMsgCount->setCurrentIndex (1);  // default 3
+    m_ft2QsoMsgCount = saved;
+    connect (ui->cbQsoMsgCount, QOverload<int>::of(&QComboBox::currentIndexChanged),
+             this, [this](int idx) {
+      static const int counts[] = {2, 3, 5};
+      m_ft2QsoMsgCount = counts[idx];
+      m_settings->setValue ("FT2QsoMsgCount", m_ft2QsoMsgCount);
+    });
+  }
+
   // FT2 async mode visualizer — in verticalLayout_13, after D-CW
   m_asyncVis = new AsyncModeWidget (this);
   m_asyncVis->setVisible (false);
@@ -10563,6 +10578,38 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
       ui->txrb2->setChecked (true);
     }
   }
+  // ── FT2 QSO message count re-routing ──────────────────────────
+  // After the standard decision tree, override for 2-msg or 3-msg modes.
+  // Standard flow: TX1(grid) → TX2(report) → TX3(R+rpt) → TX4(RR73) → TX5(73)
+  //   5 msg: full standard (no change)
+  //   3 msg: skip TX3 (R+report) and TX5 (73)
+  //   2 msg: skip TX1 (grid), TX3 (R+report), TX5 (73)
+  if (m_mode == "FT2" && m_ft2QsoMsgCount < 5) {
+    if (m_ft2QsoMsgCount <= 2) {
+      // 2-msg: skip TX1 (grid) → go straight to TX2 (report)
+      if (m_ntx == 1) {
+        setTxMsg(2);
+        m_QSOProgress = REPORT;
+      }
+    }
+    if (m_ft2QsoMsgCount <= 3) {
+      // 3-msg and 2-msg: skip TX3 (R+report) → go straight to TX4 (RR73)
+      if (m_ntx == 3) {
+        setTxMsg(4);
+        m_QSOProgress = ROGERS;
+      }
+      // 3-msg and 2-msg: skip TX5 (73) → log and go to CQ
+      if (m_ntx == 5) {
+        if (m_config.prompt_to_log() || m_config.autoLog()) {
+          logQSOTimer.start(0);
+        }
+        m_ntx = 6;
+        ui->txrb6->setChecked(true);
+        m_QSOProgress = CALLING;
+      }
+    }
+  }
+
   // if we get here then we are reacting to the message
   if (m_bAutoReply) m_bCallingCQ = CALLING == m_QSOProgress;
   m_maxPoints=-1;
@@ -12608,6 +12655,8 @@ void MainWindow::displayWidgets(qint64 n)
   }
   ui->cbSpeedyContest->setVisible(isFT2);
   ui->cbDigitalMorse->setVisible(isFT2);
+  ui->labelQsoMsgs->setVisible(isFT2);
+  ui->cbQsoMsgCount->setVisible(isFT2);
   if (!isFT2) {
     ui->btnTxNow->setVisible(false);
     m_txRdyBlinkTimer.stop();

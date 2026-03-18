@@ -940,6 +940,7 @@ private:
   QMap<QString, StationHint> m_knownStationHints;
   bool m_bSpeedyContest {false};     // Speedy contest: double-click = instant TX
   bool m_bDigitalMorse {false};      // Digital Morse: Spacebar = manual TX fire
+  int  m_ft2QsoMsgCount {3};        // FT2 QSO message count: 2=ultra-fast, 3=normal, 5=full
   bool m_bTxPreloaded {false};       // TX message pre-loaded, ready for manual fire
   QTimer m_txRdyBlinkTimer;          // blink timer for TX RDY label
   QFutureWatcher<QString> m_saveWAVWatcher;
