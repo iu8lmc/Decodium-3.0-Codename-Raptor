@@ -619,23 +619,12 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_asymxPulse->setLoopCount (-1);  // infinite
   // don't start — replaced by async visualizer below
 
-  // Quick QSO toggle button — controls TX1 enabled state
-  {
-    bool quickQSO = m_settings->value ("QuickQSO", false).toBool ();
-    ui->btnQuickQSO->setChecked (quickQSO);
-    if (quickQSO) ui->tx1->setEnabled (false);
-    connect (ui->btnQuickQSO, &QPushButton::toggled, this, [this](bool checked) {
-      m_settings->setValue ("QuickQSO", checked);
-      ui->tx1->setEnabled (!checked);
-      if (checked) {
-        // regenerate TX messages with TU
-        genStdMsgs (m_rpt);
-      } else {
-        // regenerate TX messages without TU
-        genStdMsgs (m_rpt);
-      }
-    });
-  }
+  // Quick QSO toggle button — connect signal only, state applied later (after settings restore)
+  connect (ui->btnQuickQSO, &QPushButton::toggled, this, [this](bool checked) {
+    m_settings->setValue ("QuickQSO", checked);
+    ui->tx1->setEnabled (!checked);
+    if (!m_rpt.isEmpty ()) genStdMsgs (m_rpt);
+  });
 
   // FT2 async mode visualizer — in verticalLayout_13, after D-CW
   m_asyncVis = new AsyncModeWidget (this);
@@ -2302,6 +2291,14 @@ void MainWindow::readSettings()
   ui->actionBand_Buttons->setChecked(m_settings->value("BandButtons", true).toBool());
   ui->actionVHF_UHF_Buttons->setChecked(m_settings->value("VHFUHFButtons", false).toBool());
   ui->tx1->setEnabled(m_settings->value("tx1State", true).toBool());
+  // Quick QSO: restore button state and override TX1 if needed
+  {
+    bool quickQSO = m_settings->value ("QuickQSO", false).toBool ();
+    ui->btnQuickQSO->blockSignals (true);
+    ui->btnQuickQSO->setChecked (quickQSO);
+    ui->btnQuickQSO->blockSignals (false);
+    if (quickQSO) ui->tx1->setEnabled (false);
+  }
   ui->actionHighlightB4->setChecked(m_settings->value("HighlightB4", false).toBool());
   ui->actionHighlightToday->setChecked(m_settings->value("HighlightToday", false).toBool());
   ui->actionHighlightIgnored->setChecked(m_settings->value("HighlightIgnored", false).toBool());
