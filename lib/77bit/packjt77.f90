@@ -506,7 +506,17 @@ subroutine unpack77(c77,nrx,msg,unpk77_success)
         if(irpt.eq.2) msg=trim(call_1)//' '//trim(call_2)//' RRR'
         if(irpt.eq.3) msg=trim(call_1)//' '//trim(call_2)//' RR73'
         if(irpt.eq.4) msg=trim(call_1)//' '//trim(call_2)//' 73'
-        if(irpt.ge.5) then
+        if(irpt.ge.106) then
+! Decodium custom: report + TU (irpt = standard_irpt + 101)
+           isnr=(irpt-101)-35
+           if(isnr.gt.50) isnr=isnr-101
+           write(crpt,'(i3.2)') isnr
+           if(crpt(1:1).eq.' ') crpt(1:1)='+'
+           if(ir.eq.0) msg=trim(call_1)//' '//trim(call_2)//' '  &
+                //crpt//' TU'
+           if(ir.eq.1) msg=trim(call_1)//' '//trim(call_2)//' R' &
+                //crpt//' TU'
+        else if(irpt.ge.5) then
            isnr=irpt-35
            if(isnr.gt.50) isnr=isnr-101
            write(crpt,'(i3.2)') isnr
@@ -1178,6 +1188,25 @@ subroutine pack77_1(nwords,w,i3,n3,c77)
   if(nwords.eq.2 .and. (.not.ok2 .or. index(w(2),'/').ge.2)) return
   if(nwords.eq.2) go to 10
 
+! Decodium custom: CALL1 CALL2 ±NN TU  or  CALL1 CALL2 R±NN TU
+  if(nwords.eq.4 .and. trim(w(4)).eq.'TU') then
+     c1=w(3)(1:1)
+     c2=w(3)(1:2)
+     if(c1.eq.'+' .or. c1.eq.'-') then
+        ir=0
+        read(w(3),*,err=900) irpt
+        if(irpt.ge.-50 .and. irpt.le.-31) irpt=irpt+101
+        irpt=irpt+35+101         ! +101 offset = "report + TU"
+        go to 10
+     else if(c2.eq.'R+' .or. c2.eq.'R-') then
+        ir=1
+        read(w(3)(2:),*,err=900) irpt
+        if(irpt.ge.-50 .and. irpt.le.-31) irpt=irpt+101
+        irpt=irpt+35+101         ! +101 offset = "report + TU"
+        go to 10
+     endif
+  endif
+
   c1=w(nwords)(1:1)
   c2=w(nwords)(1:2)
   if(.not.is_grid4(w(nwords)(1:4)) .and. c1.ne.'+' .and. c1.ne.'-'              &
@@ -1210,7 +1239,7 @@ subroutine pack77_1(nwords,w,i3,n3,c77)
 10 i1psuffix=index(w(1)//' ' ,'/P ')
   i2psuffix=index(w(2)//' ','/P ')
   if(nwords.eq.2 .or. nwords.eq.3 .or. (nwords.eq.4 .and.               &
-       w(3)(1:2).eq.'R ')) then
+       (w(3)(1:2).eq.'R ' .or. trim(w(4)).eq.'TU'))) then
      n3=0
      i3=1                          !Type 1: Standard message, possibly with "/R"
      if (i1psuffix.ge.4.or.i2psuffix.ge.4) i3=2 !Type 2, with "/P"

@@ -8,7 +8,7 @@
 
 Fork of WSJT-X 3.0 focused on asynchronous FT2 — real-time decoding, instant TX, sensitivity close to FT8.
 
-**Build:** 2603182239 | **Author:** IU8LMC | **License:** GPL v3
+**Build:** 2603190018 | **Author:** IU8LMC | **License:** GPL v3
 
 ---
 
@@ -23,7 +23,7 @@ Digitally signed installers (SHA256 + DigiCert RFC3161 timestamp).
 
 ---
 
-## What's New — Build 2603182239
+## What's New — Build 2603190018
 
 ### [EN] English
 
@@ -412,6 +412,11 @@ build_installers.bat
 ---
 
 ## Changelog
+
+### Build 2603190018 (2026-03-19)
+- **Decodium custom "Report + TU" message**: new 77-bit encoding for 2-msg QSO mode — combines signal report with TU (Thank You) in a single standard-framed message (e.g. `IU8LMC DX1ABC R+05 TU`). Uses unused irpt range (106-206) in igrid4 field. Compatible with WSJT-X (decodes as normal report).
+- **Watchdog rescue fix**: WD rescue only from CALLING state (CQ) — dblClick mid-QSO WD fires normally
+- **2-msg mode auto-log**: TX3 sender logs QSO automatically after sending "R+report TU"
 
 ### Build 2603182239 (2026-03-18)
 - **Normalized Min-Sum LDPC (all decoders)**: all three BP decoders (`decode174_91`, `bpdecode174_91`, `bpdecode174_91var`) replace Sum-Product (tanh/product/atanh) with sign()*min(|msg|)*alpha (alpha=0.75) — +0.2-0.4 dB, faster computation

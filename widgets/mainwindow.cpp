@@ -8192,7 +8192,7 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
 {
   if (m_bDXpedMode) return;   // DXped usa dxpedAutoSequence()
   auto const& message_words = message.messageWords ();
-  auto is_73 = message_words.filter (QRegularExpression {"^(73|RR73)$"}).size();
+  auto is_73 = message_words.filter (QRegularExpression {"^(73|RR73|TU)$"}).size();
   auto msg_no_hash = message.clean_string();
   msg_no_hash = msg_no_hash.mid(22).remove("<").remove(">");
   bool is_OK=false;
@@ -8271,11 +8271,12 @@ void MainWindow::auto_sequence (DecodedText const& message, unsigned start_toler
     //debugToFile(QString{"auto_seq:    m_bAutoReply:%1 m_bCallingCQ:%2 message:%3"}.arg(m_bAutoReply).arg(m_bCallingCQ).arg(message.string().trimmed()));   //avt 1/4/24
     //debugToFile(QString{"             cbAutoSeq->isVisible:%1 cbAutoSeq->isEnabled:%2 cbAutoSeq->isChecked:%3"}.arg(ui->cbAutoSeq->isVisible()).arg(ui->cbAutoSeq->isEnabled()).arg(ui->cbAutoSeq->isChecked()));   //avt 1/4/24
 
-    // Watchdog rescue: if WD just fired but a valid reply arrives with our
-    // callsign, reset the WD and re-enable auto TX so the QSO can continue.
-    // Without this, the WD kills m_auto and the reply is silently dropped.
+    // Watchdog rescue: if WD just fired while we were calling CQ and a valid
+    // reply arrives, reset WD and continue the QSO.  Only rescue from CALLING
+    // state (CQ) — if user started a QSO via dblClick (mid-QSO, progress > CALLING)
+    // the WD should just stop TX as intended.
     if (m_tx_watchdog && !m_autoCQ
-        && m_QSOProgress > CALLING
+        && m_QSOProgress == CALLING
         && message_words.size () > 3
         && (message_words.at (2).contains (m_baseCall)
             || message_words.at (1) == m_baseCall)) {
@@ -10217,7 +10218,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
     }
   }
 
-  bool is_73 = message_words.filter (QRegularExpression {"^(73|RR73)$"}).size ();
+  bool is_73 = message_words.filter (QRegularExpression {"^(73|RR73|TU)$"}).size ();
   if (!is_externalCtrlMode() and !is_73 and !message.isStandardMessage() and !message.clean_string ().contains("<")) {   //avt 1/21/24
     qDebug () << "Not processing message - hiscall:" << hiscall << "hisgrid:" << hisgrid
               << message.clean_string () << message.isStandardMessage();
@@ -10595,8 +10596,8 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
   // After the standard decision tree, override for 2-msg or 3-msg modes.
   // Standard flow: TX1(grid) → TX2(report) → TX3(R+rpt) → TX4(RR73) → TX5(73)
   //   5 msg: full standard (no change)
-  //   3 msg: skip TX3 (R+report) and TX5 (73)
-  //   2 msg: skip TX1 (grid), TX3 (R+report), TX5 (73)
+  //   3 msg: skip TX3 (R+report) → TX4(RR73), skip TX5 → log
+  //   2 msg: skip TX1 → TX2(report), keep TX3(R+rpt), skip TX4 → log
   if (m_mode == "FT2" && m_ft2QsoMsgCount < 5) {
     if (m_ft2QsoMsgCount <= 2) {
       // 2-msg: skip TX1 (grid) → go straight to TX2 (report)
@@ -10604,22 +10605,43 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
         setTxMsg(2);
         m_QSOProgress = REPORT;
       }
+      // 2-msg: TX3 is "R+report 73" (Decodium custom) — our final message
+      // Log QSO now; TX3 will still be sent. m_sentFirst73 blocks further auto-seq.
+      if (m_ntx == 3) {
+        m_sentFirst73 = true;
+        if (!m_hisCall.isEmpty()) {
+          m_qsoCooldown[m_hisCall] = QDateTime::currentMSecsSinceEpoch();
+        }
+        if (m_config.prompt_to_log() || m_config.autoLog()) {
+          logQSOTimer.start(0);
+        }
+      }
+      // 2-msg: received R+report(+73) — skip TX4 → log and CQ
+      if (m_ntx == 4) {
+        m_sentFirst73 = true;
+        if (!m_hisCall.isEmpty()) {
+          m_qsoCooldown[m_hisCall] = QDateTime::currentMSecsSinceEpoch();
+        }
+        if (m_config.prompt_to_log() || m_config.autoLog()) {
+          logQSOTimer.start(0);
+        }
+        m_ntx = 6;
+        ui->txrb6->setChecked(true);
+        m_QSOProgress = CALLING;
+      }
     }
-    if (m_ft2QsoMsgCount <= 3) {
-      // 3-msg and 2-msg: skip TX3 (R+report) → go straight to TX4 (RR73)
+    if (m_ft2QsoMsgCount == 3) {
+      // 3-msg only: skip TX3 (R+report) → go straight to TX4 (RR73)
       if (m_ntx == 3) {
         setTxMsg(4);
         m_QSOProgress = ROGERS;
       }
+    }
+    if (m_ft2QsoMsgCount <= 3) {
       // 3-msg and 2-msg: skip TX5 (73) → log and go to CQ
       if (m_ntx == 5) {
-        // Set sentFirst73 to block auto_sequence from processing late
-        // messages from the old QSO partner (mirrors the sentFirst73
-        // protection that 5-msg mode gets when TX4/RR73 is transmitted)
         m_sentFirst73 = true;
-        // Add cooldown for the old partner (m_QSOProgress may be < ROGER_REPORT
-        // because TX3 was skipped, so auto_sequence's cooldown guard misses it)
-        if (m_mode == "FT2" && !m_hisCall.isEmpty()) {
+        if (!m_hisCall.isEmpty()) {
           m_qsoCooldown[m_hisCall] = QDateTime::currentMSecsSinceEpoch();
         }
         if (m_config.prompt_to_log() || m_config.autoLog()) {
@@ -10927,8 +10949,14 @@ void MainWindow::genStdMsgs(QString rpt, bool unconditional)
         sent=rs + a + m_config.my_grid();
       }
       msgtype(t + sent, ui->tx2);
-      if(sent==rpt) msgtype(t + "R" + sent, ui->tx3);
-      if(sent!=rpt) msgtype(t + "R " + sent, ui->tx3);
+      if(m_mode=="FT2" && m_ft2QsoMsgCount <= 2) {
+        // 2-msg mode: TX3 = "R+report TU" (Decodium custom report+TU)
+        if(sent==rpt) msgtype(t + "R" + sent + " TU", ui->tx3);
+        if(sent!=rpt) msgtype(t + "R " + sent + " TU", ui->tx3);
+      } else {
+        if(sent==rpt) msgtype(t + "R" + sent, ui->tx3);
+        if(sent!=rpt) msgtype(t + "R " + sent, ui->tx3);
+      }
       if((m_mode=="FT2" or m_mode=="FT4") and SpecOp::RTTY==m_specOp) {
         QDateTime now=QDateTime::currentDateTimeUtc();
         int sinceTx3 = m_dateTimeSentTx3.secsTo(now);
