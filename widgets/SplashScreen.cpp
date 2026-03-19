@@ -96,8 +96,8 @@ SplashScreen::SplashScreen ()
   // Slogan
   auto *slogan = new QLabel (
     "<p style='text-align:center; color:#e0e0e0; font-size:15px; line-height:1.5;'>"
-    "Veloce come la luce.<br>"
-    "Libero dal tempo.<br>"
+    "Con FT2 non ci vuole pi&ugrave; potenza<br>"
+    "ma pi&ugrave; matematica.<br>"
     "<span style='color:#ffcc00; font-size:17px; font-weight:bold;'>"
     "Il futuro dei QSO digitali.</span></p>"
   );

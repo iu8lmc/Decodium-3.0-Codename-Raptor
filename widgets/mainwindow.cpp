@@ -10956,14 +10956,15 @@ void MainWindow::genStdMsgs(QString rpt, bool unconditional)
         a = a.asprintf("%4.4d ",ui->sbSerialNumber->value());
         sent=rs + a + m_config.my_grid();
       }
+      msgtype(t + sent, ui->tx2);
       if(m_mode=="FT2" && !ui->tx1->isEnabled()) {
-        // Quick QSO: TX2 includes TU marker
-        msgtype(t + sent + " TU", ui->tx2);
+        // Quick QSO: TX3 = R+report TU (identifier for other Decodium stations)
+        if(sent==rpt) msgtype(t + "R" + sent + " TU", ui->tx3);
+        if(sent!=rpt) msgtype(t + "R " + sent + " TU", ui->tx3);
       } else {
-        msgtype(t + sent, ui->tx2);
+        if(sent==rpt) msgtype(t + "R" + sent, ui->tx3);
+        if(sent!=rpt) msgtype(t + "R " + sent, ui->tx3);
       }
-      if(sent==rpt) msgtype(t + "R" + sent, ui->tx3);
-      if(sent!=rpt) msgtype(t + "R " + sent, ui->tx3);
       if((m_mode=="FT2" or m_mode=="FT4") and SpecOp::RTTY==m_specOp) {
         QDateTime now=QDateTime::currentDateTimeUtc();
         int sinceTx3 = m_dateTimeSentTx3.secsTo(now);

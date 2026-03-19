@@ -13,12 +13,13 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
   ui(new Ui::CAboutDlg)
 {
   ui->setupUi(this);
+  setWindowTitle("About " + program_title(revision()));
 
   ui->labelTxt->setText(
     "<p align=\"center\"><img src=\":/ft2logo.png\" width=\"180\" height=\"180\" /></p>"
     "<h2 align=\"center\">Decodium Fast Track 2</h2>"
     "<h3 align=\"center\"><i>" + tr("Official Release") + "</i></h3>"
-    "<p align=\"center\" style=\"font-size:14px;\"><b>Build 2603171536</b></p>"
+    "<p align=\"center\" style=\"font-size:14px;\"><b>" + program_title(revision()) + "</b></p>"
     "<p align=\"center\">"
     "<a href=\"https://buymeacoffee.com/iu8lmc\" style=\""
     "background-color:#FFDD00;color:#000000;font-family:Arial,sans-serif;"
