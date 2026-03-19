@@ -2,7 +2,7 @@
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
-#define MyBuildTag "2603191027"
+#define MyBuildTag "2603191208"
 #define DistDir "dist_64bit"
 
 [Setup]
@@ -12,7 +12,7 @@ AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyBuildTag}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL=https://www.qrz.com/db/IU8LMC
-DefaultDirName={autopf}\Decodium_FT2_x64
+DefaultDirName={localappdata}\Decodium
 DefaultGroupName=Decodium Fast Track 2
 DisableDirPage=no
 DisableProgramGroupPage=no

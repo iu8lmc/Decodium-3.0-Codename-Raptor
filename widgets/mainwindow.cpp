@@ -620,11 +620,14 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   // don't start — replaced by async visualizer below
 
   // Quick QSO toggle button — connect signal only, state applied later (after settings restore)
-  connect (ui->btnQuickQSO, &QPushButton::toggled, this, [this](bool checked) {
-    m_settings->setValue ("QuickQSO", checked);
-    ui->tx1->setEnabled (!checked);
-    if (!m_rpt.isEmpty ()) genStdMsgs (m_rpt);
-  });
+  if (ui->btnQuickQSO) {
+    connect (ui->btnQuickQSO, &QPushButton::toggled, this, [this](bool checked) {
+      m_settings->setValue ("QuickQSO", checked);
+      ui->tx1->setEnabled (!checked);
+      if (!m_rpt.isEmpty () && !m_config.my_callsign ().isEmpty ())
+        genStdMsgs (m_rpt);
+    });
+  }
 
   // FT2 async mode visualizer — in verticalLayout_13, after D-CW
   m_asyncVis = new AsyncModeWidget (this);
