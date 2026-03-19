@@ -619,18 +619,21 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_asymxPulse->setLoopCount (-1);  // infinite
   // don't start — replaced by async visualizer below
 
-  // FT2 QSO message count selector (2/3/5)
+  // Quick QSO toggle button — controls TX1 enabled state
   {
-    int saved = m_settings->value ("FT2QsoMsgCount", 3).toInt ();
-    if (saved == 2) ui->cbQsoMsgCount->setCurrentIndex (0);
-    else if (saved == 5) ui->cbQsoMsgCount->setCurrentIndex (2);
-    else ui->cbQsoMsgCount->setCurrentIndex (1);  // default 3
-    m_ft2QsoMsgCount = saved;
-    connect (ui->cbQsoMsgCount, QOverload<int>::of(&QComboBox::currentIndexChanged),
-             this, [this](int idx) {
-      static const int counts[] = {2, 3, 5};
-      m_ft2QsoMsgCount = counts[idx];
-      m_settings->setValue ("FT2QsoMsgCount", m_ft2QsoMsgCount);
+    bool quickQSO = m_settings->value ("QuickQSO", false).toBool ();
+    ui->btnQuickQSO->setChecked (quickQSO);
+    if (quickQSO) ui->tx1->setEnabled (false);
+    connect (ui->btnQuickQSO, &QPushButton::toggled, this, [this](bool checked) {
+      m_settings->setValue ("QuickQSO", checked);
+      ui->tx1->setEnabled (!checked);
+      if (checked) {
+        // regenerate TX messages with TU
+        genStdMsgs (m_rpt);
+      } else {
+        // regenerate TX messages without TU
+        genStdMsgs (m_rpt);
+      }
     });
   }
 
@@ -9730,6 +9733,10 @@ bool MainWindow::elide_tx1_not_allowed () const
 void MainWindow::on_txrb1_doubleClicked ()
 {
   ui->tx1->setEnabled (elide_tx1_not_allowed () || !ui->tx1->isEnabled ());
+  // Sync Quick QSO button with TX1 state
+  if (m_mode == "FT2") {
+    ui->btnQuickQSO->setChecked (!ui->tx1->isEnabled ());
+  }
   if (!ui->tx1->isEnabled ()) {
     // leave time for clicks to complete before setting txrb2
     QTimer::singleShot (500, ui->txrb2, SLOT (click ()));
@@ -10392,7 +10399,7 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
         if (("RRR" == word_3
              || (word_3_as_number == 73 && ROGERS == m_QSOProgress)
              || (word_3_as_number == 73 && m_mode == "FT2"
-                 && m_ft2QsoMsgCount <= 3 && m_QSOProgress >= ROGER_REPORT)
+                 && m_QSOProgress >= ROGER_REPORT)
              || "RR73" == word_3
              || ("R" == word_3 && m_QSOProgress != REPORT))) {
           if((m_mode=="FT2" or m_mode=="FT4") and "RR73" == word_3) m_dateTimeRcvdRR73=QDateTime::currentDateTimeUtc();
@@ -10470,17 +10477,24 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                    || (m_QSOProgress >= REPLYING &&
                    (m_mode=="MSK144" or m_mode=="FT8" or m_mode=="FT2" or m_mode=="FT4" || "Q65" == m_mode)))
                   && word_3.startsWith ('R')) {
-          m_ntx=4;
-          if (m_QSOProgress < ROGERS) {
-            m_txRetryCount = 0; m_lastNtx = -1;  // Reset only on FIRST R+rpt
+          if (is_73 && m_mode == "FT2") {
+            // Decodium "R+report TU" — other station says TU, QSO complete
+            m_ntx = 5;
+            m_QSOProgress = SIGNOFF;
+            ui->txrb5->setChecked(true);
+          } else {
+            m_ntx=4;
+            if (m_QSOProgress < ROGERS) {
+              m_txRetryCount = 0; m_lastNtx = -1;  // Reset only on FIRST R+rpt
+            }
+            m_QSOProgress = ROGERS;
+            if(SpecOp::RTTY == m_specOp) {
+              int n=t.size();
+              int nRpt=t[n-2].toInt();
+              if(nRpt>=529 and nRpt<=599) m_xRcvd=t[n-2] + " " + t[n-1];
+            }
+            ui->txrb4->setChecked(true);
           }
-          m_QSOProgress = ROGERS;
-          if(SpecOp::RTTY == m_specOp) {
-            int n=t.size();
-            int nRpt=t[n-2].toInt();
-            if(nRpt>=529 and nRpt<=599) m_xRcvd=t[n-2] + " " + t[n-1];
-          }
-          ui->txrb4->setChecked(true);
         } else if (m_QSOProgress >= CALLING)
           {
             if ((word_3_as_number >= -50 && word_3_as_number <= 49)
@@ -10503,6 +10517,12 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                     else
                       {
                         setTxMsg (3);
+                        // Decodium: if other station sent TU (Quick QSO),
+                        // mirror TU in our TX3 even if we're in standard mode
+                        if (is_73 && m_mode == "FT2"
+                            && !ui->tx3->text().contains(" TU")) {
+                          ui->tx3->setText(ui->tx3->text() + " TU");
+                        }
                         m_QSOProgress = ROGER_REPORT;
                       }
                   }
@@ -10594,51 +10614,29 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
       ui->txrb2->setChecked (true);
     }
   }
-  // ── FT2 QSO message count re-routing ──────────────────────────
-  // Standard flow: TX1(grid) → TX2(report) → TX3(R+rpt) → TX4(RR73) → TX5(73)
-  //   5 msg: full standard (no change)
-  //   3 msg: TX1 → TX2 → TX3(R+rpt TU) → wait 73 → log
-  //   2 msg: TX2 → TX3(R+rpt TU) → wait 73 → log
-  if (m_mode == "FT2" && m_ft2QsoMsgCount < 5) {
-    if (m_ft2QsoMsgCount <= 2) {
-      // 2-msg: skip TX1 (grid) → go straight to TX2 (report)
-      if (m_ntx == 1) {
-        setTxMsg(2);
-        m_QSOProgress = REPORT;
-      }
-    }
-    if (m_ft2QsoMsgCount <= 3) {
-      // 2-msg and 3-msg: TX3 = "R+report TU" — send it, wait for 73
-      // (TX3 content set in genStdMsgs; no skip, no premature log)
 
-      // 2-msg and 3-msg: skip TX4 (RR73) → log and CQ
-      if (m_ntx == 4) {
-        m_sentFirst73 = true;
-        if (!m_hisCall.isEmpty()) {
-          m_qsoCooldown[m_hisCall] = QDateTime::currentMSecsSinceEpoch();
-        }
-        if (m_config.prompt_to_log() || m_config.autoLog()) {
-          logQSOTimer.start(0);
-        }
-        m_ntx = 6;
-        ui->txrb6->setChecked(true);
-        m_QSOProgress = CALLING;
-      }
-      // 2-msg and 3-msg: skip TX5 (73) → log and CQ
-      if (m_ntx == 5) {
-        m_sentFirst73 = true;
-        if (!m_hisCall.isEmpty()) {
-          m_qsoCooldown[m_hisCall] = QDateTime::currentMSecsSinceEpoch();
-        }
-        if (m_config.prompt_to_log() || m_config.autoLog()) {
-          logQSOTimer.start(0);
-        }
-        m_ntx = 6;
-        ui->txrb6->setChecked(true);
-        m_QSOProgress = CALLING;
-      }
+  // ── Decodium Quick QSO rerouting ──────────────────────────────
+  // In Quick QSO mode (FT2): skip TX1→TX2, and when TX5 is reached
+  // log immediately instead of sending 73 (the other station already
+  // got our TU, so we just log and return to CQ).
+  if (m_mode == "FT2" && !ui->tx1->isEnabled()) {
+    if (m_ntx == 1) {
+      // Skip grid (TX1) → go straight to report+TU (TX2)
+      m_ntx = 2;
+      m_QSOProgress = REPORT;
+      ui->txrb2->setChecked (true);
+    }
+    if (m_ntx == 5 && m_QSOProgress == SIGNOFF) {
+      // Skip 73 (TX5) → log QSO and return to CQ
+      if (!m_bSentReport) m_bSentReport = true;
+      m_ntx = 6;                       // trigger TX6 = CQ
+      ui->txrb6->setChecked (true);
+      m_QSOProgress = CALLING;
+      auto_tx_mode(true);
+      logQSOTimer.start(0);            // log the QSO
     }
   }
+  // ──────────────────────────────────────────────────────────────
 
   // if we get here then we are reacting to the message
   if (m_bAutoReply) m_bCallingCQ = CALLING == m_QSOProgress;
@@ -10934,9 +10932,14 @@ void MainWindow::genStdMsgs(QString rpt, bool unconditional)
         a = a.asprintf("%4.4d ",ui->sbSerialNumber->value());
         sent=rs + a + m_config.my_grid();
       }
-      msgtype(t + sent, ui->tx2);
-      if(m_mode=="FT2" && m_ft2QsoMsgCount <= 3) {
-        // 2-msg and 3-msg: TX3 = "R+report TU" (Decodium custom report+TU)
+      if(m_mode=="FT2" && !ui->tx1->isEnabled()) {
+        // Quick QSO: TX2 = "report TU" (Decodium custom report+TU)
+        msgtype(t + sent + " TU", ui->tx2);
+      } else {
+        msgtype(t + sent, ui->tx2);
+      }
+      if(m_mode=="FT2" && !ui->tx1->isEnabled()) {
+        // Quick QSO: TX3 = "R+report TU" (Decodium custom report+TU)
         if(sent==rpt) msgtype(t + "R" + sent + " TU", ui->tx3);
         if(sent!=rpt) msgtype(t + "R " + sent + " TU", ui->tx3);
       } else {
@@ -12689,10 +12692,9 @@ void MainWindow::displayWidgets(qint64 n)
     m_asyncVis->setVisible(isFT2);
     if (isFT2) m_asyncVis->start(); else m_asyncVis->stop();
   }
+  ui->btnQuickQSO->setVisible(isFT2);
   ui->cbSpeedyContest->setVisible(isFT2);
   ui->cbDigitalMorse->setVisible(isFT2);
-  ui->labelQsoMsgs->setVisible(isFT2);
-  ui->cbQsoMsgCount->setVisible(isFT2);
   if (!isFT2) {
     ui->btnTxNow->setVisible(false);
     m_txRdyBlinkTimer.stop();

@@ -2155,6 +2155,37 @@ When not checked you can view the calibration results.</string>
                      </widget>
                     </item>
                     <item>
+                     <widget class="QPushButton" name="btnQuickQSO">
+                      <property name="focusPolicy">
+                       <enum>Qt::StrongFocus</enum>
+                      </property>
+                      <property name="toolTip">
+                       <string>Quick QSO: report+TU in un messaggio, scambio ~3 passaggi</string>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">QPushButton:checked {
+	color: white;
+	background-color: #cc6600;
+	border-style: outset;
+	border-width: 1px;
+	border-radius: 5px;
+	border-color: black;
+	min-width: 5em;
+	padding: 3px;
+}</string>
+                      </property>
+                      <property name="text">
+                       <string>Quick QSO</string>
+                      </property>
+                      <property name="checkable">
+                       <bool>true</bool>
+                      </property>
+                      <property name="visible">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
                      <widget class="QCheckBox" name="cbSpeedyContest">
                       <property name="toolTip">
                        <string>Contest: double-click su decode = TX immediato (~20ms)</string>
@@ -2179,39 +2210,6 @@ When not checked you can view the calibration results.</string>
                        <bool>false</bool>
                       </property>
                      </widget>
-                    </item>
-                    <item>
-                     <layout class="QHBoxLayout">
-                      <item>
-                       <widget class="QLabel" name="labelQsoMsgs">
-                        <property name="text">
-                         <string>QSO:</string>
-                        </property>
-                        <property name="visible">
-                         <bool>false</bool>
-                        </property>
-                       </widget>
-                      </item>
-                      <item>
-                       <widget class="QComboBox" name="cbQsoMsgCount">
-                        <property name="toolTip">
-                         <string>Number of TX messages per QSO: 2=ultra-fast, 3=normal, 5=full exchange</string>
-                        </property>
-                        <property name="visible">
-                         <bool>false</bool>
-                        </property>
-                        <item>
-                         <property name="text"><string>2 msg</string></property>
-                        </item>
-                        <item>
-                         <property name="text"><string>3 msg</string></property>
-                        </item>
-                        <item>
-                         <property name="text"><string>5 msg</string></property>
-                        </item>
-                       </widget>
-                      </item>
-                     </layout>
                     </item>
                     <item>
                      <widget class="QPushButton" name="btnTxNow">
