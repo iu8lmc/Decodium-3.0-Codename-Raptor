@@ -29,6 +29,7 @@
 #include <QQueue>
 #include <QFuture>
 #include "DXpedCertificate.hpp"
+#include "DecodiumCertificate.hpp"
 #include "VerifiedDxpedListManager.hpp"
 #include <QFutureWatcher>
 #include <QDateTime>
@@ -826,10 +827,13 @@ private:
   int       m_dxpedMissedThresh {4}; // missed periods before skip
   int       m_dxpedCQInterval {4};   // piggyback CQ every N TX periods
 
-  // Certificate
+  // DXped Certificate
   DXpedCertificate m_dxpedCert;
   bool      m_bDXpedCertified {false};
   QSet<QString> m_verifiedDxpedCalls;   // for receiving side display
+
+  // Decodium Certificate (verified station)
+  DecodiumCertificate m_decodiumCert;
   VerifiedDxpedListManager * m_verifiedListMgr {nullptr};
 
   void dxpedFillEmptySlots ();
@@ -839,6 +843,7 @@ private:
   void dxpedAutoSequence (DecodedText const& msg);
   void dxpedLogQSO       (int slot);
   void dxpedLoadCertificate ();
+  void decodiumLoadCertificate ();
   void dxpedUpdateControlPanel ();
 
   bool    m_bAutoReply;

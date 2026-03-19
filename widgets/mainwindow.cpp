@@ -629,6 +629,13 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     });
   }
 
+  // Decodium Certificate menu action
+  {
+    auto *certAction = new QAction (tr ("Load Decodium Certificate..."), this);
+    ui->menuFile->insertAction (ui->actionSettings, certAction);
+    connect (certAction, &QAction::triggered, this, &MainWindow::decodiumLoadCertificate);
+  }
+
   // FT2 async mode visualizer — in verticalLayout_13, after D-CW
   m_asyncVis = new AsyncModeWidget (this);
   m_asyncVis->setVisible (false);
@@ -2301,6 +2308,31 @@ void MainWindow::readSettings()
     ui->btnQuickQSO->setChecked (quickQSO);
     ui->btnQuickQSO->blockSignals (false);
     if (quickQSO) ui->tx1->setEnabled (false);
+  }
+  // Decodium Certificate: auto-load from AppData or saved path
+  {
+    QString certPath = m_settings->value ("DecodiumCertPath", "").toString ();
+    if (certPath.isEmpty ()) {
+      // Try default location: %APPDATA%/Decodium/callsign.decodium
+      QString appData = QDir::homePath () + "/AppData/Local/Decodium";
+      QDir dir (appData);
+      QStringList certs = dir.entryList (QStringList () << "*.decodium", QDir::Files);
+      if (!certs.isEmpty ())
+        certPath = dir.absoluteFilePath (certs.first ());
+    }
+    if (!certPath.isEmpty () && m_decodiumCert.load (certPath)) {
+      if (m_decodiumCert.isActive ()) {
+        ui->decodedTextBrowser->setDecodiumCertActive (true);
+        ui->decodedTextBrowser2->setDecodiumCertActive (true);
+        statusBar ()->showMessage (
+          QString ("Decodium Verified: %1 (%2) — expires %3")
+            .arg (m_decodiumCert.callsign ())
+            .arg (m_decodiumCert.tierName ())
+            .arg (m_decodiumCert.expires ().toString ("yyyy-MM-dd")), 5000);
+      } else if (m_decodiumCert.isExpired ()) {
+        statusBar ()->showMessage ("Decodium certificate expired!", 5000);
+      }
+    }
   }
   ui->actionHighlightB4->setChecked(m_settings->value("HighlightB4", false).toBool());
   ui->actionHighlightToday->setChecked(m_settings->value("HighlightToday", false).toBool());
@@ -10507,8 +10539,8 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                       }
                     else
                       {
-                        if (is_73 && m_mode == "FT2") {
-                          // Decodium Quick QSO: other station sent "+NN TU"
+                        if (is_73 && m_mode == "FT2" && !ui->tx1->isEnabled()) {
+                          // Quick QSO active + other station sent "+NN TU"
                           // Skip TX3 (R+report) → go straight to RR73 (TX4)
                           setTxMsg (4);
                           m_QSOProgress = ROGERS;
@@ -10925,7 +10957,7 @@ void MainWindow::genStdMsgs(QString rpt, bool unconditional)
         sent=rs + a + m_config.my_grid();
       }
       if(m_mode=="FT2" && !ui->tx1->isEnabled()) {
-        // Quick QSO: TX2 = "report TU" (Decodium custom report+TU)
+        // Quick QSO: TX2 includes TU marker
         msgtype(t + sent + " TU", ui->tx2);
       } else {
         msgtype(t + sent, ui->tx2);
@@ -11715,6 +11747,36 @@ void MainWindow::dxpedLoadCertificate ()
     QMessageBox::critical (this, tr ("Invalid Certificate"),
       tr ("The certificate file is invalid or the signature verification failed."));
     m_bDXpedCertified = false;
+  }
+}
+
+void MainWindow::decodiumLoadCertificate ()
+{
+  QString path = QFileDialog::getOpenFileName (this,
+    tr ("Load Decodium Certificate"), QString (), tr ("Decodium Certificate (*.decodium)"));
+  if (path.isEmpty ()) return;
+
+  if (m_decodiumCert.load (path)) {
+    if (m_decodiumCert.isActive ()) {
+      m_settings->setValue ("DecodiumCertPath", path);
+      ui->decodedTextBrowser->setDecodiumCertActive (true);
+      ui->decodedTextBrowser2->setDecodiumCertActive (true);
+      if (!m_rpt.isEmpty () && !m_config.my_callsign ().isEmpty ())
+        genStdMsgs (m_rpt);
+      QMessageBox::information (this, tr ("Decodium Certificate"),
+        tr ("Verified: %1\nTier: %2\nExpires: %3")
+        .arg (m_decodiumCert.callsign ())
+        .arg (m_decodiumCert.tierName ())
+        .arg (m_decodiumCert.expires ().toString ("yyyy-MM-dd")));
+    } else {
+      QMessageBox::warning (this, tr ("Certificate Expired"),
+        tr ("The Decodium certificate for %1 has expired on %2.")
+        .arg (m_decodiumCert.callsign ())
+        .arg (m_decodiumCert.expires ().toString ("yyyy-MM-dd")));
+    }
+  } else {
+    QMessageBox::critical (this, tr ("Invalid Certificate"),
+      tr ("The certificate file is invalid or the signature verification failed."));
   }
 }
 

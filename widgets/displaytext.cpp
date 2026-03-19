@@ -545,6 +545,14 @@ void DisplayText::displayDecodedText(DecodedText const& decodedText, QString con
                  << "verified=" << verified;
     }
   }
+  // Decodium station verification: TU in message = Decodium verified station
+  // Only shown if we have an active Decodium certificate ourselves
+  if (mode == "FT2" && m_decodiumCertActive) {
+    auto words = decodedText.messageWords ();
+    if (words.filter (QRegularExpression {"^TU$"}).size () > 0) {
+      extra += QString::fromUtf8 ("D \xe2\x9c\x93 ");   // D ✓
+    }
+  }
   QString state;    // NJ0A
 
   if (displayDXCCEntity && dxGrid.length() > 0  && logBook.countries ()->lookup (dxCall).primary_prefix  == "K") {

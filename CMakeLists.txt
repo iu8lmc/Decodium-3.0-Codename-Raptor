@@ -280,6 +280,7 @@ set (decodium_CXXSRCS
   Audio/soundout.cpp
   Audio/soundin.cpp
   UpdateChecker.cpp
+  DecodiumCertificate.cpp
   VerifiedDxpedListManager.cpp
   widgets/asyncmodewidget.cpp
   widgets/meterwidget.cpp

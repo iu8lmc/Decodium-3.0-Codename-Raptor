@@ -38,6 +38,7 @@ public:
                               double TRperiod, bool bSuperfox);
   void displayQSY(QString text);
   void setVerifiedCalls (QSet<QString> const& calls) { m_verifiedDxpedCalls = calls; }
+  void setDecodiumCertActive (bool active) { m_decodiumCertActive = active; }
   void displayHoundToBeCalled(QString t, bool bAtTop=false, QColor bg = QColor {}, QColor fg = QColor {});
   void setHighlightedHoundText(QString text);
   void new_period ();
@@ -75,6 +76,7 @@ private:
 
   QHash<QString, QPair<QColor, QColor>> highlighted_calls_;
   QSet<QString> m_verifiedDxpedCalls;
+  bool m_decodiumCertActive {false};
   bool high_volume_;
   QMetaObject::Connection vertical_scroll_connection_;
   long long modified_vertical_scrollbar_max_;
