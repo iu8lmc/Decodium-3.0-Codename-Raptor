@@ -8,7 +8,7 @@
 
 Fork of WSJT-X 3.0 focused on asynchronous FT2 — real-time decoding, instant TX, sensitivity close to FT8.
 
-**Build:** 2603190018 | **Author:** IU8LMC | **License:** GPL v3
+**Build:** 2603190215 | **Author:** IU8LMC | **License:** GPL v3
 
 ---
 
@@ -23,9 +23,42 @@ Digitally signed installers (SHA256 + DigiCert RFC3161 timestamp).
 
 ---
 
-## What's New — Build 2603190018
+## What's New — Build 2603190215
 
 ### [EN] English
+
+#### Quick QSO — Adaptive Fast Exchange
+New **Quick QSO** button (orange toggle, visible only in FT2 mode) enables a faster QSO exchange in ~3 steps instead of the standard 5:
+
+**How it works:**
+- Press the **Quick QSO** button → TX1 (grid locator) is disabled, TX2 and TX3 include "report + TU" in a single 77-bit message
+- The system **automatically detects** the other station's mode from the received messages:
+  - If the message contains **"TU"** (e.g. `IK8ABC IU8LMC +05 TU` or `IK8ABC IU8LMC R-12 TU`), Decodium recognizes the other station is in Quick QSO mode and adapts the auto-sequence accordingly
+  - If the message does **NOT** contain "TU", the standard 5-message exchange continues normally
+
+**Quick QSO flow (both stations in Quick QSO):**
+```
+Station A: CQ IU8LMC JN70
+Station B: IU8LMC IK8ABC +05 TU       ← report + TU in one message
+Station A: IK8ABC IU8LMC R-12 TU      ← R+report + TU in one message
+Station B: IU8LMC IK8ABC 73           ← QSO complete, log
+Station A: (receives 73 → auto-log)
+```
+
+**Mixed mode (Quick QSO ↔ Standard 5-msg):**
+```
+Station A (Quick QSO): CQ IU8LMC JN70
+Station B (Standard):  IU8LMC IK8ABC JN61    ← grid (TX1)
+Station A:             IK8ABC IU8LMC +05 TU   ← sends report+TU
+Station B:             IU8LMC IK8ABC R-12     ← standard R+report (no TU)
+Station A:             (detects no TU → sends RR73 normally)
+Station B:             IU8LMC IK8ABC 73
+```
+The system adapts transparently — no manual intervention needed.
+
+**WSJT-X compatibility:** Standard WSJT-X decodes the TU-encoded message as a normal report (irpt offset is in an unused range). The QSO proceeds normally, just slower.
+
+**Protocol encoding:** Uses unused irpt range 106-206 in the igrid4 field of the 77-bit type-1 message. `irpt = standard_irpt + 101`. MAXGRID4=32400, max igrid4=32606 < 32767 — fully within spec.
 
 #### Normalized Min-Sum LDPC Decoder
 The LDPC(174,91) decoder now uses **Normalized Min-Sum** algorithm instead of Sum-Product (tanh/atanh). Replaces the expensive `tanh()` / `product()` / `atanh()` chain with `sign() * min(|msg|) * alpha` (alpha=0.75). Benefits:
@@ -63,6 +96,26 @@ Full multilingual support with 10 languages selectable from the menu bar:
 
 ### [ES] Español
 
+#### Quick QSO — Intercambio Rápido Adaptativo
+Nuevo botón **Quick QSO** (toggle naranja, visible solo en modo FT2) que permite un intercambio QSO más rápido en ~3 pasos en lugar de los 5 estándar:
+
+**Cómo funciona:**
+- Pulse el botón **Quick QSO** → TX1 (locator) se desactiva, TX2 y TX3 incluyen "report + TU" en un solo mensaje de 77 bits
+- El sistema **detecta automáticamente** el modo de la otra estación a partir de los mensajes recibidos:
+  - Si el mensaje contiene **"TU"**, Decodium reconoce que la otra estación está en modo Quick QSO y adapta la auto-secuencia
+  - Si el mensaje **NO** contiene "TU", el intercambio estándar de 5 mensajes continúa normalmente
+
+**Flujo Quick QSO (ambas estaciones en Quick QSO):**
+```
+Estación A: CQ IU8LMC JN70
+Estación B: IU8LMC IK8ABC +05 TU       ← reporte + TU en un mensaje
+Estación A: IK8ABC IU8LMC R-12 TU      ← R+reporte + TU en un mensaje
+Estación B: IU8LMC IK8ABC 73           ← QSO completo, log
+Estación A: (recibe 73 → auto-log)
+```
+
+**Modo mixto (Quick QSO ↔ Estándar 5-msg):** el sistema se adapta automáticamente sin intervención manual. Compatible con WSJT-X estándar.
+
 #### Decodificador LDPC Min-Sum Normalizado
 El decodificador LDPC(174,91) ahora usa el algoritmo **Min-Sum Normalizado** en lugar de Sum-Product (tanh/atanh). Reemplaza la cadena costosa `tanh()` / `product()` / `atanh()` con `sign() * min(|msg|) * alpha` (alpha=0.75):
 - **+0.2-0.4 dB** de mejora en sensibilidad
@@ -98,6 +151,39 @@ Soporte multilingüe completo con 10 idiomas seleccionables desde la barra de me
 ---
 
 ### [IT] Italiano
+
+#### Quick QSO — Scambio Rapido Adattivo
+Nuovo pulsante **Quick QSO** (toggle arancione, visibile solo in modalità FT2) che consente uno scambio QSO più veloce in ~3 passaggi invece dei 5 standard:
+
+**Come funziona:**
+- Premi il pulsante **Quick QSO** → TX1 (locatore griglia) viene disattivato, TX2 e TX3 includono "report + TU" in un unico messaggio a 77 bit
+- Il sistema **rileva automaticamente** la modalità dell'altra stazione analizzando i messaggi ricevuti:
+  - Se il messaggio contiene **"TU"** (es. `IK8ABC IU8LMC +05 TU` o `IK8ABC IU8LMC R-12 TU`), Decodium riconosce che l'altra stazione è in modalità Quick QSO e adatta l'auto-sequenza di conseguenza
+  - Se il messaggio **NON** contiene "TU", lo scambio standard a 5 messaggi prosegue normalmente
+
+**Flusso Quick QSO (entrambe le stazioni in Quick QSO):**
+```
+Stazione A: CQ IU8LMC JN70
+Stazione B: IU8LMC IK8ABC +05 TU       ← report + TU in un messaggio
+Stazione A: IK8ABC IU8LMC R-12 TU      ← R+report + TU in un messaggio
+Stazione B: IU8LMC IK8ABC 73           ← QSO completato, log
+Stazione A: (riceve 73 → auto-log)
+```
+
+**Modalità mista (Quick QSO ↔ Standard 5-msg):**
+```
+Stazione A (Quick QSO): CQ IU8LMC JN70
+Stazione B (Standard):  IU8LMC IK8ABC JN61    ← griglia (TX1)
+Stazione A:             IK8ABC IU8LMC +05 TU   ← invia report+TU
+Stazione B:             IU8LMC IK8ABC R-12     ← R+report standard (senza TU)
+Stazione A:             (rileva assenza TU → invia RR73 normalmente)
+Stazione B:             IU8LMC IK8ABC 73
+```
+Il sistema si adatta automaticamente — nessun intervento manuale richiesto.
+
+**Compatibilità WSJT-X:** il WSJT-X standard decodifica il messaggio con TU come un normale report (l'offset irpt è in un range inutilizzato). Il QSO procede normalmente, solo più lentamente.
+
+**Codifica protocollo:** utilizza il range irpt inutilizzato 106-206 nel campo igrid4 del messaggio type-1 a 77 bit. `irpt = standard_irpt + 101`. MAXGRID4=32400, max igrid4=32606 < 32767 — completamente entro le specifiche.
 
 #### Decoder LDPC Min-Sum Normalizzato
 Il decoder LDPC(174,91) ora usa l'algoritmo **Min-Sum Normalizzato** al posto del Sum-Product (tanh/atanh). Sostituisce la catena costosa `tanh()` / `product()` / `atanh()` con `sign() * min(|msg|) * alpha` (alpha=0.75):
@@ -377,6 +463,7 @@ FT8, FT4, JT65, JT9, JT4, Q65, MSK144, WSPR, FST4, FST4W, Echo, FreqCal
 | **Async Visualizer** | **Sine wave + S-meter** | **No** |
 | **Channel Estimation** | **MMSE adaptive (Costas pilots)** | **No** |
 | **LDPC Algorithm** | **Normalized Min-Sum (alpha=0.75)** | **Sum-Product (tanh/atanh)** |
+| **Quick QSO** | **~3 steps with auto-detect** | **No** |
 
 ---
 
@@ -413,10 +500,16 @@ build_installers.bat
 
 ## Changelog
 
+### Build 2603190215 (2026-03-19)
+- **Quick QSO button**: orange toggle button (FT2 only) — enables fast ~3-step QSO exchange with report+TU encoding
+- **Auto-detect other station mode**: system automatically recognizes Quick QSO vs standard 5-msg from received messages (TU presence detection)
+- **Adaptive auto-sequence**: mirrors TU in TX3 response when other station is Quick QSO, even if local station is in standard mode
+- **Mixed mode compatibility**: Quick QSO ↔ Standard ↔ WSJT-X — all combinations work transparently
+- **77-bit TU encoding**: irpt range 106-206 in igrid4 field, backward compatible with standard WSJT-X
+
 ### Build 2603190018 (2026-03-19)
-- **Decodium custom "Report + TU" message**: new 77-bit encoding for 2-msg QSO mode — combines signal report with TU (Thank You) in a single standard-framed message (e.g. `IU8LMC DX1ABC R+05 TU`). Uses unused irpt range (106-206) in igrid4 field. Compatible with WSJT-X (decodes as normal report).
+- **Decodium custom "Report + TU" message**: new 77-bit encoding — combines signal report with TU in a single standard-framed message
 - **Watchdog rescue fix**: WD rescue only from CALLING state (CQ) — dblClick mid-QSO WD fires normally
-- **2-msg mode auto-log**: TX3 sender logs QSO automatically after sending "R+report TU"
 
 ### Build 2603182239 (2026-03-18)
 - **Normalized Min-Sum LDPC (all decoders)**: all three BP decoders (`decode174_91`, `bpdecode174_91`, `bpdecode174_91var`) replace Sum-Product (tanh/product/atanh) with sign()*min(|msg|)*alpha (alpha=0.75) — +0.2-0.4 dB, faster computation
