@@ -10395,8 +10395,6 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
         auto word_3_as_number = word_3.toInt ();
         if (("RRR" == word_3
              || (word_3_as_number == 73 && ROGERS == m_QSOProgress)
-             || (word_3_as_number == 73 && m_mode == "FT2"
-                 && m_QSOProgress >= ROGER_REPORT)
              || "RR73" == word_3
              || ("R" == word_3 && m_QSOProgress != REPORT))) {
           if((m_mode=="FT2" or m_mode=="FT4") and "RR73" == word_3) m_dateTimeRcvdRR73=QDateTime::currentDateTimeUtc();
@@ -10474,24 +10472,17 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                    || (m_QSOProgress >= REPLYING &&
                    (m_mode=="MSK144" or m_mode=="FT8" or m_mode=="FT2" or m_mode=="FT4" || "Q65" == m_mode)))
                   && word_3.startsWith ('R')) {
-          if (is_73 && m_mode == "FT2") {
-            // Decodium "R+report TU" — other station says TU, QSO complete
-            m_ntx = 5;
-            m_QSOProgress = SIGNOFF;
-            ui->txrb5->setChecked(true);
-          } else {
-            m_ntx=4;
-            if (m_QSOProgress < ROGERS) {
-              m_txRetryCount = 0; m_lastNtx = -1;  // Reset only on FIRST R+rpt
-            }
-            m_QSOProgress = ROGERS;
-            if(SpecOp::RTTY == m_specOp) {
-              int n=t.size();
-              int nRpt=t[n-2].toInt();
-              if(nRpt>=529 and nRpt<=599) m_xRcvd=t[n-2] + " " + t[n-1];
-            }
-            ui->txrb4->setChecked(true);
+          m_ntx=4;
+          if (m_QSOProgress < ROGERS) {
+            m_txRetryCount = 0; m_lastNtx = -1;  // Reset only on FIRST R+rpt
           }
+          m_QSOProgress = ROGERS;
+          if(SpecOp::RTTY == m_specOp) {
+            int n=t.size();
+            int nRpt=t[n-2].toInt();
+            if(nRpt>=529 and nRpt<=599) m_xRcvd=t[n-2] + " " + t[n-1];
+          }
+          ui->txrb4->setChecked(true);
         } else if (m_QSOProgress >= CALLING)
           {
             if ((word_3_as_number >= -50 && word_3_as_number <= 49)
@@ -10513,14 +10504,15 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                       }
                     else
                       {
-                        setTxMsg (3);
-                        // Decodium: if other station sent TU (Quick QSO),
-                        // mirror TU in our TX3 even if we're in standard mode
-                        if (is_73 && m_mode == "FT2"
-                            && !ui->tx3->text().contains(" TU")) {
-                          ui->tx3->setText(ui->tx3->text() + " TU");
+                        if (is_73 && m_mode == "FT2") {
+                          // Decodium Quick QSO: other station sent "+NN TU"
+                          // Skip TX3 (R+report) → go straight to RR73 (TX4)
+                          setTxMsg (4);
+                          m_QSOProgress = ROGERS;
+                        } else {
+                          setTxMsg (3);
+                          m_QSOProgress = ROGER_REPORT;
                         }
-                        m_QSOProgress = ROGER_REPORT;
                       }
                   }
               }
@@ -10935,14 +10927,8 @@ void MainWindow::genStdMsgs(QString rpt, bool unconditional)
       } else {
         msgtype(t + sent, ui->tx2);
       }
-      if(m_mode=="FT2" && !ui->tx1->isEnabled()) {
-        // Quick QSO: TX3 = "R+report TU" (Decodium custom report+TU)
-        if(sent==rpt) msgtype(t + "R" + sent + " TU", ui->tx3);
-        if(sent!=rpt) msgtype(t + "R " + sent + " TU", ui->tx3);
-      } else {
-        if(sent==rpt) msgtype(t + "R" + sent, ui->tx3);
-        if(sent!=rpt) msgtype(t + "R " + sent, ui->tx3);
-      }
+      if(sent==rpt) msgtype(t + "R" + sent, ui->tx3);
+      if(sent!=rpt) msgtype(t + "R " + sent, ui->tx3);
       if((m_mode=="FT2" or m_mode=="FT4") and SpecOp::RTTY==m_specOp) {
         QDateTime now=QDateTime::currentDateTimeUtc();
         int sinceTx3 = m_dateTimeSentTx3.secsTo(now);
