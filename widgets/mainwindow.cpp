@@ -20,6 +20,8 @@
 #include <QStringListModel>
 #include <QSettings>
 #include <QKeyEvent>
+#include <QMoveEvent>
+#include <QResizeEvent>
 #include <QWheelEvent>
 #include <QProcessEnvironment>
 #include <QSharedMemory>
@@ -850,6 +852,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   connect(m_wideGraph.data (), SIGNAL(freezeDecode2(int)),this,SLOT(freezeDecode(int)));
   connect(m_wideGraph.data (), SIGNAL(f11f12(int)),this,SLOT(bumpFqso(int)));
   connect(m_wideGraph.data (), SIGNAL(setXIT2(int)),this,SLOT(setXIT(int)));
+  m_wideGraph->installEventFilter (this);    // magnetic snap detection
 
   connect (m_fastGraph.data (), &FastGraph::fastPick, this, &MainWindow::fastPick);
 
@@ -5020,6 +5023,11 @@ bool MainWindow::eventFilter (QObject * object, QEvent * event)
       remove_child_from_event_filter (static_cast<QChildEvent *> (event)->child ());
       break;
 
+    case QEvent::Move:
+      // Waterfall magnetic snap: detect when user drags WideGraph near main window
+      if (object == m_wideGraph.data ()) checkWideGraphSnap ();
+      break;
+
     default: break;
     }
   return QObject::eventFilter(object, event);
@@ -5157,6 +5165,56 @@ void MainWindow::subProcessError (QProcess * process, QProcess::ProcessError)
       m_valid = false;              // ensures exit if still constructing
       QTimer::singleShot (0, this, SLOT (close ()));
     }
+}
+
+// ── Waterfall magnetic docking ─────────────────────────────────────
+void MainWindow::snapWideGraph ()
+{
+  if (!m_wideGraph || !m_wideGraph->isVisible () || m_wfSnap == WfSnapNone) return;
+  m_wfSnapping = true;
+  if (m_wfSnap == WfSnapBottom) {
+    m_wideGraph->move (x (), y () + height ());
+    m_wideGraph->resize (width (), m_wideGraph->height ());
+  } else if (m_wfSnap == WfSnapTop) {
+    m_wideGraph->move (x (), y () - m_wideGraph->height ());
+    m_wideGraph->resize (width (), m_wideGraph->height ());
+  }
+  m_wfSnapping = false;
+}
+
+void MainWindow::checkWideGraphSnap ()
+{
+  if (!m_wideGraph || !m_wideGraph->isVisible () || m_wfSnapping) return;
+  constexpr int snap_dist = 30;
+  QPoint wg = m_wideGraph->pos ();
+  int mBottom = y () + height ();
+  int mTop = y ();
+  // Check bottom snap: waterfall top near main window bottom
+  if (qAbs (wg.y () - mBottom) < snap_dist && qAbs (wg.x () - x ()) < width () / 2) {
+    m_wfSnap = WfSnapBottom;
+    snapWideGraph ();
+  }
+  // Check top snap: waterfall bottom near main window top
+  else if (qAbs (wg.y () + m_wideGraph->height () - mTop) < snap_dist
+           && qAbs (wg.x () - x ()) < width () / 2) {
+    m_wfSnap = WfSnapTop;
+    snapWideGraph ();
+  }
+  else {
+    m_wfSnap = WfSnapNone;
+  }
+}
+
+void MainWindow::moveEvent (QMoveEvent *e)
+{
+  MultiGeometryWidget::moveEvent (e);
+  snapWideGraph ();
+}
+
+void MainWindow::resizeEvent (QResizeEvent *e)
+{
+  MultiGeometryWidget::resizeEvent (e);
+  snapWideGraph ();
 }
 
 void MainWindow::closeEvent(QCloseEvent * e)
@@ -5349,6 +5407,7 @@ void MainWindow::on_actionLocal_User_Guide_triggered()
 void MainWindow::on_actionWide_Waterfall_triggered()      //Display Waterfalls
 {
   m_wideGraph->showNormal();
+  if (m_wfSnap != WfSnapNone) snapWideGraph ();
 }
 
 void MainWindow::on_actionEcho_Graph_triggered()
@@ -6889,6 +6948,41 @@ void MainWindow::activeWorked(QString call, QString band)
   m_activeCall[call].bands=QString::fromLatin1(ba);
 }
 
+// ITU callsign validator — rejects ghost/phantom decodes like "31OC80GD"
+// Pattern: prefix (1-2 letters, or digit+1-2 letters) + single digit + suffix (1-4 letters)
+// Compound calls (with /) require at least one valid base callsign part
+static bool isValidITUCall (const QString &call)
+{
+  static const QRegularExpression baseRx {
+    "^([A-Z]{1,2}|[0-9][A-Z]{1,2})[0-9][A-Z]{1,4}$"
+  };
+
+  QString c = call.toUpper ().trimmed ();
+  if (c.isEmpty ()) return false;
+
+  // Compound callsign — at least one part must be a valid base call
+  if (c.contains ('/')) {
+    QStringList parts = c.split ('/');
+    if (parts.size () > 3) return false;
+    for (const QString &p : parts) {
+      if (p.length () >= 3 && baseRx.match (p).hasMatch ()) return true;
+    }
+    return false;
+  }
+
+  return baseRx.match (c).hasMatch ();
+}
+
+// Tokens that appear in callsign positions but are NOT callsigns
+static bool isKnownToken (const QString &w)
+{
+  static const QSet<QString> tokens {
+    "CQ", "DE", "73", "RR73", "RRR", "R", "TNX", "GL", "TU", "QSY",
+    "HNY", "PSE", "AGN", "QRZ", "K", "SK", "TEST", "BEACON"
+  };
+  return tokens.contains (w.toUpper ());
+}
+
 void MainWindow::readFromStdout()                             //readFromStdout
 {
   bool bDisplayPoints = false;
@@ -6978,9 +7072,29 @@ void MainWindow::readFromStdout()                             //readFromStdout
       and (!(m_mode=="FT2" &&
            (message0.contains("? a")                                              // AP low-confidence decodes
            || (decodedtext.snr() < -21 && decodedtext.isLowConfidence()))))       // very weak + uncertain
+      // FDR step 4: Ghost station filter — validates callsigns against ITU rules
+      // Catches phantom decodes like "31OC80GD E2" from CRC14 false positives at very low SNR
+      and ([&] () -> bool {
+        if (m_mode != "FT2" && m_mode != "FT8") return true;  // only filter FT2/FT8
+        QString msg = message0.mid (24).trimmed ();
+        if (msg.isEmpty () || msg.contains ("<DecodeFinished>")) return true;
+        QStringList words = msg.split (' ', SkipEmptyParts);
+        // Extract tokens that should be callsigns (skip CQ/DE prefix, reports, grids, hashes)
+        static const QRegularExpression reportRx {"^[R]?[+-]?\\d{1,2}$"};
+        static const QRegularExpression gridRx {"^[A-R]{2}[0-9]{2}([A-X]{2})?$", QRegularExpression::CaseInsensitiveOption};
+        for (const QString &w : words) {
+          if (w.startsWith ("<") && w.endsWith (">")) continue;   // <...> or <callsign> hash
+          if (isKnownToken (w)) continue;
+          if (reportRx.match (w).hasMatch ()) continue;           // signal reports like -08, R-12, +03
+          if (gridRx.match (w).hasMatch ()) continue;             // grid squares like FN20, JN61MX
+          if (w.startsWith ("CQ")) continue;                       // CQ, CQDX, CQ_DX etc.
+          // This token should be a callsign — validate it
+          if (!isValidITUCall (w)) return false;                   // ghost → reject entire decode
+        }
+        return true;
+      } ())
       )
     {
-    // Callsign filter removed — was blocking valid decodes
 
     if (m_mode!="FT8" and m_mode!="FT2" and m_mode!="FT4" and !m_mode.startsWith ("FST4") and m_mode!="Q65") {
       //Pad 22-char msg to at least 37 chars
