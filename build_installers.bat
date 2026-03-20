@@ -6,10 +6,10 @@ set ISCC="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 set PFX=C:\Users\IU8LMC\decodium_codesign.pfx
 set PASS=Dec2026sign
 set SRC=C:\Users\IU8LMC\Downloads\WSJTX_3.0_Source
-set BUILD=2603200134
+set BUILD=2603200201
 
 echo ============================================
-echo  Decodium Fast Track 2 %BUILD% - Build 2603200134 Installers
+echo  Decodium Shannon %BUILD% - Build 2603200134 Installers
 echo ============================================
 echo.
 
@@ -28,7 +28,7 @@ echo === Step 1: Signing x64 executables ===
 for %%f in (decodium.exe jt9.exe message_aggregator.exe wsprd.exe udp_daemon.exe rigctl-decodium.exe rigctld-decodium.exe rigctlcom-decodium.exe) do (
     if exist "%SRC%\dist_64bit\%%f" (
         echo   Signing x64\%%f...
-        %SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /d "Decodium Fast Track 2" /tr http://timestamp.digicert.com /td SHA256 "%SRC%\dist_64bit\%%f"
+        %SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /d "Decodium Shannon" /tr http://timestamp.digicert.com /td SHA256 "%SRC%\dist_64bit\%%f"
         if errorlevel 1 echo   WARNING: Failed to sign %%f
     ) else (
         echo   SKIP: %%f not found
@@ -40,7 +40,7 @@ echo === Step 2: Signing x86 executables ===
 for %%f in (decodium.exe jt9.exe message_aggregator.exe wsprd.exe udp_daemon.exe rigctl-decodium.exe rigctld-decodium.exe rigctlcom-decodium.exe) do (
     if exist "%SRC%\dist_32bit\%%f" (
         echo   Signing x86\%%f...
-        %SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /d "Decodium Fast Track 2" /tr http://timestamp.digicert.com /td SHA256 "%SRC%\dist_32bit\%%f"
+        %SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /d "Decodium Shannon" /tr http://timestamp.digicert.com /td SHA256 "%SRC%\dist_32bit\%%f"
         if errorlevel 1 echo   WARNING: Failed to sign %%f
     ) else (
         echo   SKIP: %%f not found
@@ -68,7 +68,7 @@ echo === Step 5: Signing installers ===
 for %%f in (Decodium_FT2_%BUILD%_x64_Setup.exe Decodium_FT2_%BUILD%_x86_Setup.exe) do (
     if exist "%SRC%\%%f" (
         echo   Signing %%f...
-        %SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /d "Decodium Fast Track 2 Installer" /tr http://timestamp.digicert.com /td SHA256 "%SRC%\%%f"
+        %SIGNTOOL% sign /f %PFX% /p %PASS% /fd SHA256 /d "Decodium Shannon Installer" /tr http://timestamp.digicert.com /td SHA256 "%SRC%\%%f"
         if errorlevel 1 echo   WARNING: Failed to sign %%f
     ) else (
         echo   ERROR: %%f not found!

@@ -69,7 +69,7 @@ SplashScreen::SplashScreen ()
   layout->addWidget (logoLabel);
 
   // Title
-  auto *title = new QLabel ("DECODIUM FAST TRACK 2");
+  auto *title = new QLabel ("DECODIUM SHANNON");
   title->setAlignment (Qt::AlignCenter);
   title->setStyleSheet (
     "color: #ffffff; font-size: 26px; font-weight: bold;"
@@ -78,7 +78,7 @@ SplashScreen::SplashScreen ()
   layout->addWidget (title);
 
   // Subtitle
-  auto *subtitle = new QLabel ("FT2 Async Digital Communication");
+  auto *subtitle = new QLabel ("Non ci vuole piu' potenza, ma piu' matematica");
   subtitle->setAlignment (Qt::AlignCenter);
   subtitle->setStyleSheet (
     "color: #7eb8ff; font-size: 14px; font-style: italic;"
@@ -96,10 +96,10 @@ SplashScreen::SplashScreen ()
   // Slogan
   auto *slogan = new QLabel (
     "<p style='text-align:center; color:#e0e0e0; font-size:15px; line-height:1.5;'>"
-    "Con FT2 non ci vuole pi&ugrave; potenza<br>"
-    "ma pi&ugrave; matematica.<br>"
+    "Dedicato a Claude Shannon (1916-2001)<br>"
+    "padre della teoria dell'informazione.<br>"
     "<span style='color:#ffcc00; font-size:17px; font-weight:bold;'>"
-    "Il futuro dei QSO digitali.</span></p>"
+    "A 0-1.5 dB dal limite di Shannon.</span></p>"
   );
   slogan->setAlignment (Qt::AlignCenter);
   slogan->setTextFormat (Qt::RichText);
