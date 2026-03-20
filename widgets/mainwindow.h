@@ -174,6 +174,8 @@ private:
   void closeEvent(QCloseEvent *) override;
   void childEvent(QChildEvent *) override;
   bool eventFilter(QObject *, QEvent *) override;
+  void moveEvent(QMoveEvent *) override;
+  void resizeEvent(QResizeEvent *) override;
   void showQSYMessage(QString message);
 
 private slots:
@@ -575,6 +577,12 @@ private:
   QScopedPointer<EqualizationToolsDialog> m_equalizationToolsDialog;
 
   QScopedPointer<WideGraph> m_wideGraph;
+  // Waterfall magnetic docking
+  enum WfSnap { WfSnapNone, WfSnapBottom, WfSnapTop };
+  WfSnap m_wfSnap {WfSnapBottom};
+  bool m_wfSnapping {false};
+  void snapWideGraph ();
+  void checkWideGraphSnap ();
   QScopedPointer<EchoGraph> m_echoGraph;
   QScopedPointer<FastGraph> m_fastGraph;
   QScopedPointer<LogQSO> m_logDlg;
