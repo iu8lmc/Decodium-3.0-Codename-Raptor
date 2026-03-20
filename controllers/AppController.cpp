@@ -372,7 +372,7 @@ void AppController::playAlert(const QString &alertType)
 
 void AppController::checkForUpdates()
 {
-    QUrl url(QStringLiteral("https://api.github.com/repos/iu8lmc/Decodium-3.0-Shannon/releases/latest"));
+    QUrl url(QStringLiteral("https://api.github.com/repos/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest"));
     QNetworkRequest req(url);
     req.setHeader(QNetworkRequest::UserAgentHeader, QStringLiteral("Decodium3/3.0"));
     req.setRawHeader("Accept", "application/vnd.github.v3+json");

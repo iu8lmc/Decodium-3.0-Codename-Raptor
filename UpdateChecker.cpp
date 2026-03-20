@@ -23,7 +23,7 @@
 
 // GitHub repo
 static constexpr char GITHUB_API_URL[] =
-    "https://api.github.com/repos/iu8lmc/Decodium-3.0-Shannon/releases/latest";
+    "https://api.github.com/repos/iu8lmc/Decodium-3.0-Codename-Raptor/releases/latest";
 
 // ──────────────────────────────────────────────────────────────────────────────
 void UpdateChecker::checkForUpdates (QWidget * parent, bool silent)
