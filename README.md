@@ -1,4 +1,4 @@
-# Decodium Fast Track 2
+# Decodium Shannon
 
 **The fastest and most sensitive FT2 client in the world.**
 *El cliente FT2 más rápido y sensible del mundo.*
@@ -23,7 +23,7 @@ Digitally signed installers (SHA256 + DigiCert RFC3161 timestamp).
 
 ---
 
-## What's New — Build 2603200134: FT2 Decoder v2 — Push to Shannon Limit
+## What's New — Build 2603200201: FT2 Decoder v2 — Push to Shannon Limit
 
 ### [IT] Italiano — Decoder FT2 v2: Verso il Limite di Shannon
 
@@ -448,7 +448,7 @@ Menü çubuğundan seçilebilen 10 dil ile tam çok dilli destek:
 
 ## Raptor Engine — Enhanced FT2 Decoder
 
-The heart of Decodium Fast Track 2 is the **Raptor Engine**, an asynchronous FT2 decoder completely redesigned to approach FT8 performance.
+The heart of Decodium Shannon is the **Raptor Engine**, an asynchronous FT2 decoder completely redesigned to approach FT8 performance.
 
 ### Decoder Innovations
 
@@ -580,7 +580,7 @@ FT8, FT4, JT65, JT9, JT4, Q65, MSK144, WSPR, FST4, FST4W, Echo, FreqCal
 - Predictive soundcard drift compensation
 
 ### UI & Display
-- "Fast Track 2" logo and branding
+- "Shannon" logo and branding
 - B4 Strikethrough — worked stations shown with strikethrough
 - TX Bracket on waterfall — red brackets `[ ]` at TX position
 - No B4 Filter — hides worked stations on the band
@@ -667,7 +667,7 @@ build_installers.bat
 
 ## Changelog
 
-### Build 2603200134 (2026-03-20)
+### Build 2603200201 (2026-03-20)
 - **FT2 Decoder v2 — Push to Shannon Limit**: complete rewrite of 3-layer decoding stack
 - **Exact Log-Sum-Exp demapper**: replaces max-log approximation, +0.5-1.0 dB at low SNR
 - **LDPC multi-restart x4**: 4 BP attempts with deterministic row permutation, +0.2-0.3 dB
@@ -712,15 +712,15 @@ build_installers.bat
 - **Fix**: RR73 infinite loop — stop after 3 retries
 - **Fix**: UpdateChecker regex
 
-### Build 2603151508 (2026-03-15) — Decodium Fast Track 2
-- **Full rebrand**: Decodium 3.0 ASYMX → Decodium Fast Track 2
+### Build 2603151508 (2026-03-15) — Decodium Shannon
+- **Full rebrand**: Decodium 3.0 ASYMX → Decodium Shannon
 - **Raptor Engine**: scale factor 3.2, normalizebmet RMS, 5 metric passes
 - **Turbo Timer 187ms**: 20 decode/period (4x faster)
 - **TX Frequency Hopping**: +/-25 Hz anti-collision async
 - **Predictive DT Hints**: 60s station timing cache
 - **Sync-Triggered Decode**: 2 phases (Costas scan + targeted decode)
 - **Speedy Contest + Digital Morse (D-CW)**: instant and manual TX
-- **New SVG logo**: Fast Track 2 branding
+- **New SVG logo**: Shannon branding
 
 ### Build 2603080006 (2026-03-08)
 - Async TX: bypass 3.75s period, 300ms guard timer
@@ -740,6 +740,6 @@ build_installers.bat
 ## Credits
 - **WSJT-X** by Joe Taylor K1JT and the WSJT Development Group
 - **WSJT-X 3.0.0** fork by WM8Q (avantol)
-- **Decodium Fast Track 2** by IU8LMC
+- **Decodium Shannon** by IU8LMC
 
 73 de IU8LMC Martino & IZ8XXE Mimmo

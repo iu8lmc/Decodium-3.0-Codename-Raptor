@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Decodium Fast Track 2</string>
+   <string>Decodium Shannon</string>
   </property>
   <property name="toolTip">
    <string/>
@@ -2150,7 +2150,7 @@ When not checked you can view the calibration results.</string>
                        <bool>false</bool>
                       </property>
                       <property name="toolTip">
-                       <string>Fast Track 2: Async FT2 decoder attivo — decodifica continua senza periodi</string>
+                       <string>Shannon: Async FT2 decoder attivo — decodifica continua senza periodi</string>
                       </property>
                      </widget>
                     </item>
@@ -5310,7 +5310,7 @@ QPushButton[state=&quot;ok&quot;] {
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About Decodium Fast Track 2</string>
+    <string>About Decodium Shannon</string>
    </property>
    <property name="menuRole">
     <enum>QAction::AboutRole</enum>
@@ -5899,23 +5899,23 @@ QPushButton[state=&quot;ok&quot;] {
   </action>
   <action name="actionQuick_Start_Guide_to_WSJT_X_2_7_and_QMAP">
    <property name="text">
-    <string>Quick-Start Guide to Decodium Fast Track 2 and QMAP</string>
+    <string>Quick-Start Guide to Decodium Shannon and QMAP</string>
    </property>
   </action>
   <action name="actionWSJT_X_improved_Home_Page">
    <property name="text">
-    <string>Decodium Fast Track 2 Home Page</string>
+    <string>Decodium Shannon Home Page</string>
    </property>
    <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go to the Decodium Fast Track 2 home page.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Go to the Decodium Shannon home page.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionThe_additional_features_of_wsjt_x_improved">
    <property name="text">
-    <string>The additional features of Decodium Fast Track 2</string>
+    <string>The additional features of Decodium Shannon</string>
    </property>
    <property name="whatsThis">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overview on the additional features of Decodium Fast Track 2.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overview on the additional features of Decodium Shannon.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="actionRecommended_Audio_Settings">

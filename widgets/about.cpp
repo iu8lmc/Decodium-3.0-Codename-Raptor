@@ -17,7 +17,7 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
 
   ui->labelTxt->setText(
     "<p align=\"center\"><img src=\":/ft2logo.png\" width=\"180\" height=\"180\" /></p>"
-    "<h2 align=\"center\">Decodium Fast Track 2</h2>"
+    "<h2 align=\"center\">Decodium Shannon</h2>"
     "<h3 align=\"center\"><i>" + tr("Official Release") + "</i></h3>"
     "<p align=\"center\" style=\"font-size:14px;\"><b>" + program_title(revision()) + "</b></p>"
     "<p align=\"center\">"
@@ -28,7 +28,7 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
     "&#9749; Help us grow</a></p>"
     "<hr>"
     "<p align=\"center\"><b>Mod by IU8LMC</b> — <a href=\"https://www.qrz.com/db/IU8LMC\">qrz.com/db/IU8LMC</a></p>"
-    "<p>" + tr("Decodium Fast Track 2 is an asynchronous weak-signal digital "
+    "<p>" + tr("Decodium Shannon is an asynchronous weak-signal digital "
     "communication client focused on the FT2 mode (3.75s period, 4-GFSK). "
     "Async TX without period synchronization, enhanced decoder sensitivity, "
     "extended frequency range for maximum decoding performance.") + "</p>"
@@ -65,7 +65,7 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
     "KK1D, ND0B, PY1ZRJ, PY2SDR, VE1SKY, VK3ACF, VK4BDJ, "
     "VK7MO, VR2UPU, W3DJS, W4TI, W4TV, " + tr("and") + " W9MDB.</p>"
     "<p align=\"center\"><img src=\":/icon_128x128.png\" /></p>"
-    "<p>" + tr("Decodium Fast Track 2 is licensed under the terms of Version 3 "
+    "<p>" + tr("Decodium Shannon is licensed under the terms of Version 3 "
     "of the GNU General Public License (GPL).") + "</p>");
 }
 

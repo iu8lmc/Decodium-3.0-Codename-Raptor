@@ -1,5 +1,5 @@
 //
-// DXpedition Certificate Generator — Decodium Fast Track 2
+// DXpedition Certificate Generator — Decodium Shannon
 // Tool riservato all'authority (IU8LMC) — NON distribuire
 //
 // Usage:
@@ -99,7 +99,7 @@ int main (int argc, char *argv[])
 
   // Interactive mode
   std::cout << "========================================\n";
-  std::cout << "  Decodium Fast Track 2 — DXped Certificate Generator\n";
+  std::cout << "  Decodium Shannon — DXped Certificate Generator\n";
   std::cout << "  RESERVED — Do not distribute\n";
   std::cout << "========================================\n\n";
 
