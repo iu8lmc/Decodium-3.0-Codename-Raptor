@@ -1,21 +1,11 @@
 subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
      ndepth, ncontest, mycall, hiscall, outlines, nout)
 
-! Level 2: Sync-Triggered FT2 Decoder
-! ====================================
-! Two-phase architecture that eliminates DT grid search:
-!
-! Phase 1 - Costas Scan:
-!   getcandidates2 + coarse sync2d over full DT range
-!   Cost: O(candidates x time_steps x 4_dot_products) — FAST
-!   Returns: list of (freq, ibest, sync) hits above trigger threshold
-!
-! Phase 2 - Targeted Decode:
-!   Fine sync refinement + bitmetrics + LDPC — only at Phase 1 positions
-!   DT is KNOWN from Phase 1, not searched
-!   Cost: O(hits x LDPC) — LDPC only for confirmed sync
-!
-! Same C++ interface as ft2_async_decode for drop-in replacement.
+! Level 2: Sync-Triggered FT2 Decoder — Decodium v2
+! ===================================================
+! Improvements over v1:
+!  - AP type 4: hiscall+mycall (61 AP bits)
+!  - Soft AP injection (weighted by confidence, not hard +/-1)
 
   use packjt77
 
@@ -56,6 +46,16 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
   real xibest, sm1, sp1, den
   integer ndecodes
 
+! AP decoding variables
+  integer*1 apmask_cq(2*ND), apmask_mycall(2*ND), apmask_hiscall(2*ND)
+  integer*1 mcq(77), mmycall(77), mhiscall(77)
+  character*77 c77_ap
+  character*37 apmsg
+  integer nap_type, nap_i3, nap_n3
+
+! Soft AP variables
+  real ap_weight
+
   data rvec/0,1,0,0,1,0,1,0,0,1,0,1,1,1,1,0,1,0,0,0,1,0,0,1,1,0,1,1,0, &
      1,0,0,1,0,1,1,0,0,0,0,1,0,0,0,1,0,1,0,0,1,1,1,1,0,0,1,0,1, &
      0,1,0,1,0,1,1,0,1,1,1,1,1,0,0,0,1,0,1/
@@ -85,16 +85,61 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
   doosd = ndepth0.ge.3
   dd = iwave
 
+! ── AP (A-Priori) mask setup ──────────────────────────────
+! AP type 1: CQ           (29 bits)
+! AP type 2: mycall        (29 bits)
+! AP type 3: CQ + mycall   (58 bits)
+! AP type 4: hiscall + mycall (58 bits + 3 type = 61 AP bits) — NEW v2
+
+  apmask_cq = 0
+  apmask_mycall = 0
+  apmask_hiscall = 0
+  mcq = 0
+  mmycall = 0
+  mhiscall = 0
+
+! Pack CQ bit pattern
+  apmsg = 'CQ K1JT FN20'
+  nap_i3 = -1; nap_n3 = -1
+  call pack77(apmsg, nap_i3, nap_n3, c77_ap)
+  if(nap_i3.ge.0) then
+    read(c77_ap, '(77i1)') mcq
+    mcq = mod(mcq + rvec, 2)
+    apmask_cq(1:29) = 1
+  endif
+
+! Pack mycall bit pattern (bits 30-58)
+  if(len_trim(mycall).ge.3) then
+    apmsg = 'CQ '//mycall(1:12)//' AA00'
+    nap_i3 = -1; nap_n3 = -1
+    call pack77(apmsg, nap_i3, nap_n3, c77_ap)
+    if(nap_i3.ge.0) then
+      read(c77_ap, '(77i1)') mmycall
+      mmycall = mod(mmycall + rvec, 2)
+      apmask_mycall(30:58) = 1
+    endif
+  endif
+
+! Pack hiscall bit pattern (bits 1-29) for AP type 4
+  if(len_trim(hiscall).ge.3) then
+    apmsg = hiscall(1:12)//' K1JT FN20'
+    nap_i3 = -1; nap_n3 = -1
+    call pack77(apmsg, nap_i3, nap_n3, c77_ap)
+    if(nap_i3.ge.0) then
+      read(c77_ap, '(77i1)') mhiscall
+      mhiscall = mod(mhiscall + rvec, 2)
+      apmask_hiscall(1:29) = 1
+    endif
+  endif
+
 ! ============================================
 ! PHASE 1: Fast Costas Sync Scan
 ! ============================================
   nhits = 0
 
-! Get candidate frequencies from spectrogram
   call getcandidates2(dd, real(nfa), real(nfb), 0.50, nfqso, MAXCAND, &
        savg, candidate, ncand, sbase)
 
-! For each candidate, coarse sync search only
   dobigfft = .true.
   do icand = 1, ncand
     f0 = candidate(1, icand)
@@ -106,7 +151,7 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
     sum2 = sum(cd2*conjg(cd2))/(real(NMAX)/real(NDOWN))
     if(sum2.gt.0.0) cd2 = cd2/sqrt(sum2)
 
-! Coarse sync search: full DT range, freq +/-12 Hz step 3
+! Coarse sync search
     ibest_c = -1
     idfbest_c = 0
     smax_c = -99.
@@ -121,9 +166,8 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
       enddo
     enddo
 
-! Trigger threshold (lower than decode threshold — catch weak signals)
-    syncmin_scan = 0.60
-    if(ndepth0.ge.3) syncmin_scan = 0.50
+    syncmin_scan = 0.50
+    if(ndepth0.ge.3) syncmin_scan = 0.40
 
     if(smax_c.ge.syncmin_scan .and. nhits.lt.MAXHITS) then
       nhits = nhits + 1
@@ -144,13 +188,11 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
     idf0 = hit_idf(ihit)
     snr0 = hit_snr(ihit)
 
-! Re-downsample at candidate frequency (reuses cached FFT)
     call ft2_downsample(dd, .false., f0, cd2)
     sum2 = sum(cd2*conjg(cd2))/(real(NMAX)/real(NDOWN))
     if(sum2.gt.0.0) cd2 = cd2/sqrt(sum2)
 
-! Fine sync: +/-5 samples, +/-4 Hz around coarse position
-! DT is KNOWN from Phase 1 — just refine it
+! Fine sync
     ibest = ibest0
     idfbest = idf0
     smax = -99.
@@ -165,21 +207,17 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
       enddo
     enddo
 
-! Decode threshold (stricter than scan trigger)
-    smaxthresh = 0.80
-    if(ndepth0.ge.3) smaxthresh = 0.65
+    smaxthresh = 0.65
+    if(ndepth0.ge.3) smaxthresh = 0.50
     if(smax.lt.smaxthresh) cycle
 
-! Corrected frequency
     f1 = f0 + real(idfbest)
     if(f1.le.10.0 .or. f1.ge.4990.0) cycle
 
-! Final downsample at corrected frequency
     call ft2_downsample(dd, .false., f1, cb)
     sum2 = sum(abs(cb)**2)/(real(NSS)*NN)
     if(sum2.gt.0.0) cb = cb/sqrt(sum2)
 
-! Extract signal at known position (DT eliminated)
     cd = 0.
     if(ibest.ge.0) then
       it = min(NDMAX-1, ibest+NN*NSS-1)
@@ -189,11 +227,10 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
       cd(-ibest:ibest+NN*NSS-1) = cb(0:NN*NSS+2*ibest-1)
     endif
 
-! Bit metrics
     call get_ft2_bitmetrics(cd, bitmetrics, badsync)
     if(badsync) cycle
 
-! Sub-sample DT refinement via parabolic interpolation
+! Sub-sample DT refinement
     if(ibest.gt.0 .and. ibest.lt.NDMAX-1) then
       call sync2d(cd2, ibest-1, ctwk2(:,idfbest), 1, sm1)
       call sync2d(cd2, ibest+1, ctwk2(:,idfbest), 1, sp1)
@@ -207,7 +244,7 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
       xibest = real(ibest)
     endif
 
-! Sync quality check (hard Costas symbol verification)
+! Sync quality check
     hbits = 0
     where(bitmetrics(:,1).ge.0) hbits = 1
     ns1 = count(hbits(  1:  8).eq.(/0,0,0,1,1,0,1,1/))
@@ -215,11 +252,11 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
     ns3 = count(hbits(133:140).eq.(/1,1,1,0,0,1,0,0/))
     ns4 = count(hbits(199:206).eq.(/1,0,1,1,0,0,0,1/))
     nsync_qual = ns1 + ns2 + ns3 + ns4
-    nsync_qual_min = 13
-    if(ndepth0.ge.3) nsync_qual_min = 10
+    nsync_qual_min = 10
+    if(ndepth0.ge.3) nsync_qual_min = 8
     if(nsync_qual.lt.nsync_qual_min) cycle
 
-! Scale LLRs from bitmetrics (3 metric types) — 3.2 matches FT8 for better LDPC separation
+! Scale LLRs from bitmetrics — scalefac 3.2 (standard)
     scalefac = 3.2
     llra(  1: 58) = bitmetrics(  9: 66, 1)
     llra( 59:116) = bitmetrics( 75:132, 1)
@@ -237,7 +274,7 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
     llrc = scalefac * llrc
     call normalizebmet(llrc, 2*ND)
 
-! Multi-metric: best-of (max |value|) and average
+! Best-of metric (max |value|) and average
     do i = 1, 2*ND
       if(abs(llra(i)).ge.abs(llrb(i)) .and. &
          abs(llra(i)).ge.abs(llrc(i))) then
@@ -250,19 +287,103 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
       llre(i) = (llra(i) + llrb(i) + llrc(i))/3.0
     enddo
 
-! 5 metric passes (no AP in triggered mode for speed)
-    do ipass = 1, 5
-      if(ipass.eq.1) llr = llra
-      if(ipass.eq.2) llr = llrb
-      if(ipass.eq.3) llr = llrc
-      if(ipass.eq.4) llr = llrd
-      if(ipass.eq.5) llr = llre
-      apmask = 0
+! ── Decode passes: 5 metric × (no-AP + 5 AP types) ──────
+! Pass  1-5: no AP (a, b, c, best-of, avg)
+! Pass  6:   AP1 — CQ (29 bits)
+! Pass  7:   AP2 — mycall (29 bits)
+! Pass  8:   AP3 — CQ + mycall (58 bits)
+! Pass  9:   AP4 — hiscall + mycall (58 bits) — NEW v2
+! Pass 10:   AP4 with average metric
+!
+! AP uses SOFT injection: ap_weight proportional to sync quality.
+
+    nap_type = 0
+    do ipass = 1, 10
+      if(ipass.eq.1) then; llr = llra; apmask = 0; endif
+      if(ipass.eq.2) then; llr = llrb; apmask = 0; endif
+      if(ipass.eq.3) then; llr = llrc; apmask = 0; endif
+      if(ipass.eq.4) then; llr = llrd; apmask = 0; endif
+      if(ipass.eq.5) then; llr = llre; apmask = 0; endif
+
+! ── AP type 1: CQ ──
+      if(ipass.eq.6) then
+        llr = llrd
+        apmask = apmask_cq
+        ap_weight = min(4.0, max(1.5, smax * 3.0))
+        do i = 1, 29
+          if(apmask(i).eq.1) llr(i) = (mcq(i)*2.0-1.0) * ap_weight
+        enddo
+        nap_type = 1
+      endif
+
+! ── AP type 2: mycall ──
+      if(ipass.eq.7 .and. len_trim(mycall).ge.3) then
+        llr = llrd
+        apmask = apmask_mycall
+        ap_weight = min(4.0, max(1.5, smax * 3.0))
+        do i = 30, 58
+          if(apmask(i).eq.1) llr(i) = (mmycall(i)*2.0-1.0) * ap_weight
+        enddo
+        nap_type = 2
+      endif
+
+! ── AP type 3: CQ + mycall (58 AP bits) ──
+      if(ipass.eq.8 .and. len_trim(mycall).ge.3) then
+        llr = llrd
+        apmask = 0
+        apmask(1:29) = apmask_cq(1:29)
+        apmask(30:58) = apmask_mycall(30:58)
+        ap_weight = min(4.0, max(1.5, smax * 3.0))
+        do i = 1, 29
+          if(apmask_cq(i).eq.1) llr(i) = (mcq(i)*2.0-1.0) * ap_weight
+        enddo
+        do i = 30, 58
+          if(apmask_mycall(i).eq.1) llr(i) = (mmycall(i)*2.0-1.0) * ap_weight
+        enddo
+        nap_type = 3
+      endif
+
+! ── AP type 4: hiscall + mycall (58 AP bits) — NEW v2 ──
+! When both hiscall and mycall are known, inject both as AP.
+! hiscall = bits 1-29 (first callsign), mycall = bits 30-58.
+! 58+3=61 AP bits — massive help at very low SNR.
+      if(ipass.eq.9 .and. len_trim(mycall).ge.3 .and.                   &
+         len_trim(hiscall).ge.3) then
+        llr = llrd
+        apmask = 0
+        apmask(1:29) = apmask_hiscall(1:29)
+        apmask(30:58) = apmask_mycall(30:58)
+        ap_weight = min(4.0, max(1.5, smax * 3.0))
+        do i = 1, 29
+          if(apmask_hiscall(i).eq.1) llr(i) = (mhiscall(i)*2.0-1.0) * ap_weight
+        enddo
+        do i = 30, 58
+          if(apmask_mycall(i).eq.1) llr(i) = (mmycall(i)*2.0-1.0) * ap_weight
+        enddo
+        nap_type = 4
+      endif
+
+! ── AP type 4 with average metric ──
+      if(ipass.eq.10 .and. len_trim(mycall).ge.3 .and.                  &
+         len_trim(hiscall).ge.3) then
+        llr = llre
+        apmask = 0
+        apmask(1:29) = apmask_hiscall(1:29)
+        apmask(30:58) = apmask_mycall(30:58)
+        ap_weight = min(4.0, max(1.5, smax * 3.0))
+        do i = 1, 29
+          if(apmask_hiscall(i).eq.1) llr(i) = (mhiscall(i)*2.0-1.0) * ap_weight
+        enddo
+        do i = 30, 58
+          if(apmask_mycall(i).eq.1) llr(i) = (mmycall(i)*2.0-1.0) * ap_weight
+        enddo
+        nap_type = 4
+      endif
 
       message77 = 0
       dmin = 0.0
-      maxosd = 3
-      if(ndepth0.ge.3) maxosd = 4
+      maxosd = 4
+      if(ndepth0.ge.3) maxosd = 7
       if(.not.doosd) maxosd = -1
 
       Keff = 91
@@ -277,7 +398,7 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
         call unpack77(c77, 1, message, unpk77_success)
         if(.not.unpk77_success) cycle
 
-! Check duplicate within this call
+! Check duplicate
         idupe = 0
         do i = 1, ndecodes
           if(decodes(i).eq.message) idupe = 1
@@ -297,13 +418,18 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
 
 ! DT from known sync position
         xdt = xibest/1333.33 - 0.5
-        annot = 'T '
+        if(ipass.le.5) then
+          annot = 'T '
+        else
+          write(annot,'(a1,i1)') 'a', nap_type
+        endif
         nout = nout + 1
         write(outlines(nout), 1001) nsnr, xdt, nint(f1), message, annot
 1001    format(i4,f5.1,i5,' ~ ',1x,a37,1x,a2)
         exit
       endif
     enddo  ! ipass
+
   enddo  ! ihit
 
   return

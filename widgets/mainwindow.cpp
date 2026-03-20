@@ -20623,7 +20623,7 @@ void MainWindow::showStartupBanner ()
   );
   layout->addWidget (helpTitle);
 
-  auto *coffeeBtn = new QPushButton (QString::fromUtf8 ("  \u2615 Buy me a coffee  "));
+  auto *coffeeBtn = new QPushButton (QString::fromUtf8 ("  \u2615 Help us grow  "));
   coffeeBtn->setCursor (Qt::PointingHandCursor);
   coffeeBtn->setFixedSize (240, 44);
   coffeeBtn->setStyleSheet (
@@ -20646,7 +20646,7 @@ void MainWindow::showStartupBanner ()
   layout->addLayout (coffeeLay);
 
   connect (coffeeBtn, &QPushButton::clicked, [] () {
-    QDesktopServices::openUrl (QUrl ("https://buymeacoffee.com/iu8lmc"));
+    QDesktopServices::openUrl (QUrl ("https://pay.sumup.com/b2c/QFI3ZQYH"));
   });
 
   layout->addSpacing (8);

@@ -116,9 +116,9 @@ SplashScreen::SplashScreen ()
   );
   layout->addWidget (helpTitle);
 
-  auto *coffeeBtn = new QPushButton ("  Buy me a coffee  ");
+  auto *coffeeBtn = new QPushButton (QString::fromUtf8 ("  \u2615 Help us grow  "));
   coffeeBtn->setCursor (Qt::PointingHandCursor);
-  coffeeBtn->setFixedSize (220, 44);
+  coffeeBtn->setFixedSize (240, 44);
   coffeeBtn->setStyleSheet (
     "QPushButton {"
     "  background-color: #FFDD00; color: #000000;"
@@ -139,7 +139,7 @@ SplashScreen::SplashScreen ()
   layout->addLayout (coffeeLay);
 
   connect (coffeeBtn, &QPushButton::clicked, [] () {
-    QDesktopServices::openUrl (QUrl ("https://buymeacoffee.com/iu8lmc"));
+    QDesktopServices::openUrl (QUrl ("https://pay.sumup.com/b2c/QFI3ZQYH"));
   });
 
   layout->addSpacing (8);
