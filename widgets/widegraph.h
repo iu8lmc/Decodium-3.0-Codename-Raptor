@@ -2,7 +2,7 @@
 #ifndef WIDEGRAPH_H_
 #define WIDEGRAPH_H_
 
-#include <QDialog>
+#include <QWidget>
 #include <QScopedPointer>
 #include <QDir>
 #include <QHash>
@@ -18,7 +18,7 @@ namespace Ui {
 class QSettings;
 class Configuration;
 
-class WideGraph : public QDialog
+class WideGraph : public QWidget
 {
   Q_OBJECT
 

@@ -14,7 +14,7 @@
 #include "moc_widegraph.cpp"
 
 WideGraph::WideGraph(QSettings * settings, QWidget *parent) :
-  QDialog(parent),
+  QWidget(parent),
   ui(new Ui::WideGraph),
   m_settings (settings),
   m_palettes_path {":/Palettes"},
@@ -25,8 +25,6 @@ WideGraph::WideGraph(QSettings * settings, QWidget *parent) :
 {
   ui->setupUi(this);
 
-  setWindowTitle (QApplication::applicationName () + " - " + tr ("Wide Graph"));
-  setWindowFlags (Qt::WindowCloseButtonHint | Qt::WindowMinimizeButtonHint);
   setMaximumWidth (MAX_SCREENSIZE);
   setMaximumHeight (880);
 
@@ -45,7 +43,6 @@ WideGraph::WideGraph(QSettings * settings, QWidget *parent) :
   {
     //Restore user's settings
     SettingsGroup g {m_settings, "WideGraph"};
-    restoreGeometry (m_settings->value ("geometry", saveGeometry ()).toByteArray ());
     ui->widePlot->setPlotZero(m_settings->value("PlotZero", 0).toInt());
     ui->widePlot->setPlotGain(m_settings->value("PlotGain", 0).toInt());
     ui->widePlot->setPlot2dGain(m_settings->value("Plot2dGain", 0).toInt());
@@ -126,7 +123,7 @@ WideGraph::~WideGraph ()
 void WideGraph::closeEvent (QCloseEvent * e)
 {
   saveSettings ();
-  QDialog::closeEvent (e);
+  QWidget::closeEvent (e);
 }
 
 void WideGraph::saveSettings()                                           //saveSettings
@@ -248,7 +245,7 @@ void WideGraph::keyPressEvent(QKeyEvent *e)                                 //F1
     emit f11f12(n);
     break;
   default:
-    QDialog::keyPressEvent (e);
+    QWidget::keyPressEvent (e);
   }
 }
 

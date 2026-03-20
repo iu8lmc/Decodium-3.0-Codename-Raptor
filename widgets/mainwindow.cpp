@@ -20,8 +20,6 @@
 #include <QStringListModel>
 #include <QSettings>
 #include <QKeyEvent>
-#include <QMoveEvent>
-#include <QResizeEvent>
 #include <QWheelEvent>
 #include <QProcessEnvironment>
 #include <QSharedMemory>
@@ -848,15 +846,23 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   connect(m_detector, &Detector::framesWritten, this, &MainWindow::dataSink);
   connect (&m_audioThread, &QThread::finished, m_detector, &QObject::deleteLater);
 
-  // setup the waterfall
+  // setup the waterfall — embedded in a QDockWidget (like the cluster)
+  m_waterfallDock = new QDockWidget (tr ("Wide Graph"), this);
+  m_waterfallDock->setObjectName ("waterfallDock");
+  m_waterfallDock->setWidget (m_wideGraph.data ());
+  m_waterfallDock->setAllowedAreas (Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+  m_waterfallDock->setFeatures (QDockWidget::DockWidgetMovable
+                                | QDockWidget::DockWidgetFloatable
+                                | QDockWidget::DockWidgetClosable);
+  addDockWidget (Qt::TopDockWidgetArea, m_waterfallDock);
+
   connect(m_wideGraph.data (), SIGNAL(freezeDecode2(int)),this,SLOT(freezeDecode(int)));
   connect(m_wideGraph.data (), SIGNAL(f11f12(int)),this,SLOT(bumpFqso(int)));
   connect(m_wideGraph.data (), SIGNAL(setXIT2(int)),this,SLOT(setXIT(int)));
-  m_wideGraph->installEventFilter (this);    // magnetic snap detection
 
   connect (m_fastGraph.data (), &FastGraph::fastPick, this, &MainWindow::fastPick);
 
-  connect (this, &MainWindow::finished, m_wideGraph.data (), &WideGraph::close);
+  connect (this, &MainWindow::finished, m_waterfallDock, &QWidget::close);
   connect (this, &MainWindow::finished, m_echoGraph.data (), &EchoGraph::close);
   connect (this, &MainWindow::finished, m_fastGraph.data (), &FastGraph::close);
 
@@ -5023,11 +5029,6 @@ bool MainWindow::eventFilter (QObject * object, QEvent * event)
       remove_child_from_event_filter (static_cast<QChildEvent *> (event)->child ());
       break;
 
-    case QEvent::Move:
-      // Waterfall magnetic snap: detect when user drags WideGraph near main window
-      if (object == m_wideGraph.data ()) checkWideGraphSnap ();
-      break;
-
     default: break;
     }
   return QObject::eventFilter(object, event);
@@ -5167,55 +5168,6 @@ void MainWindow::subProcessError (QProcess * process, QProcess::ProcessError)
     }
 }
 
-// ── Waterfall magnetic docking ─────────────────────────────────────
-void MainWindow::snapWideGraph ()
-{
-  if (!m_wideGraph || !m_wideGraph->isVisible () || m_wfSnap == WfSnapNone) return;
-  m_wfSnapping = true;
-  if (m_wfSnap == WfSnapBottom) {
-    m_wideGraph->move (x (), y () + height ());
-    m_wideGraph->resize (width (), m_wideGraph->height ());
-  } else if (m_wfSnap == WfSnapTop) {
-    m_wideGraph->move (x (), y () - m_wideGraph->height ());
-    m_wideGraph->resize (width (), m_wideGraph->height ());
-  }
-  m_wfSnapping = false;
-}
-
-void MainWindow::checkWideGraphSnap ()
-{
-  if (!m_wideGraph || !m_wideGraph->isVisible () || m_wfSnapping) return;
-  constexpr int snap_dist = 30;
-  QPoint wg = m_wideGraph->pos ();
-  int mBottom = y () + height ();
-  int mTop = y ();
-  // Check bottom snap: waterfall top near main window bottom
-  if (qAbs (wg.y () - mBottom) < snap_dist && qAbs (wg.x () - x ()) < width () / 2) {
-    m_wfSnap = WfSnapBottom;
-    snapWideGraph ();
-  }
-  // Check top snap: waterfall bottom near main window top
-  else if (qAbs (wg.y () + m_wideGraph->height () - mTop) < snap_dist
-           && qAbs (wg.x () - x ()) < width () / 2) {
-    m_wfSnap = WfSnapTop;
-    snapWideGraph ();
-  }
-  else {
-    m_wfSnap = WfSnapNone;
-  }
-}
-
-void MainWindow::moveEvent (QMoveEvent *e)
-{
-  MultiGeometryWidget::moveEvent (e);
-  snapWideGraph ();
-}
-
-void MainWindow::resizeEvent (QResizeEvent *e)
-{
-  MultiGeometryWidget::resizeEvent (e);
-  snapWideGraph ();
-}
 
 void MainWindow::closeEvent(QCloseEvent * e)
 {
@@ -5406,8 +5358,8 @@ void MainWindow::on_actionLocal_User_Guide_triggered()
 
 void MainWindow::on_actionWide_Waterfall_triggered()      //Display Waterfalls
 {
-  m_wideGraph->showNormal();
-  if (m_wfSnap != WfSnapNone) snapWideGraph ();
+  m_waterfallDock->show ();
+  m_waterfallDock->raise ();
 }
 
 void MainWindow::on_actionEcho_Graph_triggered()
@@ -12957,7 +12909,7 @@ void MainWindow::on_actionFST4_triggered()
   m_bFast9=false;
   m_bFastMode=false;
   m_fastGraph->hide();
-  m_wideGraph->show();
+  m_waterfallDock->show();
   if (m_tci_audio && ui->bandComboBox->currentText()!="OOB")
     Q_EMIT m_config.transceiver_period(m_TRperiod);
   m_nsps=6912;                   //For symspec only
@@ -13008,7 +12960,7 @@ void MainWindow::on_actionFST4W_triggered()
   m_bFast9=false;
   m_bFastMode=false;
   m_fastGraph->hide();
-  m_wideGraph->show();
+  m_waterfallDock->show();
   if (m_tci_audio && ui->bandComboBox->currentText()!="OOB")
     Q_EMIT m_config.transceiver_period(m_TRperiod);
   m_nsps=6912;                   //For symspec only
@@ -13062,7 +13014,7 @@ void MainWindow::on_actionFT2_triggered()
   VHF_features_enabled(bVHF);
   ui->cbAutoSeq->setChecked(true);
   m_fastGraph->hide();
-  m_wideGraph->show();
+  m_waterfallDock->show();
   {
     QString ft2hdr = "UTC   dB   DT Freq    " + tr ("Message");
     ui->rh_decodes_headings_label->setText(ft2hdr);
@@ -13131,7 +13083,7 @@ void MainWindow::on_actionFT4_triggered()
   VHF_features_enabled(bVHF);
   ui->cbAutoSeq->setChecked(true);
   m_fastGraph->hide();
-  m_wideGraph->show();
+  m_waterfallDock->show();
   ui->rh_decodes_headings_label->setText("UTC   dB   DT Freq    " + tr ("Message"));
   m_wideGraph->setPeriod(m_TRperiod,m_nsps);
   if (m_tci_audio && ui->bandComboBox->currentText()!="OOB")
@@ -13199,7 +13151,7 @@ void MainWindow::on_actionFT8_triggered()
   m_TRperiod=15.0;
   ui->sbFtol->setValue (m_settings->value ("Ftol_SF", 50).toInt()); // restore last used Ftol parameter
   m_fastGraph->hide();
-  m_wideGraph->show();
+  m_waterfallDock->show();
   ui->rh_decodes_headings_label->setText("  UTC   dB   DT Freq    " + tr ("Message"));
   m_wideGraph->setPeriod(m_TRperiod,m_nsps);
   if (m_tci_audio && ui->bandComboBox->currentText()!="OOB")
@@ -13439,7 +13391,7 @@ void MainWindow::on_actionJT9_triggered()
     ui->sbTR->values ({5, 10, 15, 30});
     if(bVHF && m_mode!="JT65" && !blocked) ui->sbTR->setValue (m_settings->value ("TRPeriod", 15).toInt());  // restore last used TRperiod
     on_sbTR_valueChanged (ui->sbTR->value());
-    m_wideGraph->hide();
+    m_waterfallDock->hide();
     m_fastGraph->showNormal();
     ui->TxFreqSpinBox->setValue(700);
     ui->RxFreqSpinBox->setValue(700);
@@ -13678,7 +13630,7 @@ void MainWindow::on_actionMSK144_triggered()
   ui->sbFtol->setValue (m_settings->value ("Ftol_MSK144", 50).toInt());   // restore last used parameter
   m_bShMsgs=m_settings->value("ShMsgs_MSK144",false).toBool();
   ui->cbShMsgs->setChecked(m_bShMsgs);
-  m_wideGraph->hide();
+  m_waterfallDock->hide();
   m_fastGraph->showNormal();
   ui->TxFreqSpinBox->setValue(1500);
   ui->RxFreqSpinBox->setValue(1500);
@@ -13939,10 +13891,10 @@ void MainWindow::fast_config(bool b)
   ui->TxFreqSpinBox->setEnabled(!b);
   ui->sbTR->setVisible(b);
   if(b and (m_bFast9 or m_mode=="MSK144")) {
-    m_wideGraph->hide();
+    m_waterfallDock->hide();
     m_fastGraph->showNormal();
   } else {
-    m_wideGraph->showNormal();
+    m_waterfallDock->show();
     m_fastGraph->hide();
   }
 }
