@@ -590,6 +590,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 {
   ui->setupUi(this);
   setUnifiedTitleAndToolBarOnMac (true);
+  setDockNestingEnabled (true);        // allow complex nested dock layouts
   createStatusBar();
 
   add_child_to_event_filter (this);
@@ -642,10 +643,21 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
                                 | QDockWidget::DockWidgetClosable);
   addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
 
-  // "Reset Layout" action in the View menu
+  // ── Layout presets submenu in View ───────────────────────────────
   ui->menuView->addSeparator ();
-  auto *resetLayoutAction = ui->menuView->addAction (tr ("Reset Layout"));
-  connect (resetLayoutAction, &QAction::triggered, this, &MainWindow::resetDockLayout);
+  auto *layoutMenu = ui->menuView->addMenu (tr ("Layout"));
+  auto addPreset = [&](QString name, int id) {
+    auto *a = layoutMenu->addAction (name);
+    connect (a, &QAction::triggered, this, [this, id]() { applyLayoutPreset (id); });
+  };
+  addPreset (tr ("Classic — WSJT-X style"),          0);
+  addPreset (tr ("Wide — decodes side by side"),      1);
+  addPreset (tr ("Stacked — all vertical"),           2);
+  addPreset (tr ("Operator — waterfall + controls top"), 3);
+  addPreset (tr ("Compact — minimal footprint"),      4);
+  addPreset (tr ("DXpedition — dual monitor"),        5);
+  layoutMenu->addSeparator ();
+  addPreset (tr ("Reset to Default"),                 0);
 
   // ASYMX: hide period 1/2 selector — async mode has no period concept
   ui->txFirstCheckBox->hide();
@@ -5223,38 +5235,127 @@ void MainWindow::subProcessError (QProcess * process, QProcess::ProcessError)
 
 
 // ── Reset all dock widgets to default positions ────────────────────
-void MainWindow::resetDockLayout ()
+// ── Layout presets ─────────────────────────────────────────────────
+// Helper: undock everything, then re-place according to preset id.
+//  0 = Classic (WSJT-X):   waterfall top, decodes L+R, controls bottom
+//  1 = Wide:               decodes L+R, waterfall bottom, controls bottom (tabbed)
+//  2 = Stacked:            all vertical top→bottom
+//  3 = Operator:           waterfall+controls top (tabbed), decodes bottom L+R
+//  4 = Compact:            waterfall top, decodes+controls bottom (tabbed)
+//  5 = DXpedition:         band activity floating, rest docked
+void MainWindow::applyLayoutPreset (int preset)
 {
-  // Remove all docks from their current position
-  removeDockWidget (m_waterfallDock);
-  removeDockWidget (m_bandActivityDock);
-  removeDockWidget (m_rxFreqDock);
-  removeDockWidget (m_controlsDock);
-  removeDockWidget (m_clusterDock);
-  if (m_activeStationsDock) removeDockWidget (m_activeStationsDock);
+  // Collect all docks
+  QList<QDockWidget*> docks = { m_waterfallDock, m_bandActivityDock,
+                                 m_rxFreqDock, m_controlsDock, m_clusterDock };
+  if (m_activeStationsDock) docks.append (m_activeStationsDock);
 
-  // Re-add in default positions
-  addDockWidget (Qt::TopDockWidgetArea, m_waterfallDock);
-  addDockWidget (Qt::LeftDockWidgetArea, m_bandActivityDock);
-  addDockWidget (Qt::RightDockWidgetArea, m_rxFreqDock);
-  addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
-  addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
-  if (m_activeStationsDock) addDockWidget (Qt::RightDockWidgetArea, m_activeStationsDock);
-
-  // Make sure they're all visible and not floating
-  m_waterfallDock->setFloating (false);
-  m_waterfallDock->show ();
-  m_bandActivityDock->setFloating (false);
-  m_bandActivityDock->show ();
-  m_rxFreqDock->setFloating (false);
-  m_rxFreqDock->show ();
-  m_controlsDock->setFloating (false);
-  m_controlsDock->show ();
-  m_clusterDock->setFloating (false);
-  if (m_activeStationsDock) {
-    m_activeStationsDock->setFloating (false);
-    m_activeStationsDock->show ();
+  // Remove all from layout
+  for (auto *d : docks) {
+    removeDockWidget (d);
+    d->setFloating (false);
   }
+
+  switch (preset) {
+  default:
+  case 0: // Classic — WSJT-X style
+    addDockWidget (Qt::TopDockWidgetArea,    m_waterfallDock);
+    addDockWidget (Qt::LeftDockWidgetArea,   m_bandActivityDock);
+    addDockWidget (Qt::RightDockWidgetArea,  m_rxFreqDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
+    tabifyDockWidget (m_controlsDock, m_clusterDock);
+    if (m_activeStationsDock) {
+      addDockWidget (Qt::RightDockWidgetArea, m_activeStationsDock);
+      tabifyDockWidget (m_rxFreqDock, m_activeStationsDock);
+    }
+    m_controlsDock->raise ();
+    m_rxFreqDock->raise ();
+    break;
+
+  case 1: // Wide — decodes side by side, waterfall bottom
+    addDockWidget (Qt::LeftDockWidgetArea,   m_bandActivityDock);
+    addDockWidget (Qt::RightDockWidgetArea,  m_rxFreqDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_waterfallDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
+    tabifyDockWidget (m_waterfallDock, m_controlsDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
+    tabifyDockWidget (m_controlsDock, m_clusterDock);
+    if (m_activeStationsDock) {
+      addDockWidget (Qt::RightDockWidgetArea, m_activeStationsDock);
+      tabifyDockWidget (m_rxFreqDock, m_activeStationsDock);
+    }
+    m_waterfallDock->raise ();
+    m_rxFreqDock->raise ();
+    break;
+
+  case 2: // Stacked — all vertical
+    addDockWidget (Qt::TopDockWidgetArea,    m_waterfallDock);
+    addDockWidget (Qt::TopDockWidgetArea,    m_bandActivityDock);
+    addDockWidget (Qt::TopDockWidgetArea,    m_rxFreqDock);
+    tabifyDockWidget (m_bandActivityDock, m_rxFreqDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
+    tabifyDockWidget (m_controlsDock, m_clusterDock);
+    if (m_activeStationsDock) {
+      addDockWidget (Qt::TopDockWidgetArea, m_activeStationsDock);
+      tabifyDockWidget (m_rxFreqDock, m_activeStationsDock);
+    }
+    m_bandActivityDock->raise ();
+    m_controlsDock->raise ();
+    break;
+
+  case 3: // Operator — waterfall+controls top, decodes bottom
+    addDockWidget (Qt::TopDockWidgetArea,    m_waterfallDock);
+    addDockWidget (Qt::TopDockWidgetArea,    m_controlsDock);
+    tabifyDockWidget (m_waterfallDock, m_controlsDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_bandActivityDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_rxFreqDock);
+    splitDockWidget (m_bandActivityDock, m_rxFreqDock, Qt::Horizontal);
+    addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
+    tabifyDockWidget (m_bandActivityDock, m_clusterDock);
+    if (m_activeStationsDock) {
+      addDockWidget (Qt::BottomDockWidgetArea, m_activeStationsDock);
+      tabifyDockWidget (m_rxFreqDock, m_activeStationsDock);
+    }
+    m_waterfallDock->raise ();
+    m_bandActivityDock->raise ();
+    m_rxFreqDock->raise ();
+    break;
+
+  case 4: // Compact — waterfall top, rest tabbed bottom
+    addDockWidget (Qt::TopDockWidgetArea,    m_waterfallDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_bandActivityDock);
+    tabifyDockWidget (m_controlsDock, m_bandActivityDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_rxFreqDock);
+    tabifyDockWidget (m_bandActivityDock, m_rxFreqDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
+    tabifyDockWidget (m_rxFreqDock, m_clusterDock);
+    if (m_activeStationsDock) {
+      addDockWidget (Qt::BottomDockWidgetArea, m_activeStationsDock);
+      tabifyDockWidget (m_clusterDock, m_activeStationsDock);
+    }
+    m_controlsDock->raise ();
+    break;
+
+  case 5: // DXpedition — band activity large left, rest right stacked
+    addDockWidget (Qt::LeftDockWidgetArea,   m_bandActivityDock);
+    addDockWidget (Qt::RightDockWidgetArea,  m_rxFreqDock);
+    addDockWidget (Qt::RightDockWidgetArea,  m_controlsDock);
+    splitDockWidget (m_rxFreqDock, m_controlsDock, Qt::Vertical);
+    addDockWidget (Qt::TopDockWidgetArea,    m_waterfallDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
+    if (m_activeStationsDock) {
+      addDockWidget (Qt::RightDockWidgetArea, m_activeStationsDock);
+      tabifyDockWidget (m_rxFreqDock, m_activeStationsDock);
+    }
+    m_rxFreqDock->raise ();
+    break;
+  }
+
+  // Show all docks
+  for (auto *d : docks) d->show ();
 }
 
 void MainWindow::closeEvent(QCloseEvent * e)

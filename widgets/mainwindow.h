@@ -175,7 +175,7 @@ private:
   void childEvent(QChildEvent *) override;
   bool eventFilter(QObject *, QEvent *) override;
   void showQSYMessage(QString message);
-  void resetDockLayout ();
+  void applyLayoutPreset (int preset);
 
 private slots:
   void initialize_fonts ();
