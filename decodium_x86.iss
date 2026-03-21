@@ -1,8 +1,8 @@
-﻿#define MyAppName "Decodium Shannon x86"
+#define MyAppName "Decodium Shannon x86"
 #define MyAppVersion "3.0"
 #define MyAppPublisher "IU8LMC"
 #define MyAppExeName "decodium.exe"
-#define MyBuildTag "2603211439"
+#define MyBuildTag "2603211523"
 #define DistDir "dist_32bit"
 
 [Setup]
@@ -12,7 +12,7 @@ AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyBuildTag}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL=https://www.qrz.com/db/IU8LMC
-DefaultDirName={localappdata}\Decodium
+DefaultDirName={autopf}\Decodium
 DefaultGroupName=Decodium Shannon
 DisableDirPage=no
 DisableProgramGroupPage=no
@@ -26,8 +26,7 @@ CloseApplications=force
 CloseApplicationsFilter=decodium.exe,jt9.exe
 RestartApplications=no
 UninstallDisplayIcon={app}\decodium.exe
-PrivilegesRequired=lowest
-; SignTool and SignedUninstaller require IDE config; exes are already signed
+PrivilegesRequired=admin
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -57,19 +56,21 @@ Source: "{#DistDir}\ft2logo.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#DistDir}\JPLEPH"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Qt plugins
-Source: "{#DistDir}\platforms\*"; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs
-Source: "{#DistDir}\audio\*"; DestDir: "{app}\audio"; Flags: ignoreversion recursesubdirs
-Source: "{#DistDir}\imageformats\*"; DestDir: "{app}\imageformats"; Flags: ignoreversion recursesubdirs
-Source: "{#DistDir}\sqldrivers\*"; DestDir: "{app}\sqldrivers"; Flags: ignoreversion recursesubdirs
-Source: "{#DistDir}\bearer\*"; DestDir: "{app}\bearer"; Flags: ignoreversion recursesubdirs
-Source: "{#DistDir}\styles\*"; DestDir: "{app}\styles"; Flags: ignoreversion recursesubdirs
-Source: "{#DistDir}\mediaservice\*"; DestDir: "{app}\mediaservice"; Flags: ignoreversion recursesubdirs
-
-; Note: printsupport not available on x86 build
+Source: "{#DistDir}\platforms\*"; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#DistDir}\audio\*"; DestDir: "{app}\audio"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#DistDir}\imageformats\*"; DestDir: "{app}\imageformats"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#DistDir}\sqldrivers\*"; DestDir: "{app}\sqldrivers"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#DistDir}\bearer\*"; DestDir: "{app}\bearer"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#DistDir}\styles\*"; DestDir: "{app}\styles"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#DistDir}\mediaservice\*"; DestDir: "{app}\mediaservice"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Sounds and palettes
-Source: "{#DistDir}\sounds\*"; DestDir: "{app}\sounds"; Flags: ignoreversion recursesubdirs
-Source: "{#DistDir}\Palettes\*"; DestDir: "{app}\Palettes"; Flags: ignoreversion recursesubdirs
+Source: "{#DistDir}\sounds\*"; DestDir: "{app}\sounds"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#DistDir}\Palettes\*"; DestDir: "{app}\Palettes"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Dirs]
+; Ensure program directory is writable for ADIF log
+Name: "{app}"; Permissions: users-modify
 
 [Icons]
 Name: "{group}\Decodium Shannon"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
@@ -77,9 +78,8 @@ Name: "{group}\{cm:UninstallProgram,Decodium Shannon}"; Filename: "{uninstallexe
 Name: "{autodesktop}\Decodium Shannon x86"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-; Aggiunge regola firewall Windows per UDP (necessario per JTAlert e altri programmi esterni)
+; Firewall rules (admin mode)
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Decodium UDP Inbound"""; Flags: runhidden
-Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""Decodium UDP Inbound"" dir=in action=allow protocol=UDP program=""{app}\{#MyAppExeName}"" enable=yes profile=any"; Flags: runhidden; StatusMsg: "Configurazione regola firewall UDP..."
-Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""Decodium UDP 2237"""; Flags: runhidden
-Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""Decodium UDP 2237"" dir=in action=allow protocol=UDP localport=2237 enable=yes profile=any"; Flags: runhidden
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,Decodium Shannon}"; Flags: nowait postinstall skipifsilent
+Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall add rule name=""Decodium UDP Inbound"" dir=in action=allow protocol=UDP program=""{app}\{#MyAppExeName}"" enable=yes profile=any"; Flags: runhidden; StatusMsg: "Configurazione firewall UDP..."
+; Auto-launch after install
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,Decodium Shannon}"; Flags: nowait postinstall

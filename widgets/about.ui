@@ -6,7 +6,7 @@
    <enum>Qt::NonModal</enum>
   </property>
   <property name="windowTitle">
-   <string>About Decodium Shannon v3.0 — Build 2603211439</string>
+   <string>About Decodium Shannon v3.0 — Build 2603211523</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

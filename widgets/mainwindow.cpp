@@ -601,25 +601,30 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->decodedTextBrowser->set_configuration (&m_config, true);
   ui->decodedTextBrowser2->set_configuration (&m_config);
 
-  // ── Dock widgets for Band Activity & Rx Frequency ──────────────
-  // Reparent the two decode panels from the splitter into QDockWidgets
-  // so they can be moved, resized and docked anywhere.
+  // ── Dock widgets — all panels are QDockWidgets ──────────────────
+  // Common dock features for all panels
+  auto const dockFeatures = QDockWidget::DockWidgetMovable
+                            | QDockWidget::DockWidgetFloatable
+                            | QDockWidget::DockWidgetClosable;
+
+  // Band Activity (left decode panel)
+  ui->layoutWidget->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+  ui->layoutWidget->setMinimumHeight (80);
   m_bandActivityDock = new QDockWidget (tr ("Band Activity"), this);
   m_bandActivityDock->setObjectName ("bandActivityDock");
   m_bandActivityDock->setWidget (ui->layoutWidget);
   m_bandActivityDock->setAllowedAreas (Qt::AllDockWidgetAreas);
-  m_bandActivityDock->setFeatures (QDockWidget::DockWidgetMovable
-                                   | QDockWidget::DockWidgetFloatable
-                                   | QDockWidget::DockWidgetClosable);
+  m_bandActivityDock->setFeatures (dockFeatures);
   addDockWidget (Qt::LeftDockWidgetArea, m_bandActivityDock);
 
+  // Rx Frequency (right decode panel)
+  ui->rh_decodes_widget->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+  ui->rh_decodes_widget->setMinimumHeight (80);
   m_rxFreqDock = new QDockWidget (tr ("Rx Frequency"), this);
   m_rxFreqDock->setObjectName ("rxFreqDock");
   m_rxFreqDock->setWidget (ui->rh_decodes_widget);
   m_rxFreqDock->setAllowedAreas (Qt::AllDockWidgetAreas);
-  m_rxFreqDock->setFeatures (QDockWidget::DockWidgetMovable
-                              | QDockWidget::DockWidgetFloatable
-                              | QDockWidget::DockWidgetClosable);
+  m_rxFreqDock->setFeatures (dockFeatures);
   addDockWidget (Qt::RightDockWidgetArea, m_rxFreqDock);
 
   // Hide the now-empty splitter (children reparented to dock widgets above)
@@ -628,19 +633,18 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     lay->removeWidget (ui->decodes_splitter);
   }
 
-  // Controls panel (frequency, band, clock, TX) as dock widget
-  // Remove from central widget layout before reparenting
+  // Controls panel (frequency, band, clock, TX)
   if (auto *lay = ui->centralWidget->layout ()) {
     lay->removeWidget (ui->lower_panel_widget);
   }
-  ui->lower_panel_widget->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
+  ui->lower_panel_widget->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
+  ui->lower_panel_widget->setMinimumHeight (0);
+  ui->lower_panel_widget->setMaximumHeight (16777215);  // QWIDGETSIZE_MAX
   m_controlsDock = new QDockWidget (tr ("Controls"), this);
   m_controlsDock->setObjectName ("controlsDock");
   m_controlsDock->setWidget (ui->lower_panel_widget);
   m_controlsDock->setAllowedAreas (Qt::AllDockWidgetAreas);
-  m_controlsDock->setFeatures (QDockWidget::DockWidgetMovable
-                                | QDockWidget::DockWidgetFloatable
-                                | QDockWidget::DockWidgetClosable);
+  m_controlsDock->setFeatures (dockFeatures);
   addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
 
   // ── Layout presets submenu in View ───────────────────────────────
@@ -737,7 +741,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     m_clusterTable->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_clusterTable->setMinimumHeight (60);
     m_clusterDock->setWidget (m_clusterTable);
-    m_clusterDock->setAllowedAreas (Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+    m_clusterDock->setAllowedAreas (Qt::AllDockWidgetAreas);
     m_clusterDock->setFeatures (QDockWidget::DockWidgetMovable
                                 | QDockWidget::DockWidgetFloatable
                                 | QDockWidget::DockWidgetClosable);
@@ -915,7 +919,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_waterfallDock = new QDockWidget (tr ("Wide Graph"), this);
   m_waterfallDock->setObjectName ("waterfallDock");
   m_waterfallDock->setWidget (m_wideGraph.data ());
-  m_waterfallDock->setAllowedAreas (Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+  m_waterfallDock->setAllowedAreas (Qt::AllDockWidgetAreas);
   m_waterfallDock->setFeatures (QDockWidget::DockWidgetMovable
                                 | QDockWidget::DockWidgetFloatable
                                 | QDockWidget::DockWidgetClosable);
@@ -2006,7 +2010,7 @@ void MainWindow::writeSettings()
           m_settings->setValue ("geometryNoControls", saveGeometry ());
         }
     }
-  m_settings->setValue ("state", saveState (3));
+  m_settings->setValue ("state", saveState (4));
   m_settings->setValue("MRUdir", m_path);
   m_settings->setValue("TxFirst",m_txFirst);
   m_settings->setValue("DXcall",ui->dxCallEntry->text());
@@ -2248,7 +2252,7 @@ void MainWindow::readSettings()
   auto current_view_mode = SWL_mode ? 1 : show_menus ? 0 : 2;
   change_layout (current_view_mode);
   geometries (current_view_mode, the_geometries);
-  restoreState (m_settings->value ("state").toByteArray (), 3);
+  restoreState (m_settings->value ("state").toByteArray (), 4);
   ui->dxCallEntry->setText (m_settings->value ("DXcall", QString {}).toString ());
   ui->dxGridEntry->setText (m_settings->value ("DXgrid", QString {}).toString ());
   m_path = m_settings->value("MRUdir", m_config.save_directory ().absolutePath ()).toString ();
