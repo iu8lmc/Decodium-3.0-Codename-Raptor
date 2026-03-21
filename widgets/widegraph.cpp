@@ -26,10 +26,12 @@ WideGraph::WideGraph(QSettings * settings, QWidget *parent) :
   ui->setupUi(this);
 
   setMaximumWidth (MAX_SCREENSIZE);
-  setMaximumHeight (880);
+
+  setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+  setMinimumHeight (120);
 
   ui->widePlot->setCursor(Qt::CrossCursor);
-  ui->widePlot->setMaximumHeight(800);
+  ui->widePlot->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
   ui->widePlot->setCurrent(false);
   ui->cbControls->setCursor(Qt::ArrowCursor);
   ui->cbBars->setCursor(Qt::ArrowCursor);

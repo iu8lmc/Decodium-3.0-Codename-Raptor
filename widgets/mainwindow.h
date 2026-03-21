@@ -175,6 +175,7 @@ private:
   void childEvent(QChildEvent *) override;
   bool eventFilter(QObject *, QEvent *) override;
   void showQSYMessage(QString message);
+  void resetDockLayout ();
 
 private slots:
   void initialize_fonts ();
@@ -576,6 +577,10 @@ private:
 
   QScopedPointer<WideGraph> m_wideGraph;
   QDockWidget *m_waterfallDock {nullptr};
+  QDockWidget *m_bandActivityDock {nullptr};
+  QDockWidget *m_rxFreqDock {nullptr};
+  QDockWidget *m_activeStationsDock {nullptr};
+  QDockWidget *m_controlsDock {nullptr};
   QScopedPointer<EchoGraph> m_echoGraph;
   QScopedPointer<FastGraph> m_fastGraph;
   QScopedPointer<LogQSO> m_logDlg;
