@@ -600,6 +600,53 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->decodedTextBrowser->set_configuration (&m_config, true);
   ui->decodedTextBrowser2->set_configuration (&m_config);
 
+  // ── Dock widgets for Band Activity & Rx Frequency ──────────────
+  // Reparent the two decode panels from the splitter into QDockWidgets
+  // so they can be moved, resized and docked anywhere.
+  m_bandActivityDock = new QDockWidget (tr ("Band Activity"), this);
+  m_bandActivityDock->setObjectName ("bandActivityDock");
+  m_bandActivityDock->setWidget (ui->layoutWidget);
+  m_bandActivityDock->setAllowedAreas (Qt::AllDockWidgetAreas);
+  m_bandActivityDock->setFeatures (QDockWidget::DockWidgetMovable
+                                   | QDockWidget::DockWidgetFloatable
+                                   | QDockWidget::DockWidgetClosable);
+  addDockWidget (Qt::LeftDockWidgetArea, m_bandActivityDock);
+
+  m_rxFreqDock = new QDockWidget (tr ("Rx Frequency"), this);
+  m_rxFreqDock->setObjectName ("rxFreqDock");
+  m_rxFreqDock->setWidget (ui->rh_decodes_widget);
+  m_rxFreqDock->setAllowedAreas (Qt::AllDockWidgetAreas);
+  m_rxFreqDock->setFeatures (QDockWidget::DockWidgetMovable
+                              | QDockWidget::DockWidgetFloatable
+                              | QDockWidget::DockWidgetClosable);
+  addDockWidget (Qt::RightDockWidgetArea, m_rxFreqDock);
+
+  // Hide the now-empty splitter (children reparented to dock widgets above)
+  ui->decodes_splitter->hide ();
+  if (auto *lay = ui->centralWidget->layout ()) {
+    lay->removeWidget (ui->decodes_splitter);
+  }
+
+  // Controls panel (frequency, band, clock, TX) as dock widget
+  // Remove from central widget layout before reparenting
+  if (auto *lay = ui->centralWidget->layout ()) {
+    lay->removeWidget (ui->lower_panel_widget);
+  }
+  ui->lower_panel_widget->setSizePolicy (QSizePolicy::Preferred, QSizePolicy::Preferred);
+  m_controlsDock = new QDockWidget (tr ("Controls"), this);
+  m_controlsDock->setObjectName ("controlsDock");
+  m_controlsDock->setWidget (ui->lower_panel_widget);
+  m_controlsDock->setAllowedAreas (Qt::AllDockWidgetAreas);
+  m_controlsDock->setFeatures (QDockWidget::DockWidgetMovable
+                                | QDockWidget::DockWidgetFloatable
+                                | QDockWidget::DockWidgetClosable);
+  addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
+
+  // "Reset Layout" action in the View menu
+  ui->menuView->addSeparator ();
+  auto *resetLayoutAction = ui->menuView->addAction (tr ("Reset Layout"));
+  connect (resetLayoutAction, &QAction::triggered, this, &MainWindow::resetDockLayout);
+
   // ASYMX: hide period 1/2 selector — async mode has no period concept
   ui->txFirstCheckBox->hide();
 
@@ -675,7 +722,13 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     m_clusterTable->setEditTriggers (QAbstractItemView::NoEditTriggers);
     m_clusterTable->setSelectionBehavior (QAbstractItemView::SelectRows);
     m_clusterTable->verticalHeader()->setVisible (false);
+    m_clusterTable->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_clusterTable->setMinimumHeight (60);
     m_clusterDock->setWidget (m_clusterTable);
+    m_clusterDock->setAllowedAreas (Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+    m_clusterDock->setFeatures (QDockWidget::DockWidgetMovable
+                                | QDockWidget::DockWidgetFloatable
+                                | QDockWidget::DockWidgetClosable);
     addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
     m_clusterDock->setVisible (false);
 
@@ -1941,7 +1994,7 @@ void MainWindow::writeSettings()
           m_settings->setValue ("geometryNoControls", saveGeometry ());
         }
     }
-  m_settings->setValue ("state", saveState ());
+  m_settings->setValue ("state", saveState (3));
   m_settings->setValue("MRUdir", m_path);
   m_settings->setValue("TxFirst",m_txFirst);
   m_settings->setValue("DXcall",ui->dxCallEntry->text());
@@ -1950,7 +2003,7 @@ void MainWindow::writeSettings()
   m_settings->setValue("MsgAvgDisplayed", m_msgAvgWidget && m_msgAvgWidget->isVisible ());
   m_settings->setValue("FoxLogDisplayed", m_foxLogWindow && m_foxLogWindow->isVisible ());
   m_settings->setValue("ContestLogDisplayed", m_contestLogWindow && m_contestLogWindow->isVisible ());
-  m_settings->setValue("ActiveStationsDisplayed", m_ActiveStationsWidget && m_ActiveStationsWidget->isVisible ());
+  m_settings->setValue("ActiveStationsDisplayed", m_activeStationsDock && m_activeStationsDock->isVisible ());
   m_settings->setValue("QSYMessageCreatorDisplayed", m_QSYMessageCreatorWidget && m_QSYMessageCreatorWidget->isVisible ());
   m_settings->setValue("ShowQSYMessages", ui->actionEnable_QSY_Popups->isChecked());
   m_settings->setValue("QSYMonitorDisplayed", m_qsymonitorWidget && m_qsymonitorWidget->isVisible ());
@@ -2183,7 +2236,7 @@ void MainWindow::readSettings()
   auto current_view_mode = SWL_mode ? 1 : show_menus ? 0 : 2;
   change_layout (current_view_mode);
   geometries (current_view_mode, the_geometries);
-  restoreState (m_settings->value ("state", saveState ()).toByteArray ());
+  restoreState (m_settings->value ("state").toByteArray (), 3);
   ui->dxCallEntry->setText (m_settings->value ("DXcall", QString {}).toString ());
   ui->dxGridEntry->setText (m_settings->value ("DXgrid", QString {}).toString ());
   m_path = m_settings->value("MRUdir", m_config.save_directory ().absolutePath ()).toString ();
@@ -5169,6 +5222,41 @@ void MainWindow::subProcessError (QProcess * process, QProcess::ProcessError)
 }
 
 
+// ── Reset all dock widgets to default positions ────────────────────
+void MainWindow::resetDockLayout ()
+{
+  // Remove all docks from their current position
+  removeDockWidget (m_waterfallDock);
+  removeDockWidget (m_bandActivityDock);
+  removeDockWidget (m_rxFreqDock);
+  removeDockWidget (m_controlsDock);
+  removeDockWidget (m_clusterDock);
+  if (m_activeStationsDock) removeDockWidget (m_activeStationsDock);
+
+  // Re-add in default positions
+  addDockWidget (Qt::TopDockWidgetArea, m_waterfallDock);
+  addDockWidget (Qt::LeftDockWidgetArea, m_bandActivityDock);
+  addDockWidget (Qt::RightDockWidgetArea, m_rxFreqDock);
+  addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
+  addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
+  if (m_activeStationsDock) addDockWidget (Qt::RightDockWidgetArea, m_activeStationsDock);
+
+  // Make sure they're all visible and not floating
+  m_waterfallDock->setFloating (false);
+  m_waterfallDock->show ();
+  m_bandActivityDock->setFloating (false);
+  m_bandActivityDock->show ();
+  m_rxFreqDock->setFloating (false);
+  m_rxFreqDock->show ();
+  m_controlsDock->setFloating (false);
+  m_controlsDock->show ();
+  m_clusterDock->setFloating (false);
+  if (m_activeStationsDock) {
+    m_activeStationsDock->setFloating (false);
+    m_activeStationsDock->show ();
+  }
+}
+
 void MainWindow::closeEvent(QCloseEvent * e)
 {
   if (!m_logbookRead or upLotw != nullptr)    //avt 9/23/25
@@ -5622,12 +5710,19 @@ void MainWindow::on_actionActiveStations_triggered()
 {
   if(m_ActiveStationsWidget == NULL) {
     m_ActiveStationsWidget.reset (new ActiveStations {m_settings, m_config.decoded_text_font ()});
-    // Connect signals from Message Averaging window
-    connect (this, &MainWindow::finished, m_ActiveStationsWidget.data (), &ActiveStations::close);
+    // Wrap in a QDockWidget
+    m_activeStationsDock = new QDockWidget (tr ("Active Stations"), this);
+    m_activeStationsDock->setObjectName ("activeStationsDock");
+    m_activeStationsDock->setWidget (m_ActiveStationsWidget.data ());
+    m_activeStationsDock->setAllowedAreas (Qt::AllDockWidgetAreas);
+    m_activeStationsDock->setFeatures (QDockWidget::DockWidgetMovable
+                                       | QDockWidget::DockWidgetFloatable
+                                       | QDockWidget::DockWidgetClosable);
+    addDockWidget (Qt::RightDockWidgetArea, m_activeStationsDock);
+    connect (this, &MainWindow::finished, m_activeStationsDock, &QWidget::close);
   }
-  m_ActiveStationsWidget->showNormal();
-  m_ActiveStationsWidget->raise();
-  m_ActiveStationsWidget->activateWindow();
+  m_activeStationsDock->show ();
+  m_activeStationsDock->raise ();
   configActiveStations();
   connect(m_ActiveStationsWidget.data(), SIGNAL(callSandP(int)),this,SLOT(callSandP2(int)));
   // connect up another signal to handle clicks in the Activity window when in Fox mode
@@ -6944,7 +7039,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
   QString all_decodes;
   if(m_ActiveStationsWidget!=NULL) {
     bDisplayPoints=(m_mode=="FT2" or m_mode=="FT4" or m_mode=="FT8") and
-      (m_specOp==SpecOp::ARRL_DIGI or m_ActiveStationsWidget->isVisible());
+      (m_specOp==SpecOp::ARRL_DIGI or (m_activeStationsDock && m_activeStationsDock->isVisible()));
   }
   while(proc_jt9.canReadLine()) {
     auto line_read = proc_jt9.readLine ();
@@ -8084,7 +8179,7 @@ void MainWindow::readFromStdout()                             //readFromStdout
           if(m_bCallingCQ && !m_bAutoReply && for_us && m_specOp!=SpecOp::FOX && m_specOp!=SpecOp::HOUND
               && ui->actionInclude_averaging->isVisible() && ui->actionInclude_averaging->isChecked()) {
             bool bProcessMsgNormally=ui->respondComboBox->currentText()!="CQ: None" or
-                                       (m_ActiveStationsWidget!=NULL and !m_ActiveStationsWidget->isVisible());
+                                       (m_activeStationsDock==nullptr or !m_activeStationsDock->isVisible());
             if (decodedtext.messageWords().length() >= 3) {
                   QString t=decodedtext.messageWords()[2];
                   if(t.contains("R+") or t.contains("R-") or t=="R" or t=="RRR" or t=="RR73") bProcessMsgNormally=true;
