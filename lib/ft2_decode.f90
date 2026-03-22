@@ -314,8 +314,8 @@ contains
                   call timer('sync2d  ',1)
                enddo
                if(iseg.eq.1) smax1=smax
-               smaxthresh=0.80
-               if(ndepth0.ge.3) smaxthresh=0.65
+               smaxthresh=0.60      ! best-3-of-4 Costas: max is ~75% of sum-of-4
+               if(ndepth0.ge.3) smaxthresh=0.50
                if(isp.ge.2) smaxthresh=smaxthresh*0.88  ! pass 2: ~15% più bassa
                if(isp.ge.3) smaxthresh=smaxthresh*0.76  ! pass 3+: ~25% più bassa
                if(smax.lt.smaxthresh) cycle

@@ -207,8 +207,8 @@ subroutine ft2_triggered_decode(iwave, nqsoprogress, nfqso, nfa, nfb, &
       enddo
     enddo
 
-    smaxthresh = 0.65
-    if(ndepth0.ge.3) smaxthresh = 0.50
+    smaxthresh = 0.50      ! best-3-of-4 Costas: scaled for 3/4 sync sum
+    if(ndepth0.ge.3) smaxthresh = 0.38
     if(smax.lt.smaxthresh) cycle
 
     f1 = f0 + real(idfbest)

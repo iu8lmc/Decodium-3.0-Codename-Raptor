@@ -90,7 +90,14 @@ subroutine sync2d(cd0,i0,ctwk,itwk,sync)
     endif
   endif
 
-  sync = p(z1) + p(z2) + p(z3) + p(z4)
+! Best 3 of 4 Costas: drop the weakest array to be robust against
+! QRM hitting a single Costas position.
+  p1=p(z1)
+  p2=p(z2)
+  p3=p(z3)
+  p4=p(z4)
+  pmin=min(p1,p2,p3,p4)
+  sync = p1 + p2 + p3 + p4 - pmin
 
   return
 end subroutine sync2d
