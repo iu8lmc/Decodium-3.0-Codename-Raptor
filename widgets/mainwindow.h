@@ -881,8 +881,7 @@ private:
   bool    m_listenMode;           //avt 2/1/24
   QString m_myContinent;          //avt 5/6/24
   int     m_incrLogCount;         //avt 9/23/25
-  int     m_qsoTodayCount {0};   // QSOs logged today (reset at UTC midnight)
-  QDate   m_qsoTodayDate;        // date for which m_qsoTodayCount is valid
+  int     m_qsoSessionCount {0}; // QSOs logged this session (never resets)
   QLabel *m_statusQsoLabel {nullptr}; // status bar: QSO count display
   bool    dlQsoReqReply;          //avt 9/23/25
   bool    dlQslReqReply;          //avt 9/23/25

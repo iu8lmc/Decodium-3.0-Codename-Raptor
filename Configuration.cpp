@@ -147,7 +147,9 @@
 #include <QAction>
 #include <QFileDialog>
 #include <QDir>
+#include <QDirIterator>
 #include <QFileInfo>
+#include <QProcess>
 #include <QTemporaryFile>
 #include <QFormLayout>
 #include <QString>
@@ -3872,21 +3874,21 @@ void Configuration::impl::on_hamlib_download_button_clicked (bool /*clicked*/)
   settings_->sync ();
   QDir dataPath = QCoreApplication::applicationDirPath();
   QFile f1 {dataPath.absolutePath() + "/" + "libhamlib-4_old.dll"};
-  QFile f2 {dataPath.absolutePath() + "/" + "libhamlib-4_new.dll"};
+  QFile f2 {dataPath.absolutePath() + "/" + "hamlib_update.zip"};
   if (f1.exists()) f1.remove();
   if (f2.exists()) f2.remove();
   ui_->hamlib_download_button->setEnabled (false);
   ui_->revert_update_button->setEnabled (false);
   if (ui_->rbHamlib32->isChecked()) {
     cty_download.configure(network_manager_,
-                           "https://n0nb.users.sourceforge.net/dll32/libhamlib-4.dll",
-                           dataPath.absoluteFilePath("libhamlib-4_new.dll"),
-                           "Downloading latest libhamlib-4.dll");
+                           "https://github.com/Hamlib/Hamlib/releases/download/4.7/hamlib-w32-4.7.zip",
+                           dataPath.absoluteFilePath("hamlib_update.zip"),
+                           "Downloading Hamlib 4.7");
   } else {
     cty_download.configure(network_manager_,
-                           "https://n0nb.users.sourceforge.net/dll64/libhamlib-4.dll",
-                           dataPath.absoluteFilePath("libhamlib-4_new.dll"),
-                           "Downloading latest libhamlib-4.dll");
+                           "https://github.com/Hamlib/Hamlib/releases/download/4.7/hamlib-w64-4.7.zip",
+                           dataPath.absoluteFilePath("hamlib_update.zip"),
+                           "Downloading Hamlib 4.7");
   }
   connect (&cty_download, &FileDownload::complete, this, &Configuration::impl::after_hamlib_downloaded, Qt::UniqueConnection);
   connect (&cty_download, &FileDownload::error, this, &Configuration::impl::error_during_hamlib_download, Qt::UniqueConnection);
@@ -3918,16 +3920,74 @@ void Configuration::impl::error_during_hamlib_download (QString const& reason)
 void Configuration::impl::after_hamlib_downloaded ()
 {
   QDir dataPath = QCoreApplication::applicationDirPath();
-  QFile::rename(dataPath.absolutePath() + "/" + "libhamlib-4.dll", dataPath.absolutePath() + "/" + "libhamlib-4_old.dll");
-  QTimer::singleShot (1000, [=] {
-    QFile::rename(dataPath.absolutePath() + "/" + "libhamlib-4_new.dll", dataPath.absolutePath() + "/" + "libhamlib-4.dll");
-    ui_->in_use->setText("Download completed. Restart the program.");
-  });
-  QTimer::singleShot (1500, [=] {
-    MessageBox::information_message (this, tr ("Hamlib Update successful \n\nNew Hamlib will be used after restart"));
-    ui_->revert_update_button->setEnabled (true);
-    ui_->hamlib_download_button->setEnabled (true);
-  });
+  QString zipPath = dataPath.absoluteFilePath ("hamlib_update.zip");
+
+  // Validate: zip must be > 1 MB (HTML error pages are typically < 100 KB)
+  QFileInfo zipInfo (zipPath);
+  if (zipInfo.size () < 1024 * 1024) {
+    QFile::remove (zipPath);
+    error_during_hamlib_download (tr ("Downloaded file is too small (%1 bytes) — likely not a valid zip.")
+                                     .arg (zipInfo.size ()));
+    return;
+  }
+
+  // Extract libhamlib-4.dll from the zip using Windows built-in tar
+  // The zip contains e.g. hamlib-w64-4.7/bin/libhamlib-4.dll
+  // We use tar with a wildcard to find it regardless of the top-level dir name
+  QString tmpExtract = dataPath.absoluteFilePath ("hamlib_extract_tmp");
+  QDir ().mkpath (tmpExtract);
+
+  QProcess tarProc;
+  tarProc.setWorkingDirectory (dataPath.absolutePath ());
+  tarProc.start ("tar", QStringList ()
+      << "-xf" << zipPath
+      << "--strip-components=2"
+      << "-C" << tmpExtract
+      << "--include" << "*/bin/libhamlib-4.dll");
+  tarProc.waitForFinished (30000);
+
+  QString extractedDll = tmpExtract + "/libhamlib-4.dll";
+  if (!QFile::exists (extractedDll)) {
+    // Fallback: try without --include (some Windows tar versions lack it)
+    QProcess tarProc2;
+    tarProc2.setWorkingDirectory (dataPath.absolutePath ());
+    tarProc2.start ("tar", QStringList () << "-xf" << zipPath << "-C" << tmpExtract);
+    tarProc2.waitForFinished (30000);
+
+    // Search for the DLL in extracted tree
+    QDirIterator it (tmpExtract, QStringList () << "libhamlib-4.dll", QDir::Files, QDirIterator::Subdirectories);
+    if (it.hasNext ()) {
+      extractedDll = it.next ();
+    } else {
+      QDir (tmpExtract).removeRecursively ();
+      QFile::remove (zipPath);
+      error_during_hamlib_download (tr ("Could not find libhamlib-4.dll inside the downloaded zip."));
+      return;
+    }
+  }
+
+  // Backup current DLL and install new one
+  QString currentDll = dataPath.absoluteFilePath ("libhamlib-4.dll");
+  QString backupDll  = dataPath.absoluteFilePath ("libhamlib-4_old.dll");
+  QFile::remove (backupDll);
+  QFile::rename (currentDll, backupDll);
+  bool ok = QFile::copy (extractedDll, currentDll);
+
+  // Cleanup
+  QDir (tmpExtract).removeRecursively ();
+  QFile::remove (zipPath);
+
+  if (!ok) {
+    // Restore backup
+    QFile::rename (backupDll, currentDll);
+    error_during_hamlib_download (tr ("Failed to install new libhamlib-4.dll."));
+    return;
+  }
+
+  ui_->in_use->setText ("Download completed. Restart the program.");
+  MessageBox::information_message (this, tr ("Hamlib Update successful \n\nNew Hamlib will be used after restart"));
+  ui_->revert_update_button->setEnabled (true);
+  ui_->hamlib_download_button->setEnabled (true);
 }
 
 void Configuration::impl::on_revert_update_button_clicked (bool /*clicked*/)

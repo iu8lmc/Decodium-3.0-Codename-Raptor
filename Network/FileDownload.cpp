@@ -114,8 +114,16 @@ void FileDownload::replyComplete()
       else // the body has completed. Save it.
       {
         url_valid_ = false; // reset
-        // load the database asynchronously
-        // future_load_ = std::async (std::launch::async, &LotWUsers::impl::load_dictionary, this, csv_file_.fileName ());
+        // Reject HTML responses (e.g. SourceForge redirect pages)
+        QString contentType = reply_->header (QNetworkRequest::ContentTypeHeader).toString ();
+        if (contentType.contains ("text/html", Qt::CaseInsensitive)) {
+          LOG_INFO(QString{ "FileDownload [%1]: rejected — server returned HTML instead of binary"}.arg(user_agent_));
+          destfile_.cancelWriting ();
+          destfile_.commit ();
+          Q_EMIT error (tr ("Download failed: server returned an HTML page instead of the expected file."));
+          Q_EMIT load_finished ();
+          return;
+        }
         LOG_INFO(QString{ "FileDownload [%1]: complete. File path is %2"}.arg(user_agent_).arg(destfile_.fileName()));
         destfile_.commit();
         emit complete(destination_filename_);

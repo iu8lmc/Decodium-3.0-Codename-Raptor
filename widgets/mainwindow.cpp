@@ -5267,7 +5267,7 @@ void MainWindow::createStatusBar()                           //createStatusBar
   m_statusQsoLabel->setAlignment (Qt::AlignHCenter);
   m_statusQsoLabel->setMinimumSize (QSize {100, 18});
   m_statusQsoLabel->setFrameStyle (QFrame::Panel | QFrame::Sunken);
-  m_statusQsoLabel->setToolTip (tr ("QSOs today / total to upload"));
+  m_statusQsoLabel->setToolTip (tr ("QSOs this session / total to upload"));
   statusBar()->addWidget (m_statusQsoLabel);
 
   statusBar()->addPermanentWidget(&progressBar);
@@ -9994,11 +9994,9 @@ void MainWindow::guiUpdate()
       m_statusQueueLabel->setText (qs > 0 ? QString ("Q:%1").arg (qs) : "");
       m_statusQueueLabel->setVisible (m_autoCQ || m_bDXpedMode);
     }
-    // ── QSO counter (today + upload) ──────────────────────────────
+    // ── QSO counter (session + upload) ─────────────────────────────
     if (m_statusQsoLabel) {
-      QDate today = QDateTime::currentDateTimeUtc ().date ();
-      if (m_qsoTodayDate != today) { m_qsoTodayDate = today; m_qsoTodayCount = 0; }
-      m_statusQsoLabel->setText (QString ("Today:%1 | Up:%2").arg (m_qsoTodayCount).arg (m_incrLogCount));
+      m_statusQsoLabel->setText (QString ("QSO:%1 | Up:%2").arg (m_qsoSessionCount).arg (m_incrLogCount));
     }
 
     // ── QSO Progress indicator ────────────────────────────────────
@@ -21151,10 +21149,7 @@ void MainWindow::logIncremental(QString call, QString adif)
     outStream << adif.toUpper() << "<EOR>" << Qt::endl;
     outputFile.close();
     m_incrLogCount++;
-    // Increment today's QSO count
-    QDate today = QDateTime::currentDateTimeUtc ().date ();
-    if (m_qsoTodayDate != today) { m_qsoTodayDate = today; m_qsoTodayCount = 0; }
-    ++m_qsoTodayCount;
+    ++m_qsoSessionCount;
     last_tx_label.setText(QString{"Logged %1 (%2 to upload)"}.arg(call).arg(m_incrLogCount));
   }
 }
@@ -21179,20 +21174,7 @@ void MainWindow::setIncrLogCount()
     debugToFile(QString{"setIncrLo    m_incrLogCount:%1"}.arg(m_incrLogCount));
   }
 
-  // Count today's QSOs from full ADIF log
-  m_qsoTodayDate = QDateTime::currentDateTimeUtc ().date ();
-  m_qsoTodayCount = 0;
-  QString todayStr = m_qsoTodayDate.toString ("yyyyMMdd");
-  QFile flog {m_config.writeable_data_dir ().absoluteFilePath (FULL_LOG_FNAME)};
-  if (flog.open (QIODevice::ReadOnly | QIODevice::Text)) {
-    QTextStream ts (&flog);
-    while (!ts.atEnd ()) {
-      QString line = ts.readLine ();
-      if (line.contains ("<QSO_DATE:" + QString::number (todayStr.length ()) + ">" + todayStr, Qt::CaseInsensitive))
-        ++m_qsoTodayCount;
-    }
-    flog.close ();
-  }
+  m_qsoSessionCount = 0;  // session counter starts at zero
 }
 
 void MainWindow::showStartupBanner ()
