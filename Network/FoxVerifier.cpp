@@ -25,7 +25,7 @@ FoxVerifier::FoxVerifier(QString user_agent, QNetworkAccessManager *manager,QStr
     request_ = QNetworkRequest(q_url_);
     request_.setRawHeader( "User-Agent" , user_agent.toUtf8());
     request_.setRawHeader( "Accept" , "*/*" );
-    request_.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
+    // FollowRedirectsAttribute removed in Qt6; use manual redirect via httpRedirected signal
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     request_.setTransferTimeout(FOXVERIFIER_DEFAULT_TIMEOUT_MSEC);
