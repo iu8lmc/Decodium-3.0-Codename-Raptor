@@ -171,30 +171,32 @@ contains
 
 ! For now:
 ! ndepth=1: 1 pass, bp  
-! ndepth=2: subtraction, 3 passes, bp+osd (no subtract refinement) 
-! ndepth=3: subtraction, 3 passes, bp+osd
-    npass=3
+! ndepth=2: subtraction, 3 passes, bp+osd (no subtract refinement)
+! ndepth=3: subtraction, 4 passes, bp+osd (Shannon enhanced)
+    npass=4
     imetric=1
+    if(ndepth.le.2) npass=3
     if(ndepth.eq.1) npass=2
     do ipass=1,npass
       newdat=.true.
       syncmin=1.0
       if(ndepth.le.2) syncmin=1.8
-!      if(nzhsym.eq.41) syncmin=2.0
+! Adaptive syncmin: lower threshold on later passes (weaker signals
+! remain after subtraction of strong ones)
+      if(ipass.ge.3) syncmin=syncmin*0.88
+      if(ipass.ge.4) syncmin=syncmin*0.76
       if(ipass.eq.1) then
         lsubtract=.true.
         imetric=1
       elseif(ipass.eq.2) then
         n2=ndecodes
         imetric=2
-!        if(ndecodes.eq.0) imetric=2 
         lsubtract=.true.
-      elseif(ipass.eq.3) then
+      elseif(ipass.ge.3) then
         imetric=2
-!        if((ndecodes-n2).eq.0) cycle
         if(ndecodes.eq.0) cycle
-        lsubtract=.true. 
-      endif 
+        lsubtract=.true.
+      endif
       call timer('sync8   ',0)
       maxc=MAXCAND
       call sync8(dd,NPTS,ifa,ifb,syncmin,nfqso,maxc,candidate,ncand,sbase)

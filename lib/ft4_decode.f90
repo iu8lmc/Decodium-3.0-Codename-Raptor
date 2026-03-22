@@ -193,10 +193,12 @@ contains
 
       max_iterations=40
       syncmin=1.18
+      if(ndepth.ge.3) syncmin=1.0
       dosubtract=.true.
       doosd=.true.
-      nsp=3
+      nsp=4        ! 4 subtraction passes (like FT2 Shannon)
       if(ndepth.eq.2) then
+         nsp=3
          doosd=.false.
       endif
       if(ndepth.eq.1) then
@@ -214,11 +216,16 @@ contains
             if(nd2.eq.0) exit
          endif
 
+! Adaptive syncmin: lower threshold on later passes (weaker signals
+! remain after subtraction of strong ones)
+         syncmin_pass=syncmin
+         if(isp.ge.2) syncmin_pass=syncmin*0.88
+         if(isp.ge.3) syncmin_pass=syncmin*0.76
          candidate=0.0
          ncand=0
          call timer('getcand4',0)
-         call getcandidates4(dd,fa,fb,syncmin,nfqso,MAXCAND,savg,candidate,   &
-            ncand,sbase)
+         call getcandidates4(dd,fa,fb,syncmin_pass,nfqso,MAXCAND,savg,       &
+            candidate,ncand,sbase)
          call timer('getcand4',1)
          dobigfft=.true.
          do icand=1,ncand
@@ -276,7 +283,11 @@ contains
                   call timer('sync4d  ',1)
                enddo
                if(iseg.eq.1) smax1=smax
-               if(smax.lt.1.2) cycle
+               smaxthresh=0.90      ! best-3-of-4 Costas: scaled for 3/4 sync
+               if(ndepth.ge.3) smaxthresh=0.75
+               if(isp.ge.2) smaxthresh=smaxthresh*0.88
+               if(isp.ge.3) smaxthresh=smaxthresh*0.76
+               if(smax.lt.smaxthresh) cycle
                if(iseg.gt.1 .and. smax.lt.smax1) cycle 
                f1=f0+real(idfbest)
                if( f1.le.10.0 .or. f1.ge.4990.0 ) cycle
@@ -304,7 +315,7 @@ contains
                ns3=count(hbits(133:140).eq.(/1,1,1,0,0,1,0,0/))
                ns4=count(hbits(199:206).eq.(/1,0,1,1,0,0,0,1/))
                nsync_qual=ns1+ns2+ns3+ns4
-               if(nsync_qual.lt. 20) cycle
+               if(nsync_qual.lt. 16) cycle  ! relaxed: robust with best-3-of-4
 
                scalefac=2.83
                llra(  1: 58)=bitmetrics(  9: 66, 1)

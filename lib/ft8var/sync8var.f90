@@ -105,12 +105,17 @@ subroutine sync8var(nfa,nfb,syncmin,nfqso,candidate,ncand,jzb,jzt,ipass,lqsothre
             endif
           enddo
           sya=sum(tall(1:7)); sycq=sum(tall(8:16)); sybc=sum(tall(17:30))
+          syb=sum(tall(17:23)); syc=sum(tall(24:30))
           sy1=(sya+sycq+sybc)/30.; sy2=(sya+sybc)/21.; sync_abc=max(sy1,sy2)
           sy1=(sycq+sybc)/23.; sy2=(sybc)/14.; sync_bc=max(sy1,sy2); if(sy1.gt.sy2) lcq=.true.
+! Best 2 of 3: also try a+b and a+c
+          sync_ab=(sya+syb)/14.; sync_ac=(sya+syc)/14.
         else
-          sybc=sum(tall(17:30)); sync_abc=sum(tall(1:7))+sybc; sync_bc=sybc/14.; sync_abc=sync_abc/21.
+          sybc=sum(tall(17:30)); syb=sum(tall(17:23)); syc=sum(tall(24:30))
+          sync_abc=sum(tall(1:7))+sybc; sync_bc=sybc/14.; sync_abc=sync_abc/21.
+          sync_ab=(sum(tall(1:7))+syb)/14.; sync_ac=(sum(tall(1:7))+syc)/14.
         endif
-        sync2d(i,j)=max(sync_abc,sync_bc); if(lcq) syncq(i,j)=.true.
+        sync2d(i,j)=max(sync_abc,sync_bc,sync_ab,sync_ac); if(lcq) syncq(i,j)=.true.
       enddo
     enddo
   else
@@ -148,7 +153,14 @@ subroutine sync8var(nfa,nfb,syncmin,nfqso,candidate,ncand,jzb,jzt,ipass,lqsothre
         t01=(t01-t1*2)/28.0; if(t01.lt.1e-8) t01=1.0; t02=(t02-t2*2)/46.0; if(t02.lt.1e-8) t02=1.0 ! safe division
         sync01=t1/(7.0*t01); sync02=(t1/7.0 + tcq/9.0)/t02; syncs=max(sync01,sync02)
         lcq2=.false.; if(sync02.gt.sync01) lcq2=.true.
-        sync2d(i,j)=max(syncf,syncs)
+! Best 2 of 3 Costas: also try a+b and a+c combinations
+        t1=ta+tb; t01=t0a+t0b
+        t01=(t01-t1*2)/28.0; if(t01.lt.1e-8) t01=1.0
+        sync_ab=t1/(7.0*t01)
+        t1=ta+tc; t01=t0a+t0c
+        t01=(t01-t1*2)/28.0; if(t01.lt.1e-8) t01=1.0
+        sync_ac=t1/(7.0*t01)
+        sync2d(i,j)=max(syncf,syncs,sync_ab,sync_ac)
         if(syncf.gt.syncs) then; if(lcq) syncq(i,j)=.true.; else; if(lcq2) syncq(i,j)=.true.; endif
       enddo
     enddo

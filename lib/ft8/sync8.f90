@@ -75,12 +75,23 @@ subroutine sync8(dd,npts,nfa,nfb,syncmin,nfqso,maxcand,candidate,ncand,sbase)
         t=ta+tb+tc
         t0=t0a+t0b+t0c
         t0=(t0-t)/6.0
-        sync_abc=t/t0
-        t=tb+tc
+        sync_abc=0.0
+        if(t0.gt.0.0) sync_abc=t/t0
+! Best 2 of 3 Costas: try all combinations, keep the best.
+! This makes FT8 sync robust against QRM on any single Costas.
+        sync_bc=0.0
         t0=t0b+t0c
-        t0=(t0-t)/6.0
-        sync_bc=t/t0
-        sync2d(i,j)=max(sync_abc,sync_bc)
+        t0=(t0-(tb+tc))/6.0
+        if(t0.gt.0.0) sync_bc=(tb+tc)/t0
+        sync_ab=0.0
+        t0=t0a+t0b
+        t0=(t0-(ta+tb))/6.0
+        if(t0.gt.0.0) sync_ab=(ta+tb)/t0
+        sync_ac=0.0
+        t0=t0a+t0c
+        t0=(t0-(ta+tc))/6.0
+        if(t0.gt.0.0) sync_ac=(ta+tc)/t0
+        sync2d(i,j)=max(sync_abc,sync_bc,sync_ab,sync_ac)
      enddo
   enddo
 
