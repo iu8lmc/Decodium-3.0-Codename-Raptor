@@ -1126,7 +1126,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
           }
           m_bCallingCQ = true;  //allows tail-enders to be picked up
           m_ntx = 6;
-          m_bAutoReply = false;
+          if (!m_autoCQ) m_bAutoReply = false;   // NOT during Auto CQ — needs bAutoReply=true to catch replies
           m_QSOProgress = CALLING;
           ui->txrb6->setChecked(true);
 
@@ -2991,6 +2991,7 @@ void MainWindow::dataSink(qint64 frames)
   if(m_monitoring || m_diskData) {
     m_wideGraph->dataSink2(s,m_df3,m_ihsym,m_diskData,m_px);
   }
+
   if(m_mode=="MSK144") return;
 
   fixStop();
@@ -4569,7 +4570,7 @@ void MainWindow::process_autoButton (bool checked)   //manually or by controller
   m_maxPoints=-1;
   if (checked && ui->respondComboBox->isVisible() && ui->respondComboBox->currentText() != "CQ: None"
       && CALLING == m_QSOProgress) {
-      m_bAutoReply = false;         // ready for next
+      if (!m_autoCQ) m_bAutoReply = false;   // ready for next (but NOT during Auto CQ — needs bAutoReply=true)
       m_bCallingCQ = true;          // allows tail-enders to be picked up
   }
   if (!checked) {            //avt 10/2/25
@@ -18422,13 +18423,13 @@ void MainWindow::on_autoCQButton_clicked(bool checked)
       ui->txrb6->setChecked(true);
       m_QSOProgress = CALLING;
       m_bCallingCQ = true;
-      m_bAutoReply = true;    // FIX: deve essere true — auto_sequence richiede bCallingCQ && bAutoReply per rispondere ai caller
       ui->cbAutoSeq->setChecked(true);
       genStdMsgs(QString{});    // regenerate CQ message
       if (!m_auto) {
         ui->autoButton->setChecked(true);
         on_autoButton_clicked(true);
       }
+      m_bAutoReply = true;    // FIX: DOPO on_autoButton_clicked — altrimenti riga 4604 la resetta a false
       // Mostra caller queue in Tab 2 e seleziona il tab
       if (SpecOp::FOX != m_specOp) {
         ui->tab2StackedWidget->setCurrentIndex(1);
