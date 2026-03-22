@@ -18,6 +18,11 @@
 #include <fftw3.h>
 #include <thread> // TCI
 #include <QApplication>
+#include <QScreen>
+#include <QDialog>
+#include <QFormLayout>
+#include <QDialogButtonBox>
+#include <QVBoxLayout>
 #include <QStringListModel>
 #include <QSettings>
 #include <QKeyEvent>
@@ -997,6 +1002,12 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_qsoProgress->setFixedHeight (24);
   m_qsoProgress->setMinimumWidth (200);
   m_mainToolBar->addWidget (m_qsoProgress);
+
+  // AutoCQ right-click → settings dialog
+  ui->autoCQButton->setContextMenuPolicy (Qt::CustomContextMenu);
+  connect (ui->autoCQButton, &QWidget::customContextMenuRequested, this, [this] () {
+    showAutoCQSettings ();
+  });
 
   connect(m_wideGraph.data (), SIGNAL(freezeDecode2(int)),this,SLOT(freezeDecode(int)));
   connect(m_wideGraph.data (), SIGNAL(f11f12(int)),this,SLOT(bumpFqso(int)));
@@ -2331,6 +2342,21 @@ void MainWindow::readSettings()
   change_layout (current_view_mode);
   geometries (current_view_mode, the_geometries);
   restoreState (m_settings->value ("state").toByteArray (), 4);
+
+  // Auto-fit window to screen if it exceeds available size
+  {
+    QRect avail = QApplication::primaryScreen ()->availableGeometry ();
+    QRect geo = geometry ();
+    bool adjusted = false;
+    if (geo.width () > avail.width ()) { geo.setWidth (avail.width () - 20); adjusted = true; }
+    if (geo.height () > avail.height ()) { geo.setHeight (avail.height () - 40); adjusted = true; }
+    if (geo.left () < avail.left () || geo.right () > avail.right ()
+        || geo.top () < avail.top () || geo.bottom () > avail.bottom ()) {
+      geo.moveCenter (avail.center ());
+      adjusted = true;
+    }
+    if (adjusted) setGeometry (geo);
+  }
   ui->dxCallEntry->setText (m_settings->value ("DXcall", QString {}).toString ());
   ui->dxGridEntry->setText (m_settings->value ("DXgrid", QString {}).toString ());
   m_path = m_settings->value("MRUdir", m_config.save_directory ().absolutePath ()).toString ();
@@ -2360,6 +2386,12 @@ void MainWindow::readSettings()
   m_settings->beginGroup("Common");
   m_mode="FT2";  // Decodium FT2-only: always force FT2 mode
   m_settings->endGroup();
+
+  // AutoCQ settings
+  m_settings->beginGroup ("AutoCQ");
+  m_maxCQCalls = m_settings->value ("MaxCQCalls", 0).toInt ();
+  m_maxCallerRetries = m_settings->value ("MaxCallerRetries", 3).toInt ();
+  m_settings->endGroup ();
 
   // do this outside of settings group because it uses groups internally
   ui->actionAstronomical_data->setChecked (displayAstro);
@@ -5231,6 +5263,13 @@ void MainWindow::createStatusBar()                           //createStatusBar
   m_statusQueueLabel->setToolTip (tr ("Caller queue size"));
   statusBar()->addWidget (m_statusQueueLabel);
 
+  m_statusQsoLabel = new QLabel (this);
+  m_statusQsoLabel->setAlignment (Qt::AlignHCenter);
+  m_statusQsoLabel->setMinimumSize (QSize {100, 18});
+  m_statusQsoLabel->setFrameStyle (QFrame::Panel | QFrame::Sunken);
+  m_statusQsoLabel->setToolTip (tr ("QSOs today / total to upload"));
+  statusBar()->addWidget (m_statusQsoLabel);
+
   statusBar()->addPermanentWidget(&progressBar);
   progressBar.setMinimumSize (QSize {150, 18});
 
@@ -7335,25 +7374,30 @@ void MainWindow::readFromStdout()                             //readFromStdout
            (message0.contains("? a")                                              // AP low-confidence decodes
            || (decodedtext.snr() < -21 && decodedtext.isLowConfidence()))))       // very weak + uncertain
       // FDR step 4: Ghost station filter — validates callsigns against ITU rules
-      // Catches phantom decodes like "31OC80GD E2" from CRC14 false positives at very low SNR
+      // Only active for very weak signals; requires MAJORITY of callsign-position
+      // words to fail ITU validation before rejecting the decode
       and ([&] () -> bool {
-        if (m_mode != "FT2" && m_mode != "FT8") return true;  // only filter FT2/FT8
+        if (m_mode != "FT2" && m_mode != "FT8") return true;
+        if (decodedtext.snr () > -20) return true;          // only filter very weak decodes
         QString msg = message0.mid (24).trimmed ();
         if (msg.isEmpty () || msg.contains ("<DecodeFinished>")) return true;
         QStringList words = msg.split (' ', SkipEmptyParts);
-        // Extract tokens that should be callsigns (skip CQ/DE prefix, reports, grids, hashes)
         static const QRegularExpression reportRx {"^[R]?[+-]?\\d{1,2}$"};
         static const QRegularExpression gridRx {"^[A-R]{2}[0-9]{2}([A-X]{2})?$", QRegularExpression::CaseInsensitiveOption};
+        int nCallPositions = 0;
+        int nFailed = 0;
         for (const QString &w : words) {
-          if (w.startsWith ("<") && w.endsWith (">")) continue;   // <...> or <callsign> hash
+          if (w.startsWith ("<") && w.endsWith (">")) continue;
           if (isKnownToken (w)) continue;
-          if (reportRx.match (w).hasMatch ()) continue;           // signal reports like -08, R-12, +03
-          if (gridRx.match (w).hasMatch ()) continue;             // grid squares like FN20, JN61MX
-          if (w.startsWith ("CQ")) continue;                       // CQ, CQDX, CQ_DX etc.
-          // This token should be a callsign — validate it
-          if (!isValidITUCall (w)) return false;                   // ghost → reject entire decode
+          if (reportRx.match (w).hasMatch ()) continue;
+          if (gridRx.match (w).hasMatch ()) continue;
+          if (w.startsWith ("CQ")) continue;
+          // This token occupies a callsign position
+          ++nCallPositions;
+          if (!isValidITUCall (w)) ++nFailed;
         }
-        return true;
+        // Reject only if ALL callsign-position words are invalid (true ghost)
+        return nCallPositions == 0 || nFailed < nCallPositions;
       } ())
       )
     {
@@ -9574,11 +9618,11 @@ void MainWindow::guiUpdate()
     // Auto CQ retry logic (only when Auto CQ mode is active)
     if (m_autoCQ && !m_tune) {
       if (m_ntx >= 2 && m_ntx <= 4) {
-        // Rule 1: Tx2/Tx3/Tx4 repeated 3 times without response → return to CQ (Tx6)
+        // Rule 1: Tx2/Tx3/Tx4 repeated N times without response → return to CQ (Tx6)
         if (m_ntx == m_lastNtx) {
           ++m_txRetryCount;
-          if (m_txRetryCount >= MAX_TX_RETRIES) {
-            qDebug () << "AutoCQ: Tx" << m_ntx << "sent" << MAX_TX_RETRIES << "times without response, returning to CQ";
+          if (m_txRetryCount >= m_maxCallerRetries) {
+            qDebug () << "AutoCQ: Tx" << m_ntx << "sent" << m_maxCallerRetries << "times without response, returning to CQ";
             m_txRetryCount = 0;
             m_lastNtx = -1;
             // Reset to CQ without disabling TX (set CALLING so clearDX skips auto_tx_mode(false))
@@ -9592,15 +9636,20 @@ void MainWindow::guiUpdate()
           m_lastNtx = m_ntx;
         }
       } else if (m_ntx == 6) {
-        ++m_txRetryCount;
-        if (m_txRetryCount >= MAX_TX_RETRIES) {
-          m_txRetryCount = 0;
-          m_lastNtx = -1;
-          QTimer::singleShot (0, this, [this] () {
-            m_QSOProgress = CALLING;
-            clearDX ();
-          });
+        // CQ mode: use configurable max CQ calls (0 = unlimited)
+        if (m_maxCQCalls > 0) {
+          ++m_txRetryCount;
+          if (m_txRetryCount >= m_maxCQCalls) {
+            m_txRetryCount = 0;
+            m_lastNtx = -1;
+            // Max CQ calls reached — stop TX
+            QTimer::singleShot (0, this, [this] () {
+              auto_tx_mode (false);
+              m_QSOProgress = CALLING;
+            });
+          }
         }
+        // No else reset — CQ keeps calling
         m_lastNtx = 6;
       } else {
         m_txRetryCount = 0;
@@ -9944,6 +9993,12 @@ void MainWindow::guiUpdate()
       int qs = m_callerQueue.size ();
       m_statusQueueLabel->setText (qs > 0 ? QString ("Q:%1").arg (qs) : "");
       m_statusQueueLabel->setVisible (m_autoCQ || m_bDXpedMode);
+    }
+    // ── QSO counter (today + upload) ──────────────────────────────
+    if (m_statusQsoLabel) {
+      QDate today = QDateTime::currentDateTimeUtc ().date ();
+      if (m_qsoTodayDate != today) { m_qsoTodayDate = today; m_qsoTodayCount = 0; }
+      m_statusQsoLabel->setText (QString ("Today:%1 | Up:%2").arg (m_qsoTodayCount).arg (m_incrLogCount));
     }
 
     // ── QSO Progress indicator ────────────────────────────────────
@@ -18384,6 +18439,50 @@ void MainWindow::on_autoCQButton_clicked(bool checked)
     check_button_color();
 }
 
+void MainWindow::showAutoCQSettings ()
+{
+  QDialog dlg (this);
+  dlg.setWindowTitle (tr ("Auto CQ Settings"));
+  auto *form = new QFormLayout;
+
+  auto *sbMaxCQ = new QSpinBox;
+  sbMaxCQ->setRange (0, 999);
+  sbMaxCQ->setSpecialValueText (tr ("Unlimited"));
+  sbMaxCQ->setValue (m_maxCQCalls);
+  sbMaxCQ->setToolTip (tr ("0 = unlimited CQ calls"));
+  form->addRow (tr ("Max CQ calls (0=∞):"), sbMaxCQ);
+
+  auto *sbMaxRetry = new QSpinBox;
+  sbMaxRetry->setRange (1, 20);
+  sbMaxRetry->setValue (m_maxCallerRetries);
+  sbMaxRetry->setToolTip (tr ("Max retries for a non-responding station before skipping"));
+  form->addRow (tr ("Max retries per station:"), sbMaxRetry);
+
+  auto *sbMissed = new QSpinBox;
+  sbMissed->setRange (2, 20);
+  sbMissed->setValue (MAX_MISSED_PERIODS);
+  sbMissed->setToolTip (tr ("RX periods without reply before returning to CQ"));
+  form->addRow (tr ("Timeout periods (no reply):"), sbMissed);
+
+  auto *buttons = new QDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  connect (buttons, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+  connect (buttons, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+
+  auto *layout = new QVBoxLayout (&dlg);
+  layout->addLayout (form);
+  layout->addWidget (buttons);
+
+  if (dlg.exec () == QDialog::Accepted) {
+    m_maxCQCalls = sbMaxCQ->value ();
+    m_maxCallerRetries = sbMaxRetry->value ();
+    // Save to settings
+    m_settings->beginGroup ("AutoCQ");
+    m_settings->setValue ("MaxCQCalls", m_maxCQCalls);
+    m_settings->setValue ("MaxCallerRetries", m_maxCallerRetries);
+    m_settings->endGroup ();
+  }
+}
+
 void MainWindow::on_msk144Button_clicked()
 {
     on_actionMSK144_triggered();
@@ -21052,6 +21151,10 @@ void MainWindow::logIncremental(QString call, QString adif)
     outStream << adif.toUpper() << "<EOR>" << Qt::endl;
     outputFile.close();
     m_incrLogCount++;
+    // Increment today's QSO count
+    QDate today = QDateTime::currentDateTimeUtc ().date ();
+    if (m_qsoTodayDate != today) { m_qsoTodayDate = today; m_qsoTodayCount = 0; }
+    ++m_qsoTodayCount;
     last_tx_label.setText(QString{"Logged %1 (%2 to upload)"}.arg(call).arg(m_incrLogCount));
   }
 }
@@ -21074,6 +21177,21 @@ void MainWindow::setIncrLogCount()
     }
     f.close();
     debugToFile(QString{"setIncrLo    m_incrLogCount:%1"}.arg(m_incrLogCount));
+  }
+
+  // Count today's QSOs from full ADIF log
+  m_qsoTodayDate = QDateTime::currentDateTimeUtc ().date ();
+  m_qsoTodayCount = 0;
+  QString todayStr = m_qsoTodayDate.toString ("yyyyMMdd");
+  QFile flog {m_config.writeable_data_dir ().absoluteFilePath (FULL_LOG_FNAME)};
+  if (flog.open (QIODevice::ReadOnly | QIODevice::Text)) {
+    QTextStream ts (&flog);
+    while (!ts.atEnd ()) {
+      QString line = ts.readLine ();
+      if (line.contains ("<QSO_DATE:" + QString::number (todayStr.length ()) + ">" + todayStr, Qt::CaseInsensitive))
+        ++m_qsoTodayCount;
+    }
+    flog.close ();
   }
 }
 

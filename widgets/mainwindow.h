@@ -723,6 +723,8 @@ private:
   qint32  m_txRetryCount {0};  // Consecutive Tx retry counter for auto-sequence timeout
   qint32  m_lastNtx {-1};     // Last Tx number sent (for retry detection)
   static constexpr int MAX_TX_RETRIES = 3;    // Tx2/Tx3/Tx4 retries before returning to CQ
+  int  m_maxCQCalls         {0};             // 0=unlimited CQ calls; >0 = stop after N CQ transmissions
+  int  m_maxCallerRetries   {3};             // max retries for non-responding station before skip
   int  m_autoCQPeriodsMissed   {0};           // RX periods senza risposta dal caller corrente
   bool m_receivedReplyThisPeriod {false};     // flag reset ogni periodo RX
   static constexpr int MAX_MISSED_PERIODS = 4;
@@ -815,6 +817,7 @@ private:
   void enqueueCaller (QString const& call, int freq, int snr = -99);
   void processNextInQueue ();
   void refreshCallerQueueDisplay ();
+  void showAutoCQSettings ();
 
   // DX-pedition multi-slot certified mode
   struct DXpedSlot {
@@ -878,6 +881,9 @@ private:
   bool    m_listenMode;           //avt 2/1/24
   QString m_myContinent;          //avt 5/6/24
   int     m_incrLogCount;         //avt 9/23/25
+  int     m_qsoTodayCount {0};   // QSOs logged today (reset at UTC midnight)
+  QDate   m_qsoTodayDate;        // date for which m_qsoTodayCount is valid
+  QLabel *m_statusQsoLabel {nullptr}; // status bar: QSO count display
   bool    dlQsoReqReply;          //avt 9/23/25
   bool    dlQslReqReply;          //avt 9/23/25
   bool    m_nonQsl;               //avt 9/23/25
