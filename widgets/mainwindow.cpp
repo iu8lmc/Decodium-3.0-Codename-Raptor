@@ -2,6 +2,7 @@
 #include "mainwindow.h"
 #include "asyncmodewidget.h"
 
+#include <QToolButton>
 #include <QAudio>
 #include <QAudioOutput>
 #include <QSound>
@@ -660,6 +661,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   addPreset (tr ("Operator — waterfall + controls top"), 3);
   addPreset (tr ("Compact — minimal footprint"),      4);
   addPreset (tr ("DXpedition — dual monitor"),        5);
+  addPreset (tr ("FT2 Operator — all visible"),       6);
   layoutMenu->addSeparator ();
   addPreset (tr ("Reset to Default"),                 0);
 
@@ -950,6 +952,51 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
                                 | QDockWidget::DockWidgetFloatable
                                 | QDockWidget::DockWidgetClosable);
   addDockWidget (Qt::TopDockWidgetArea, m_waterfallDock);
+
+  // ── Main Toolbar ─────────────────────────────────────────────────
+  m_mainToolBar = addToolBar (tr ("Quick Actions"));
+  m_mainToolBar->setObjectName ("mainToolBar");
+  m_mainToolBar->setMovable (true);
+  m_mainToolBar->setIconSize (QSize (20, 20));
+  m_mainToolBar->setToolButtonStyle (Qt::ToolButtonTextBesideIcon);
+
+  auto addTbBtn = [&](const QString &text, const QString &color, QAbstractButton *src) {
+    auto *a = m_mainToolBar->addAction (text);
+    a->setCheckable (src->isCheckable ());
+    a->setChecked (src->isChecked ());
+    a->setToolTip (src->toolTip ());
+    QString ss = QString (
+      "QToolButton { background: %1; color: #fff; border-radius: 3px; padding: 3px 8px; font-weight: bold; font-size: 9pt; }"
+      "QToolButton:checked { background: %1; border: 2px solid #fff; }"
+    ).arg (color);
+    for (auto *w : m_mainToolBar->findChildren<QToolButton*>()) {
+      if (w->defaultAction () == a) { w->setStyleSheet (ss); break; }
+    }
+    connect (a, &QAction::toggled, src, [src](bool c) { if (src->isChecked () != c) src->click (); });
+    connect (src, &QAbstractButton::toggled, a, &QAction::setChecked);
+    return a;
+  };
+  addTbBtn ("Monitor",   "#2e7d32", ui->monitorButton);
+  addTbBtn ("Enable TX", "#c62828", ui->autoButton);
+  addTbBtn ("Decode",    "#0277bd", ui->DecodeButton);
+  addTbBtn ("Tune",      "#f57f17", ui->tuneButton);
+  auto *haltAct = m_mainToolBar->addAction ("Halt TX");
+  haltAct->setToolTip (tr ("Stop transmitting"));
+  for (auto *w : m_mainToolBar->findChildren<QToolButton*>()) {
+    if (w->defaultAction () == haltAct) {
+      w->setStyleSheet ("QToolButton { background: #555; color: #fff; border-radius: 3px; padding: 3px 8px; font-weight: bold; font-size: 9pt; }");
+      break;
+    }
+  }
+  connect (haltAct, &QAction::triggered, ui->stopTxButton, &QAbstractButton::click);
+
+  m_mainToolBar->addSeparator ();
+
+  // QSO Progress indicator in toolbar
+  m_qsoProgress = new QSOProgressWidget (this);
+  m_qsoProgress->setFixedHeight (24);
+  m_qsoProgress->setMinimumWidth (200);
+  m_mainToolBar->addWidget (m_qsoProgress);
 
   connect(m_wideGraph.data (), SIGNAL(freezeDecode2(int)),this,SLOT(freezeDecode(int)));
   connect(m_wideGraph.data (), SIGNAL(f11f12(int)),this,SLOT(bumpFqso(int)));
@@ -5169,6 +5216,21 @@ void MainWindow::createStatusBar()                           //createStatusBar
   band_hopping_label.setMinimumSize (QSize {80, 18});
   band_hopping_label.setFrameStyle (QFrame::Panel | QFrame::Sunken);
 
+  // ── Extra status labels ──────────────────────────────────────────
+  m_statusFreqLabel = new QLabel (this);
+  m_statusFreqLabel->setAlignment (Qt::AlignHCenter);
+  m_statusFreqLabel->setMinimumSize (QSize {120, 18});
+  m_statusFreqLabel->setFrameStyle (QFrame::Panel | QFrame::Sunken);
+  m_statusFreqLabel->setToolTip (tr ("TX / RX audio frequencies"));
+  statusBar()->addWidget (m_statusFreqLabel);
+
+  m_statusQueueLabel = new QLabel (this);
+  m_statusQueueLabel->setAlignment (Qt::AlignHCenter);
+  m_statusQueueLabel->setMinimumSize (QSize {80, 18});
+  m_statusQueueLabel->setFrameStyle (QFrame::Panel | QFrame::Sunken);
+  m_statusQueueLabel->setToolTip (tr ("Caller queue size"));
+  statusBar()->addWidget (m_statusQueueLabel);
+
   statusBar()->addPermanentWidget(&progressBar);
   progressBar.setMinimumSize (QSize {150, 18});
 
@@ -5387,6 +5449,22 @@ void MainWindow::applyLayoutPreset (int preset)
       tabifyDockWidget (m_rxFreqDock, m_activeStationsDock);
     }
     m_rxFreqDock->raise ();
+    break;
+
+  case 6: // FT2 Operator — waterfall top, controls+decodes below, all visible
+    addDockWidget (Qt::TopDockWidgetArea,    m_waterfallDock);
+    addDockWidget (Qt::LeftDockWidgetArea,   m_bandActivityDock);
+    addDockWidget (Qt::LeftDockWidgetArea,   m_rxFreqDock);
+    splitDockWidget (m_bandActivityDock, m_rxFreqDock, Qt::Horizontal);
+    addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
+    addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
+    splitDockWidget (m_controlsDock, m_clusterDock, Qt::Horizontal);
+    if (m_activeStationsDock) {
+      addDockWidget (Qt::BottomDockWidgetArea, m_activeStationsDock);
+      tabifyDockWidget (m_clusterDock, m_activeStationsDock);
+    }
+    m_controlsDock->raise ();
+    m_clusterDock->raise ();
     break;
   }
 
@@ -9850,6 +9928,52 @@ void MainWindow::guiUpdate()
     QString utc = t.date().toString("dd MMM yyyy") + "\n" +
       t.time().toString("HH:mm:ss") + " UTC";
     ui->labUTC->setText(utc);
+
+    // ── Status bar live info ──────────────────────────────────────
+    if (m_statusFreqLabel) {
+      QString txrx = QString ("TX %1 / RX %2 Hz")
+        .arg (ui->TxFreqSpinBox->value ())
+        .arg (ui->RxFreqSpinBox->value ());
+      if (m_transmitting)
+        m_statusFreqLabel->setStyleSheet ("QLabel{color:#fff;background:#c62828}");
+      else
+        m_statusFreqLabel->setStyleSheet ("");
+      m_statusFreqLabel->setText (txrx);
+    }
+    if (m_statusQueueLabel) {
+      int qs = m_callerQueue.size ();
+      m_statusQueueLabel->setText (qs > 0 ? QString ("Q:%1").arg (qs) : "");
+      m_statusQueueLabel->setVisible (m_autoCQ || m_bDXpedMode);
+    }
+
+    // ── QSO Progress indicator ────────────────────────────────────
+    if (m_qsoProgress) {
+      if (m_bDXpedMode) {
+        m_qsoProgress->setNumSlots (m_dxpedNumSlots);
+        for (int i = 0; i < m_dxpedNumSlots; i++) {
+          auto const& sl = m_dxpedSlots[i];
+          int pStep = 0;
+          if (!sl.call.isEmpty ()) {
+            if (sl.txStep == 2) pStep = 3;       // sending report
+            else if (sl.txStep == 3) pStep = 5;   // sending RR73
+          }
+          m_qsoProgress->setSlotInfo (i, sl.call, pStep);
+        }
+      } else {
+        m_qsoProgress->setNumSlots (0);
+        int pStep = 0;
+        switch (m_QSOProgress) {
+          case CALLING:      pStep = 1; break;
+          case REPLYING:     pStep = 2; break;
+          case REPORT:       pStep = 3; break;
+          case ROGER_REPORT: pStep = 4; break;
+          case SIGNOFF:      pStep = 5; break;
+          default:           pStep = m_sentFirst73 ? 6 : 0; break;
+        }
+        m_qsoProgress->setStep (pStep);
+      }
+    }
+
     if(m_bBestSPArmed and (m_dateTimeBestSP.secsTo(t) >= 120)) on_pbBestSP_clicked(); //BestSP timeout
     if(!m_monitoring and !m_diskData) ui->signal_meter_widget->setValue(0,0);
     m_sec0=nsec;

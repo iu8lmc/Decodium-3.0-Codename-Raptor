@@ -76,6 +76,7 @@ DisplayText::DisplayText(QWidget *parent)
 void DisplayText::erase ()
 {
   clear ();
+  m_lineCount = 0;
   Q_EMIT erased ();
 }
 
@@ -161,6 +162,11 @@ void DisplayText::insertText(QString const& text, QColor bg, QColor fg
     {
       block_format.setBackground (bg);
     }
+  else if (m_lineCount % 2)
+    {
+      block_format.setBackground (QColor (128, 128, 128, 15));
+    }
+  ++m_lineCount;
   format.clearForeground ();
   if (fg.isValid ())
     {

@@ -40,8 +40,10 @@
 #include <QTableWidget>
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
+#include <QToolBar>
 
 #include "MultiGeometryWidget.hpp"
+#include "QSOProgressWidget.h"
 #include "NonInheritingProcess.hpp"
 #include "Audio/AudioDevice.hpp"
 #include "commons.h"
@@ -582,6 +584,10 @@ private:
   QDockWidget *m_rxFreqDock {nullptr};
   QDockWidget *m_activeStationsDock {nullptr};
   QDockWidget *m_controlsDock {nullptr};
+  QToolBar    *m_mainToolBar {nullptr};
+  QSOProgressWidget *m_qsoProgress {nullptr};
+  QLabel      *m_statusFreqLabel {nullptr};
+  QLabel      *m_statusQueueLabel {nullptr};
   QScopedPointer<EchoGraph> m_echoGraph;
   QScopedPointer<FastGraph> m_fastGraph;
   QScopedPointer<LogQSO> m_logDlg;

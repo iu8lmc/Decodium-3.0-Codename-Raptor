@@ -298,6 +298,7 @@ set (decodium_CXXSRCS
   widgets/colorhighlighting.cpp
   WSPR/WsprTxScheduler.cpp
   widgets/mainwindow.cpp
+  widgets/QSOProgressWidget.cpp
   Configuration.cpp
   main.cpp
   Network/wsprnet.cpp

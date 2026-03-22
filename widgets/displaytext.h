@@ -81,6 +81,7 @@ private:
   QMetaObject::Connection vertical_scroll_connection_;
   long long modified_vertical_scrollbar_max_;
   bool m_strikeout {false};
+  int m_lineCount {0};
 };
 
 #endif // DISPLAYTEXT_H
