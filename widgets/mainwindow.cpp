@@ -10981,6 +10981,16 @@ void MainWindow::processMessage (DecodedText const& message, Qt::KeyboardModifie
                    || (m_QSOProgress >= REPLYING &&
                    (m_mode=="MSK144" or m_mode=="FT8" or m_mode=="FT2" or m_mode=="FT4" || "Q65" == m_mode)))
                   && word_3.startsWith ('R')) {
+          if (m_QSOProgress >= SIGNOFF) {
+            // Already sent RR73 but other station keeps sending R+rpt (didn't decode our RR73).
+            // Log the QSO and stop TX to break the loop.
+            debugToFile("processMess  R+rpt loop break — already SIGNOFF, logging QSO");
+            if (m_config.prompt_to_log() || m_config.autoLog()) {
+              logQSOTimer.start(0);
+            }
+            cease_auto_Tx_after_QSO ();
+            return;
+          }
           m_ntx=4;
           if (m_QSOProgress < ROGERS) {
             m_txRetryCount = 0; m_lastNtx = -1;  // Reset only on FIRST R+rpt
