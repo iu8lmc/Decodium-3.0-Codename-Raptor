@@ -663,6 +663,32 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   layoutMenu->addSeparator ();
   addPreset (tr ("Reset to Default"),                 0);
 
+  // ── Reset Layout — azione diretta nel menu View ────────────────
+  ui->menuView->addSeparator ();
+  auto *resetLayoutAction = ui->menuView->addAction (tr ("Reset Layout"));
+  connect (resetLayoutAction, &QAction::triggered, this, [this]() {
+    applyLayoutPreset (0);   // Classic = default
+    m_settings->remove ("windowState");
+    m_settings->remove ("windowGeometry");
+    statusBar ()->showMessage (tr ("Layout reset to default"), 3000);
+  });
+
+  // ── Theme submenu in View ───────────────────────────────────────
+  auto *themeMenu = ui->menuView->addMenu (tr ("Theme"));
+  auto *themeGroup = new QActionGroup (this);
+  themeGroup->setExclusive (true);
+  auto addTheme = [&](QString name, int id) {
+    auto *a = themeMenu->addAction (name);
+    a->setCheckable (true);
+    a->setActionGroup (themeGroup);
+    if (id == m_currentTheme) a->setChecked (true);
+    connect (a, &QAction::triggered, this, [this, id]() { applyTheme (id); });
+  };
+  addTheme (tr ("Shannon Light"),   0);
+  addTheme (tr ("Shannon Dark"),    1);
+  addTheme (tr ("Midnight"),        2);
+  addTheme (tr ("Classic (WSJT-X)"), 3);
+
   // ASYMX: hide period 1/2 selector — async mode has no period concept
   ui->txFirstCheckBox->hide();
 
@@ -1915,6 +1941,10 @@ void MainWindow::initialize_fonts ()
 {
   set_application_font (m_config.text_font ());
   setDecodedTextFont (m_config.decoded_text_font ());
+  // Apply saved theme (overrides DarkStyle toggle with full theme)
+  if (m_currentTheme != 3) {  // 3=Classic uses old DarkStyle path
+    applyTheme (m_currentTheme);
+  }
 }
 
 void MainWindow::splash_done ()
@@ -2174,6 +2204,7 @@ void MainWindow::writeSettings()
   m_settings->setValue ("disableWritingOfAllTxt", ui->actionDisable_writing_of_ALL_TXT->isChecked() );
   m_settings->setValue ("DisableEventLogging", ui->actionDisable_event_logging->isChecked() );
   m_settings->setValue ("DarkStyle", ui->actionUse_Dark_Style->isChecked() );
+  m_settings->setValue ("CurrentTheme", m_currentTheme);
   m_settings->setValue ("BandButtons", ui->actionBand_Buttons->isChecked() );
   m_settings->setValue ("VHFUHFButtons", ui->actionVHF_UHF_Buttons->isChecked() );
   m_settings->setValue ("tx1State", ui->tx1->isEnabled() );
@@ -2376,6 +2407,7 @@ void MainWindow::readSettings()
   ui->actionDisable_writing_of_ALL_TXT->setChecked(m_settings->value("disableWritingOfAllTxt", false).toBool());
   ui->actionDisable_event_logging->setChecked(m_settings->value("DisableEventLogging", false).toBool());
   ui->actionUse_Dark_Style->setChecked(m_settings->value("DarkStyle", true).toBool());
+  m_currentTheme = m_settings->value("CurrentTheme", 3).toInt();  // default Classic
   ui->actionBand_Buttons->setChecked(m_settings->value("BandButtons", true).toBool());
   ui->actionVHF_UHF_Buttons->setChecked(m_settings->value("VHFUHFButtons", false).toBool());
   ui->tx1->setEnabled(m_settings->value("tx1State", true).toBool());
@@ -9815,9 +9847,8 @@ void MainWindow::guiUpdate()
     }
 
     QDateTime t = QDateTime::currentDateTimeUtc();
-    QString utc = t.date().toString("yyyy MMM dd") + "\n " +
-      t.time().toString() + " ";
-//    QString utc = t.time().toString();      // UR for AL version use this and disable the 2 lines above
+    QString utc = t.date().toString("dd MMM yyyy") + "\n" +
+      t.time().toString("HH:mm:ss") + " UTC";
     ui->labUTC->setText(utc);
     if(m_bBestSPArmed and (m_dateTimeBestSP.secsTo(t) >= 120)) on_pbBestSP_clicked(); //BestSP timeout
     if(!m_monitoring and !m_diskData) ui->signal_meter_widget->setValue(0,0);
@@ -11493,6 +11524,8 @@ void MainWindow::clearDX ()
   if (m_autoCQ && m_callerQueue.isEmpty ()) {
     setTxMsg (6);
     m_QSOProgress = CALLING;
+    m_bCallingCQ = true;
+    m_bAutoReply = true;   // FIX: necessario perché auto_sequence richiede bAutoReply per intercettare risposte al CQ
   }
   if (m_QSOProgress != CALLING && !m_autoCQ) {
     auto_tx_mode (false);
@@ -11866,10 +11899,14 @@ void MainWindow::dxpedRxProcess(QString const& call, QString const& rptRcvd)
       switch (sl.txStep) {
         case 2:
           if (!rptRcvd.isEmpty()) sl.rptRcvd = rptRcvd;
-          sl.txStep = 3;   // ricevuto R+rpt → manda RR73
+          // Avanza a RR73: qualunque risposta dal caller (con o senza R+report) conferma ricezione
+          sl.txStep = 3;
           debugToFile("dxpedRxProc: advanced to txStep=3 (RR73)");
           break;
-        case 3: debugToFile("dxpedRxProc: already txStep=3, no change"); break;
+        case 3:
+          // Già in attesa di conferma finale — resetta missed counter (il caller sta rispondendo)
+          debugToFile("dxpedRxProc: already txStep=3, reset missed");
+          break;
       }
       return;
     }
@@ -12866,11 +12903,16 @@ void MainWindow::on_logQSOButton_clicked()                 //Log QSO button
   if (m_autoCQ && !m_bDXpedMode) {
     QTimer::singleShot(500, [this] {
       if (!m_autoCQ || m_bDXpedMode) return;
+      // Se la coda ha caller in attesa, carica il prossimo invece di tornare a CQ
+      if (!m_callerQueue.isEmpty()) {
+        processNextInQueue();
+        return;
+      }
       m_ntx = 6;
       ui->txrb6->setChecked(true);
       m_QSOProgress = CALLING;
       m_bCallingCQ = true;
-      m_bAutoReply = false;
+      m_bAutoReply = true;   // FIX: deve restare true, altrimenti auto_sequence ignora le risposte al CQ
       ui->dxCallEntry->clear();
       ui->dxGridEntry->clear();
       genStdMsgs(QString{});
@@ -18193,7 +18235,7 @@ void MainWindow::on_autoCQButton_clicked(bool checked)
       ui->txrb6->setChecked(true);
       m_QSOProgress = CALLING;
       m_bCallingCQ = true;
-      m_bAutoReply = false;
+      m_bAutoReply = true;    // FIX: deve essere true — auto_sequence richiede bCallingCQ && bAutoReply per rispondere ai caller
       ui->cbAutoSeq->setChecked(true);
       genStdMsgs(QString{});    // regenerate CQ message
       if (!m_auto) {
@@ -18978,6 +19020,103 @@ void MainWindow::on_actionUse_Dark_Style_triggered (bool checked)
       }
     statusChanged();
     guiUpdate();
+}
+
+// ── Shannon Theme System ──────────────────────────────────────────────
+void MainWindow::applyTheme (int theme)
+{
+  m_currentTheme = theme;
+  QFont font = m_config.text_font ();
+
+  // ── Classic: ripristina il percorso originale WSJT-X ──────────────
+  if (theme == 3) {
+    // Delega completamente al toggle DarkStyle originale
+    on_actionUse_Dark_Style_triggered (ui->actionUse_Dark_Style->isChecked ());
+    // Ripristina stili originali clock/freq dal .ui
+    ui->labUTC->setStyleSheet (
+      "QLabel { font-family: MS Shell Dlg 2; font-size: 16pt;"
+      " background-color: black; color: yellow; }");
+    ui->labDialFreq->setStyleSheet (
+      "QLabel { font-family: MS Shell Dlg 2; font-size: 16pt;"
+      " color: yellow; background-color: black; }"
+      "QLabel[oob=\"true\"] { background-color: red; }");
+    return;
+  }
+
+  // ── Temi Shannon / Midnight: solo dock title bars + clock/freq ────
+  // Il resto dell'interfaccia usa il percorso DarkStyle standard
+  bool wantDark = (theme == 1 || theme == 2);
+
+  // Applica dark style di base se serve
+  if (wantDark) {
+    QFile f (":qdarkstyle/style.qss");
+    if (f.open (QFile::ReadOnly | QFile::Text)) {
+      QTextStream ts (&f);
+      qApp->setFont (font);
+      qApp->setStyleSheet (ts.readAll () + "* {" + font_as_stylesheet (font) + '}');
+    }
+    m_useDarkStyle = true;
+    ui->actionUse_Dark_Style->setChecked (true);
+  } else {
+    m_useDarkStyle = false;
+    ui->actionUse_Dark_Style->setChecked (false);
+    qApp->setFont (font);
+    qApp->setStyleSheet ("* {" + font_as_stylesheet (font) + '}');
+  }
+  m_wideGraph->setDarkStyle (m_useDarkStyle);
+  ui->tabWidget->setTabShape (m_useDarkStyle ? QTabWidget::Rounded : QTabWidget::Triangular);
+
+  // ── Colori specifici per tema (solo dock title + clock + freq) ─────
+  QString dockTitleBg, dockTitleFg, dockBorder;
+  QString clockBg, clockFg, freqBg, freqFg;
+
+  switch (theme) {
+    case 0: // Shannon Light
+      dockTitleBg = "#1565c0"; dockTitleFg = "#ffffff"; dockBorder = "#1976d2";
+      clockBg     = "#0d47a1"; clockFg     = "#ffffff";
+      freqBg      = "#0d47a1"; freqFg      = "#ffffff";
+      break;
+    case 1: // Shannon Dark
+      dockTitleBg = "#1565c0"; dockTitleFg = "#ffffff"; dockBorder = "#1976d2";
+      clockBg     = "#0d47a1"; clockFg     = "#42a5f5";
+      freqBg      = "#0d47a1"; freqFg      = "#42a5f5";
+      break;
+    case 2: // Midnight
+      dockTitleBg = "#4a148c"; dockTitleFg = "#ffffff"; dockBorder = "#6a1b9a";
+      clockBg     = "#1a0a2e"; clockFg     = "#ffab00";
+      freqBg      = "#1a0a2e"; freqFg      = "#ce93d8";
+      break;
+    default:
+      break;
+  }
+
+  // Dock title bars — append solo le regole dock senza toccare il resto
+  QString dockSs = QString (
+    "QDockWidget::title {"
+    "  background: %1; color: %2; padding: 5px;"
+    "  border: 1px solid %3; border-radius: 3px;"
+    "}"
+  ).arg (dockTitleBg, dockTitleFg, dockBorder);
+  qApp->setStyleSheet (qApp->styleSheet () + dockSs);
+
+  // Clock
+  ui->labUTC->setStyleSheet (QString (
+    "QLabel { font-family: 'Segoe UI', 'Consolas', monospace; font-size: 15pt;"
+    " background-color: %1; color: %2; border-radius: 4px; padding: 4px; }"
+  ).arg (clockBg, clockFg));
+
+  // Freq
+  ui->labDialFreq->setStyleSheet (QString (
+    "QLabel { font-family: 'Segoe UI', 'Consolas', monospace; font-size: 16pt;"
+    " background-color: %1; color: %2; border-radius: 4px; padding: 2px; }"
+    "QLabel[oob=\"true\"] { background-color: red; }"
+  ).arg (freqBg, freqFg));
+
+  check_button_color ();
+  for (auto &widget : qApp->topLevelWidgets ())
+    widget->updateGeometry ();
+  statusChanged ();
+  guiUpdate ();
 }
 
 void MainWindow:: on_actionBand_Buttons_triggered ()

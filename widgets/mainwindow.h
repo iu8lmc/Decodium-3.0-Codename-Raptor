@@ -176,6 +176,7 @@ private:
   bool eventFilter(QObject *, QEvent *) override;
   void showQSYMessage(QString message);
   void applyLayoutPreset (int preset);
+  void applyTheme (int theme);
 
 private slots:
   void initialize_fonts ();
@@ -1132,6 +1133,7 @@ private:
   QVector<double> m_phaseEqCoefficients;
   bool m_block_udp_status_updates;
   bool m_useDarkStyle;
+  int  m_currentTheme {3};      // 0=Shannon Light, 1=Shannon Dark, 2=Midnight, 3=Classic
   bool m_externalCtrl;         //avt  10/1/25
   bool m_autoButtonState;     //avt 10/2/25
 
