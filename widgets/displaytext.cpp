@@ -164,7 +164,9 @@ void DisplayText::insertText(QString const& text, QColor bg, QColor fg
     }
   else if (m_lineCount % 2)
     {
-      block_format.setBackground (QColor (128, 128, 128, 15));
+      // Adaptive alternate row: brighter on dark backgrounds for visibility
+      bool dark = palette ().color (QPalette::Base).lightness () < 80;
+      block_format.setBackground (dark ? QColor (255, 255, 255, 18) : QColor (0, 0, 0, 12));
     }
   ++m_lineCount;
   format.clearForeground ();
