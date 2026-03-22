@@ -584,6 +584,7 @@ private:
   QDockWidget *m_rxFreqDock {nullptr};
   QDockWidget *m_activeStationsDock {nullptr};
   QDockWidget *m_controlsDock {nullptr};
+
   QToolBar    *m_mainToolBar {nullptr};
   QSOProgressWidget *m_qsoProgress {nullptr};
   QLabel      *m_statusFreqLabel {nullptr};
