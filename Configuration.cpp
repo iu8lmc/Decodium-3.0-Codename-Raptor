@@ -3881,12 +3881,12 @@ void Configuration::impl::on_hamlib_download_button_clicked (bool /*clicked*/)
   ui_->revert_update_button->setEnabled (false);
   if (ui_->rbHamlib32->isChecked()) {
     cty_download.configure(network_manager_,
-                           "https://github.com/Hamlib/Hamlib/releases/download/4.7/hamlib-w32-4.7.zip",
+                           "https://github.com/Hamlib/Hamlib/releases/download/4.7.0/hamlib-w32-4.7.0.zip",
                            dataPath.absoluteFilePath("hamlib_update.zip"),
                            "Downloading Hamlib 4.7");
   } else {
     cty_download.configure(network_manager_,
-                           "https://github.com/Hamlib/Hamlib/releases/download/4.7/hamlib-w64-4.7.zip",
+                           "https://github.com/Hamlib/Hamlib/releases/download/4.7.0/hamlib-w64-4.7.0.zip",
                            dataPath.absoluteFilePath("hamlib_update.zip"),
                            "Downloading Hamlib 4.7");
   }
