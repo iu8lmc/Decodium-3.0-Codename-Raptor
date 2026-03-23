@@ -1645,6 +1645,15 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->rh_decodes_headings_label->setText(t);
   readSettings();            //Restore user's setup parameters
 
+  // Floating dock widgets non ripristinano la posizione se restoreState() viene
+  // chiamato prima che la finestra sia visibile (bug Qt classico). Ripetiamo
+  // restoreState dopo che l'event loop è partito (cioè dopo show() in main.cpp).
+  QTimer::singleShot(0, this, [this]() {
+    auto savedState = m_settings->value("state").toByteArray();
+    if (!savedState.isEmpty())
+      restoreState(savedState, 4);
+  });
+
   {
     QSettings s;
     s.beginGroup("TimeSyncPanel");
@@ -1906,7 +1915,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 
   connect (&splashTimer, &QTimer::timeout, this, &MainWindow::splash_done);
   splashTimer.setSingleShot (true);
-  splashTimer.start (3000);
+  splashTimer.start (10000);
 
   // Show startup banner
   showStartupBanner ();

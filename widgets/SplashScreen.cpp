@@ -77,11 +77,11 @@ SplashScreen::SplashScreen ()
   );
   layout->addWidget (title);
 
-  // Subtitle
-  auto *subtitle = new QLabel ("Non ci vuole piu' potenza, ma piu' matematica");
+  // Subtitle — edition name
+  auto *subtitle = new QLabel ("FT2 Shannon Edition");
   subtitle->setAlignment (Qt::AlignCenter);
   subtitle->setStyleSheet (
-    "color: #7eb8ff; font-size: 14px; font-style: italic;"
+    "color: #ffcc44; font-size: 15px; font-weight: bold; letter-spacing: 1px;"
     "font-family: 'Segoe UI', Arial, sans-serif;"
   );
   layout->addWidget (subtitle);
@@ -93,13 +93,16 @@ SplashScreen::SplashScreen ()
     "stop:0 transparent, stop:0.2 #3a7bd5, stop:0.8 #3a7bd5, stop:1 transparent);");
   layout->addWidget (sep);
 
-  // Slogan
+  // Slogan — bilingual quote
   auto *slogan = new QLabel (
-    "<p style='text-align:center; color:#e0e0e0; font-size:15px; line-height:1.5;'>"
-    "Dedicato a Claude Shannon (1916-2001)<br>"
-    "padre della teoria dell'informazione.<br>"
-    "<span style='color:#ffcc00; font-size:17px; font-weight:bold;'>"
-    "A 0-1.5 dB dal limite di Shannon.</span></p>"
+    "<p style='text-align:center; color:#e0e0e0; font-size:14px; line-height:1.6;'>"
+    "<span style='color:#7eb8ff; font-style:italic;'>"
+    "&ldquo;It&apos;s not about more power. It&apos;s about better math.&rdquo;</span><br>"
+    "<span style='color:#aaccff; font-style:italic;'>"
+    "&ldquo;Non ci vuole pi&ugrave; potenza. Ci vuole pi&ugrave; matematica.&rdquo;</span><br><br>"
+    "<span style='color:#8888aa; font-size:12px;'>"
+    "Dedicato a Claude Shannon (1916&ndash;2001)<br>"
+    "padre della teoria dell&apos;informazione</span></p>"
   );
   slogan->setAlignment (Qt::AlignCenter);
   slogan->setTextFormat (Qt::RichText);
@@ -178,8 +181,8 @@ SplashScreen::SplashScreen ()
   author->setStyleSheet ("color: #555577; font-size: 11px;");
   layout->addWidget (author);
 
-  // Auto-fade after 20 seconds
-  QTimer::singleShot (20000, banner, [banner] () {
+  // Auto-fade after 10 seconds
+  QTimer::singleShot (10000, banner, [banner] () {
     if (!banner->isVisible ()) return;
     auto *effect = new QGraphicsOpacityEffect (banner);
     banner->setGraphicsEffect (effect);
