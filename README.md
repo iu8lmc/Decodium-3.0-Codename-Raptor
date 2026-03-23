@@ -1,4 +1,4 @@
-# Decodium Shannon v3.0 — Build 2603230252
+# Decodium Shannon v3.0 — Build 2603231408
 
 ## [English](#english) | [Italiano](#italiano) | [Deutsch](#deutsch)
 
@@ -6,9 +6,14 @@
 
 ## English
 
-### What's New in Build 2603230252
+### What's New in Build 2603231408
 
-**ADIF 3.17 Compliance — FT2 logged correctly**
+**Crash fix — Startup stability improvement**
+- Fixed potential null pointer crash in `readSettings()` when `QApplication::primaryScreen()` returns null (can happen in Remote Desktop sessions or VMs without display)
+- Replaced deprecated `QApplication::desktop()` API in startup banner with modern `QScreen` API (Qt 5.14+)
+- Both fixes prevent silent crashes reported by some users ("doesn't open, closes immediately")
+
+**Previous: ADIF 3.17 Compliance — FT2 logged correctly**
 - FT2 QSOs are now logged as `<MODE:4>MFSK <SUBMODE:3>FT2` per ADIF 3.17 specification
 - FT2 is officially listed in ADIF 3.17 as a submode of MFSK (alongside FT4, FST4, Q65, JS8…)
 - Previously FT2 was incorrectly logged as a standalone `<MODE:3>FT2`
@@ -41,8 +46,8 @@
 - Dockable controls with layout presets and Reset Layout
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603230252_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603230252_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603231408_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603231408_x86_Setup.exe`
 
 Both installers are code-signed.
 
@@ -55,9 +60,14 @@ Both installers are code-signed.
 
 ## Italiano
 
-### Novità nella Build 2603230252
+### Novità nella Build 2603231408
 
-**Conformità ADIF 3.17 — FT2 loggato correttamente**
+**Fix crash — Stabilità all'avvio**
+- Risolto potenziale crash con null pointer in `readSettings()` quando `QApplication::primaryScreen()` restituisce null (può accadere in sessioni Remote Desktop o VM senza display)
+- Sostituita API deprecata `QApplication::desktop()` nel banner di avvio con API moderna `QScreen`
+- Entrambi i fix prevengono crash silenziosi segnalati da alcuni utenti ("non si apre, si chiude subito")
+
+**Precedente: Conformità ADIF 3.17 — FT2 loggato correttamente**
 - I QSO FT2 vengono ora loggati come `<MODE:4>MFSK <SUBMODE:3>FT2` secondo la specifica ADIF 3.17
 - FT2 è ufficialmente elencato in ADIF 3.17 come submode di MFSK (insieme a FT4, FST4, Q65, JS8…)
 - In precedenza FT2 veniva loggato erroneamente come modo standalone `<MODE:3>FT2`
@@ -90,8 +100,8 @@ Both installers are code-signed.
 - Controlli agganciabili (dock) con preset di layout e Reset Layout
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603230252_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603230252_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603231408_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603231408_x86_Setup.exe`
 
 Entrambi gli installer sono firmati digitalmente.
 
@@ -104,9 +114,14 @@ Entrambi gli installer sono firmati digitalmente.
 
 ## Deutsch
 
-### Neuerungen in Build 2603230252
+### Neuerungen in Build 2603231408
 
-**ADIF 3.17 Konformität — FT2 wird korrekt geloggt**
+**Absturz-Fix — Stabilitätsverbesserung beim Start**
+- Potenzieller Null-Pointer-Absturz in `readSettings()` behoben, wenn `QApplication::primaryScreen()` null zurückgibt (kann bei Remote Desktop oder VMs ohne Display auftreten)
+- Veraltete `QApplication::desktop()` API im Startbanner durch moderne `QScreen` API ersetzt
+- Beide Fixes verhindern stille Abstürze, die von einigen Benutzern gemeldet wurden ("öffnet nicht, schließt sofort")
+
+**Vorherige: ADIF 3.17 Konformität — FT2 wird korrekt geloggt**
 - FT2-QSOs werden jetzt gemäß ADIF 3.17 als `<MODE:4>MFSK <SUBMODE:3>FT2` geloggt
 - FT2 ist offiziell in ADIF 3.17 als Submode von MFSK gelistet (zusammen mit FT4, FST4, Q65, JS8…)
 - Zuvor wurde FT2 fälschlicherweise als eigenständiger Modus `<MODE:3>FT2` geloggt
@@ -139,8 +154,8 @@ Entrambi gli installer sono firmati digitalmente.
 - Andockbare Steuerelemente mit Layout-Vorlagen und Layout zurücksetzen
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603230252_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603230252_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603231408_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603231408_x86_Setup.exe`
 
 Beide Installer sind digital signiert.
 

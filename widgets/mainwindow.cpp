@@ -2345,7 +2345,7 @@ void MainWindow::readSettings()
   restoreState (m_settings->value ("state").toByteArray (), 4);
 
   // Auto-fit window to screen if it exceeds available size
-  {
+  if (QApplication::primaryScreen ()) {
     QRect avail = QApplication::primaryScreen ()->availableGeometry ();
     QRect geo = geometry ();
     bool adjusted = false;
@@ -21343,8 +21343,10 @@ void MainWindow::showStartupBanner ()
 
   // Center on screen and show
   banner->show ();
-  auto geo = QApplication::desktop ()->availableGeometry (banner);
-  banner->move (geo.center () - banner->rect ().center ());
+  if (auto *scr = (banner->screen () ? banner->screen () : QApplication::primaryScreen ())) {
+    auto geo = scr->availableGeometry ();
+    banner->move (geo.center () - banner->rect ().center ());
+  }
 }
 
 void MainWindow::sendDxSpot(QString const& call, Frequency dial_freq, QString const& mode)
