@@ -1,4 +1,4 @@
-# Decodium Shannon v3.0 — Build 2603230232
+# Decodium Shannon v3.0 — Build 2603230252
 
 ## [English](#english) | [Italiano](#italiano) | [Deutsch](#deutsch)
 
@@ -6,7 +6,7 @@
 
 ## English
 
-### What's New in Build 2603230232
+### What's New in Build 2603230252
 
 **ADIF 3.17 Compliance — FT2 logged correctly**
 - FT2 QSOs are now logged as `<MODE:4>MFSK <SUBMODE:3>FT2` per ADIF 3.17 specification
@@ -41,8 +41,8 @@
 - Dockable controls with layout presets and Reset Layout
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603230232_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603230232_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603230252_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603230252_x86_Setup.exe`
 
 Both installers are code-signed.
 
@@ -55,7 +55,7 @@ Both installers are code-signed.
 
 ## Italiano
 
-### Novità nella Build 2603230232
+### Novità nella Build 2603230252
 
 **Conformità ADIF 3.17 — FT2 loggato correttamente**
 - I QSO FT2 vengono ora loggati come `<MODE:4>MFSK <SUBMODE:3>FT2` secondo la specifica ADIF 3.17
@@ -90,8 +90,8 @@ Both installers are code-signed.
 - Controlli agganciabili (dock) con preset di layout e Reset Layout
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603230232_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603230232_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603230252_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603230252_x86_Setup.exe`
 
 Entrambi gli installer sono firmati digitalmente.
 
@@ -104,7 +104,7 @@ Entrambi gli installer sono firmati digitalmente.
 
 ## Deutsch
 
-### Neuerungen in Build 2603230232
+### Neuerungen in Build 2603230252
 
 **ADIF 3.17 Konformität — FT2 wird korrekt geloggt**
 - FT2-QSOs werden jetzt gemäß ADIF 3.17 als `<MODE:4>MFSK <SUBMODE:3>FT2` geloggt
@@ -139,8 +139,8 @@ Entrambi gli installer sono firmati digitalmente.
 - Andockbare Steuerelemente mit Layout-Vorlagen und Layout zurücksetzen
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603230232_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603230232_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603230252_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603230252_x86_Setup.exe`
 
 Beide Installer sind digital signiert.
 
