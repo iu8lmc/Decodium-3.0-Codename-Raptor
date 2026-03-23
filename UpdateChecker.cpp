@@ -242,13 +242,13 @@ void UpdateChecker::launchInstaller (QString const& path)
        << "timeout /t 2 /nobreak >nul\r\n"
        << "\"" << QDir::toNativeSeparators (installerPath) << "\""
        << " /VERYSILENT /CLOSEAPPLICATIONS /FORCECLOSEAPPLICATIONS"
-       << " /SUPPRESSMSGBOXES /NORESTART\r\n";
+       << " /SUPPRESSMSGBOXES /NORESTART /MERGETASKS=\"desktopicon\"\r\n";
     bat.close ();
     QProcess::startDetached ("cmd.exe", {"/C", batPath});
   } else {
     QProcess::startDetached (installerPath,
       {"/VERYSILENT", "/CLOSEAPPLICATIONS", "/FORCECLOSEAPPLICATIONS",
-       "/SUPPRESSMSGBOXES", "/NORESTART"});
+       "/SUPPRESSMSGBOXES", "/NORESTART", "/MERGETASKS=desktopicon"});
   }
   QApplication::quit ();
   deleteLater ();
