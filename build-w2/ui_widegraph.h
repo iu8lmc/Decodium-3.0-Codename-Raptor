@@ -13,7 +13,6 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
-#include <QtWidgets/QDialog>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
@@ -72,7 +71,7 @@ public:
     QSpinBox *sbPercent2dPlot;
     QSpinBox *smoSpinBox;
 
-    void setupUi(QDialog *WideGraph)
+    void setupUi(QWidget *WideGraph)
     {
         if (WideGraph->objectName().isEmpty())
             WideGraph->setObjectName(QString::fromUtf8("WideGraph"));
@@ -386,7 +385,7 @@ public:
         QMetaObject::connectSlotsByName(WideGraph);
     } // setupUi
 
-    void retranslateUi(QDialog *WideGraph)
+    void retranslateUi(QWidget *WideGraph)
     {
         WideGraph->setWindowTitle(QCoreApplication::translate("WideGraph", "Dialog", nullptr));
 #if QT_CONFIG(tooltip)

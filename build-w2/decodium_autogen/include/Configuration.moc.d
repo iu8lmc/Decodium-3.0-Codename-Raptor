@@ -48,6 +48,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/Con
   C:/msys64/mingw64/include/QtCore/QDateTime \
   C:/msys64/mingw64/include/QtCore/QDebug \
   C:/msys64/mingw64/include/QtCore/QDir \
+  C:/msys64/mingw64/include/QtCore/QDirIterator \
   C:/msys64/mingw64/include/QtCore/QException \
   C:/msys64/mingw64/include/QtCore/QFile \
   C:/msys64/mingw64/include/QtCore/QFileInfo \
@@ -67,6 +68,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/Con
   C:/msys64/mingw64/include/QtCore/QObject \
   C:/msys64/mingw64/include/QtCore/QPair \
   C:/msys64/mingw64/include/QtCore/QPointer \
+  C:/msys64/mingw64/include/QtCore/QProcess \
   C:/msys64/mingw64/include/QtCore/QRegularExpression \
   C:/msys64/mingw64/include/QtCore/QSaveFile \
   C:/msys64/mingw64/include/QtCore/QScopedPointer \
@@ -110,6 +112,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/Con
   C:/msys64/mingw64/include/QtCore/qdeadlinetimer.h \
   C:/msys64/mingw64/include/QtCore/qdebug.h \
   C:/msys64/mingw64/include/QtCore/qdir.h \
+  C:/msys64/mingw64/include/QtCore/qdiriterator.h \
   C:/msys64/mingw64/include/QtCore/qelapsedtimer.h \
   C:/msys64/mingw64/include/QtCore/qeventloop.h \
   C:/msys64/mingw64/include/QtCore/qexception.h \
@@ -147,6 +150,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/Con
   C:/msys64/mingw64/include/QtCore/qpair.h \
   C:/msys64/mingw64/include/QtCore/qpoint.h \
   C:/msys64/mingw64/include/QtCore/qpointer.h \
+  C:/msys64/mingw64/include/QtCore/qprocess.h \
   C:/msys64/mingw64/include/QtCore/qprocessordetection.h \
   C:/msys64/mingw64/include/QtCore/qrect.h \
   C:/msys64/mingw64/include/QtCore/qrefcount.h \

@@ -21,6 +21,8 @@ decodium_autogen/timestamp: \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/DXpedCertificate.hpp \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Decoder/decodedtext.cpp \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Decoder/decodedtext.h \
+	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/DecodiumCertificate.cpp \
+	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/DecodiumCertificate.hpp \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Detector/Detector.cpp \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Detector/Detector.hpp \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/DisplayManual.hpp \
@@ -106,6 +108,8 @@ decodium_autogen/timestamp: \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/LazyFillComboBox.hpp \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/MessageBox.hpp \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/MultiGeometryWidget.hpp \
+	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/QSOProgressWidget.cpp \
+	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/QSOProgressWidget.h \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/QSYMessage.cpp \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/QSYMessage.h \
 	C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/QSYMessageCreator.cpp \
@@ -156,10 +160,12 @@ decodium_autogen/timestamp: \
 	C:/msys64/mingw64/include/QtCore/QChar \
 	C:/msys64/mingw64/include/QtCore/QCryptographicHash \
 	C:/msys64/mingw64/include/QtCore/QDataStream \
+	C:/msys64/mingw64/include/QtCore/QDate \
 	C:/msys64/mingw64/include/QtCore/QDateTime \
 	C:/msys64/mingw64/include/QtCore/QDeadlineTimer \
 	C:/msys64/mingw64/include/QtCore/QDebug \
 	C:/msys64/mingw64/include/QtCore/QDir \
+	C:/msys64/mingw64/include/QtCore/QDirIterator \
 	C:/msys64/mingw64/include/QtCore/QEvent \
 	C:/msys64/mingw64/include/QtCore/QException \
 	C:/msys64/mingw64/include/QtCore/QFile \
@@ -422,6 +428,7 @@ decodium_autogen/timestamp: \
 	C:/msys64/mingw64/include/QtGui/QOpenGLContext \
 	C:/msys64/mingw64/include/QtGui/QPaintDevice \
 	C:/msys64/mingw64/include/QtGui/QPaintDeviceWindow \
+	C:/msys64/mingw64/include/QtGui/QPainter \
 	C:/msys64/mingw64/include/QtGui/QPixmap \
 	C:/msys64/mingw64/include/QtGui/QRegularExpressionValidator \
 	C:/msys64/mingw64/include/QtGui/QStandardItem \
@@ -623,6 +630,7 @@ decodium_autogen/timestamp: \
 	C:/msys64/mingw64/include/QtWidgets/QTableView \
 	C:/msys64/mingw64/include/QtWidgets/QTableWidget \
 	C:/msys64/mingw64/include/QtWidgets/QTextEdit \
+	C:/msys64/mingw64/include/QtWidgets/QToolBar \
 	C:/msys64/mingw64/include/QtWidgets/QToolTip \
 	C:/msys64/mingw64/include/QtWidgets/QVBoxLayout \
 	C:/msys64/mingw64/include/QtWidgets/QWidget \

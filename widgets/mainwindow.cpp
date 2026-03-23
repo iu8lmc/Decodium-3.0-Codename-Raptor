@@ -696,6 +696,19 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   addTheme (tr ("Shannon Dark"),    1);
   addTheme (tr ("Midnight"),        2);
   addTheme (tr ("Classic (WSJT-X)"), 3);
+  addTheme (tr ("RF Amber"),        4);
+
+  // ── Period separator toggle ──────────────────────────────────────
+  ui->menuView->addSeparator ();
+  {
+    auto *a = ui->menuView->addAction (tr ("Show period separator line"));
+    a->setCheckable (true);
+    a->setChecked (m_config.insert_blank ());
+    a->setToolTip (tr ("Show/hide the dashed separator line between decoding periods"));
+    connect (a, &QAction::toggled, this, [this](bool checked) {
+      m_config.set_insert_blank (checked);
+    });
+  }
 
   // ASYMX: hide period 1/2 selector — async mode has no period concept
   ui->txFirstCheckBox->hide();
@@ -1893,7 +1906,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 
   connect (&splashTimer, &QTimer::timeout, this, &MainWindow::splash_done);
   splashTimer.setSingleShot (true);
-  splashTimer.start (20 * 1000);
+  splashTimer.start (3000);
 
   // Show startup banner
   showStartupBanner ();
@@ -19276,9 +19289,9 @@ void MainWindow::applyTheme (int theme)
     return;
   }
 
-  // ── Temi Shannon / Midnight: solo dock title bars + clock/freq ────
+  // ── Temi Shannon / Midnight / RF Amber: solo dock title bars + clock/freq ────
   // Il resto dell'interfaccia usa il percorso DarkStyle standard
-  bool wantDark = (theme == 1 || theme == 2);
+  bool wantDark = (theme == 1 || theme == 2 || theme == 4);
 
   // Applica dark style di base se serve
   if (wantDark) {
@@ -19319,6 +19332,11 @@ void MainWindow::applyTheme (int theme)
       clockBg     = "#1a0a2e"; clockFg     = "#ffab00";
       freqBg      = "#1a0a2e"; freqFg      = "#ce93d8";
       break;
+    case 4: // RF Amber
+      dockTitleBg = "#1a1200"; dockTitleFg = "#ffb300"; dockBorder = "#5a4000";
+      clockBg     = "#0d0900"; clockFg     = "#ffd54f";
+      freqBg      = "#0d0900"; freqFg      = "#ff8f00";
+      break;
     default:
       break;
   }
@@ -19330,7 +19348,18 @@ void MainWindow::applyTheme (int theme)
     "  border: 1px solid %3; border-radius: 3px;"
     "}"
   ).arg (dockTitleBg, dockTitleFg, dockBorder);
-  qApp->setStyleSheet (qApp->styleSheet () + dockSs);
+  QString extraSs;
+  if (theme == 4) { // RF Amber — accent color overrides
+    extraSs =
+      "QTabBar::tab:selected { background: #3d2800; color: #ffb300; border-bottom: 2px solid #ffb300; }"
+      "QMenuBar::item:selected { background: #3d2800; color: #ffb300; }"
+      "QMenu::item:selected { background: #3d2800; color: #ffb300; }"
+      "QPushButton:checked { background: #3d2800; border: 1px solid #ffb300; color: #ffb300; }"
+      "QCheckBox::indicator:checked { background: #ff8f00; border: 1px solid #ffb300; }"
+      "QToolBar { background: #111100; border-bottom: 1px solid #3d2800; }"
+      "QStatusBar { background: #0d0900; color: #ff8f00; }";
+  }
+  qApp->setStyleSheet (qApp->styleSheet () + dockSs + extraSs);
 
   // Clock
   ui->labUTC->setStyleSheet (QString (

@@ -3711,7 +3711,7 @@ public:
 #endif // QT_CONFIG(tooltip)
         revert_update_button->setText(QCoreApplication::translate("configuration_dialog", "Revert Update", nullptr));
 #if QT_CONFIG(tooltip)
-        hamlib_download_button->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Download the latest libhamlib-4.dll file from https://n0nb.users.sourceforge.net/. </p><p>Note: This function is only available on Windows.</p></body></html>", nullptr));
+        hamlib_download_button->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Download Hamlib 4.7 from GitHub Releases and extract libhamlib-4.dll. </p><p>Note: This function is only available on Windows.</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
         hamlib_download_button->setText(QCoreApplication::translate("configuration_dialog", "Update Hamlib", nullptr));
         in_use_text->setText(QCoreApplication::translate("configuration_dialog", "In use:", nullptr));
@@ -3894,7 +3894,7 @@ public:
 #endif // QT_CONFIG(tooltip)
         cbContestingOnly->setText(QCoreApplication::translate("configuration_dialog", "Contesting only", nullptr));
 #if QT_CONFIG(tooltip)
-        log_as_RTTY_check_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Some logging programs will not accept Decodium v3.0 FT2 Raptor 2603161508 mode names.</p></body></html>", nullptr));
+        log_as_RTTY_check_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Some logging programs will not accept Decodium v3.0 Shannon 2603161508 mode names.</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
         log_as_RTTY_check_box->setText(QCoreApplication::translate("configuration_dialog", "Con&vert mode to RTTY", nullptr));
 #if QT_CONFIG(tooltip)
@@ -3918,18 +3918,18 @@ public:
 #endif // QT_CONFIG(tooltip)
         label_6->setText(QCoreApplication::translate("configuration_dialog", "UDP Server port number:", nullptr));
 #if QT_CONFIG(tooltip)
-        udp_server_port_spin_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Enter the service port number of the UDP server that Decodium v3.0 FT2 Raptor 2603161508 should send updates to. If this is zero no updates will be sent.</p></body></html>", nullptr));
+        udp_server_port_spin_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Enter the service port number of the UDP server that Decodium v3.0 Shannon 2603161508 should send updates to. If this is zero no updates will be sent.</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
         udp_interfaces_label->setText(QCoreApplication::translate("configuration_dialog", "Outgoing interfaces:", nullptr));
 #if QT_CONFIG(tooltip)
-        udp_interfaces_combo_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>When sending updates to a multicast group address it is necessary to specify which network interface(s) to send them to. If the loop-back interface is multicast capable then at least that one will be selected.</p><p>For most users the loop-back interface is all that is needed, that will allow multiple other applications on the same machine to interoperate with Decodium v3.0 FT2 Raptor . If applications running on other hosts are to receive status updates then a suitable network interface should be used.</p><p>On some Linux systems it may be necessary to enable multicast on the loop-back network interface.</p></body></html>", nullptr));
+        udp_interfaces_combo_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>When sending updates to a multicast group address it is necessary to specify which network interface(s) to send them to. If the loop-back interface is multicast capable then at least that one will be selected.</p><p>For most users the loop-back interface is all that is needed, that will allow multiple other applications on the same machine to interoperate with Decodium v3.0 Shannon . If applications running on other hosts are to receive status updates then a suitable network interface should be used.</p><p>On some Linux systems it may be necessary to enable multicast on the loop-back network interface.</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
         udp_TTL_label->setText(QCoreApplication::translate("configuration_dialog", "Multicast TTL:", nullptr));
 #if QT_CONFIG(tooltip)
         udp_TTL_spin_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Sets the number or router hops that multicast datagrams are allowed to make. Almost everyone should set this to 1 to keep outgoing multicast traffic withn the local subnet.</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
 #if QT_CONFIG(tooltip)
-        accept_udp_requests_check_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>With this enabled Decodium v3.0 FT2 Raptor 2603161508 will accept certain requests back from a UDP server that receives decode messages.</p></body></html>", nullptr));
+        accept_udp_requests_check_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>With this enabled Decodium v3.0 Shannon 2603161508 will accept certain requests back from a UDP server that receives decode messages.</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
         accept_udp_requests_check_box->setText(QCoreApplication::translate("configuration_dialog", "Accept UDP requests", nullptr));
 #if QT_CONFIG(tooltip)
@@ -3942,7 +3942,7 @@ public:
         udpWindowRestore->setText(QCoreApplication::translate("configuration_dialog", "Accepted UDP request restores window", nullptr));
         n1mm_group_box->setTitle(QCoreApplication::translate("configuration_dialog", "Secondary UDP Server (deprecated)", nullptr));
 #if QT_CONFIG(tooltip)
-        enable_n1mm_broadcast_check_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>When checked, Decodium v3.0 FT2 Raptor 2603161508 will broadcast a logged contact in ADIF format to the configured hostname and port. </p></body></html>", nullptr));
+        enable_n1mm_broadcast_check_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>When checked, Decodium v3.0 Shannon 2603161508 will broadcast a logged contact in ADIF format to the configured hostname and port. </p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
         enable_n1mm_broadcast_check_box->setText(QCoreApplication::translate("configuration_dialog", "Enable logged contact ADIF broadcast", nullptr));
         n1mm_server_name_label->setText(QCoreApplication::translate("configuration_dialog", "Server name or IP address:", nullptr));
@@ -3952,14 +3952,14 @@ public:
 #endif // QT_CONFIG(tooltip)
         n1mm_server_port_label->setText(QCoreApplication::translate("configuration_dialog", "Server port number:", nullptr));
 #if QT_CONFIG(tooltip)
-        n1mm_server_port_spin_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Enter the port number that Decodium v3.0 FT2 Raptor 2603161508 should use for UDP broadcasts of ADIF log information. For N1MM Logger+, this value should be 2333. If this is zero,  no updates will be broadcast.</p></body></html>", nullptr));
+        n1mm_server_port_spin_box->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Enter the port number that Decodium v3.0 Shannon 2603161508 should use for UDP broadcasts of ADIF log information. For N1MM Logger+, this value should be 2333. If this is zero,  no updates will be broadcast.</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
         configuration_tabs->setTabText(configuration_tabs->indexOf(reporting_tab), QCoreApplication::translate("configuration_dialog", "Reportin&g", nullptr));
 #if QT_CONFIG(tooltip)
         configuration_tabs->setTabToolTip(configuration_tabs->indexOf(reporting_tab), QCoreApplication::translate("configuration_dialog", "Reporting and logging settings", nullptr));
 #endif // QT_CONFIG(tooltip)
 #if QT_CONFIG(tooltip)
-        groupBox_3->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>See &quot;Frequency Calibration&quot; in the Decodium v3.0 FT2 Raptor 2603161508 User Guide for details of how to determine these parameters for your radio.</p></body></html>", nullptr));
+        groupBox_3->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>See &quot;Frequency Calibration&quot; in the Decodium v3.0 Shannon 2603161508 User Guide for details of how to determine these parameters for your radio.</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
         groupBox_3->setTitle(QCoreApplication::translate("configuration_dialog", "Frequency Calibration", nullptr));
         label_8->setText(QCoreApplication::translate("configuration_dialog", "Slope:", nullptr));
@@ -3983,8 +3983,8 @@ public:
 #if QT_CONFIG(tooltip)
         reset_highlighting_to_defaults_push_button->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Push to reset all highlight items above to default values and priorities.</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
-        reset_highlighting_to_defaults_push_button->setText(QCoreApplication::translate("configuration_dialog", "Reset Highlighting to Decodium v3.0 FT2 Raptor 2603161508 default", nullptr));
-        reset_highlighting_to_defaults2_push_button->setText(QCoreApplication::translate("configuration_dialog", "Reset Highlighting to Decodium v3.0 FT2 Raptor 2603161508 Improved default", nullptr));
+        reset_highlighting_to_defaults_push_button->setText(QCoreApplication::translate("configuration_dialog", "Reset Highlighting to Decodium v3.0 Shannon 2603161508 default", nullptr));
+        reset_highlighting_to_defaults2_push_button->setText(QCoreApplication::translate("configuration_dialog", "Reset Highlighting to Decodium v3.0 Shannon 2603161508 Improved default", nullptr));
 #if QT_CONFIG(tooltip)
         rescan_log_push_button->setToolTip(QCoreApplication::translate("configuration_dialog", "<html><head/><body><p>Click to scan the decodium_log.adi ADIF file again for worked before information</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)

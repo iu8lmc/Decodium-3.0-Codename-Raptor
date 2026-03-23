@@ -1,4 +1,4 @@
-# Decodium Shannon v3.0 — Build 2603231408
+# Decodium Shannon v3.0 — Build 2603232100
 
 ## [English](#english) | [Italiano](#italiano) | [Deutsch](#deutsch)
 
@@ -6,9 +6,24 @@
 
 ## English
 
-### What's New in Build 2603231408
+### What's New in Build 2603232100
 
-**Crash fix — Startup stability improvement**
+**Startup performance — 20-second delay eliminated**
+- Reduced splash screen timer from 20 seconds to 3 seconds
+- The application now opens almost instantly instead of making the user wait
+
+**RF Amber theme — new original theme**
+- New "RF Amber" theme in View → Theme menu
+- Dark background with amber/gold accents inspired by vintage radio equipment
+- Phosphor amber clock display, amber frequency readout, dark cognac dock titles
+- Accent colors across tabs, menus, checkboxes, toolbar and status bar
+
+**Period separator line — quick toggle**
+- New checkable item in View menu: "Show period separator line"
+- Instantly show or hide the dashed `------` line between decoding periods
+- No need to go into Settings dialog — one click toggle
+
+**Previous: Crash fix — Startup stability improvement**
 - Fixed potential null pointer crash in `readSettings()` when `QApplication::primaryScreen()` returns null (can happen in Remote Desktop sessions or VMs without display)
 - Replaced deprecated `QApplication::desktop()` API in startup banner with modern `QScreen` API (Qt 5.14+)
 - Both fixes prevent silent crashes reported by some users ("doesn't open, closes immediately")
@@ -46,8 +61,8 @@
 - Dockable controls with layout presets and Reset Layout
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603231408_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603231408_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603232100_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603232100_x86_Setup.exe`
 
 Both installers are code-signed.
 
@@ -60,9 +75,24 @@ Both installers are code-signed.
 
 ## Italiano
 
-### Novità nella Build 2603231408
+### Novità nella Build 2603232100
 
-**Fix crash — Stabilità all'avvio**
+**Performance all'avvio — ritardo di 20 secondi eliminato**
+- Ridotto il timer della splash screen da 20 secondi a 3 secondi
+- Il programma si apre quasi istantaneamente invece di far attendere l'utente
+
+**Tema RF Amber — nuovo tema originale**
+- Nuovo tema "RF Amber" nel menu Visualizza → Tema
+- Sfondo scuro con accenti ambra/oro ispirati alle apparecchiature radio vintage
+- Orologio ambra fosforescente, frequenza in oro, titoli dock color cognac scuro
+- Colori accent su tab, menu, checkbox, toolbar e barra di stato
+
+**Linea separatrice periodi — toggle rapido**
+- Nuova voce selezionabile nel menu Visualizza: "Show period separator line"
+- Mostra/nascondi istantaneamente la linea tratteggiata `------` tra i periodi di decodifica
+- Senza entrare nelle impostazioni — un solo click
+
+**Precedente: Fix crash — Stabilità all'avvio**
 - Risolto potenziale crash con null pointer in `readSettings()` quando `QApplication::primaryScreen()` restituisce null (può accadere in sessioni Remote Desktop o VM senza display)
 - Sostituita API deprecata `QApplication::desktop()` nel banner di avvio con API moderna `QScreen`
 - Entrambi i fix prevengono crash silenziosi segnalati da alcuni utenti ("non si apre, si chiude subito")
@@ -100,8 +130,8 @@ Both installers are code-signed.
 - Controlli agganciabili (dock) con preset di layout e Reset Layout
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603231408_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603231408_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603232100_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603232100_x86_Setup.exe`
 
 Entrambi gli installer sono firmati digitalmente.
 
@@ -114,9 +144,24 @@ Entrambi gli installer sono firmati digitalmente.
 
 ## Deutsch
 
-### Neuerungen in Build 2603231408
+### Neuerungen in Build 2603232100
 
-**Absturz-Fix — Stabilitätsverbesserung beim Start**
+**Startperformance — 20-Sekunden-Verzögerung eliminiert**
+- Splash-Screen-Timer von 20 Sekunden auf 3 Sekunden reduziert
+- Das Programm öffnet sich jetzt fast sofort statt den Benutzer warten zu lassen
+
+**RF Amber-Theme — neues Originaltheme**
+- Neues "RF Amber"-Theme im Menü Ansicht → Theme
+- Dunkler Hintergrund mit Bernstein-/Goldakzenten, inspiriert von Vintage-Funkausrüstungen
+- Phosphor-Bernstein-Uhr, goldene Frequenzanzeige, dunkel-cognacfarbene Dock-Titelleisten
+- Akzentfarben in Tabs, Menüs, Checkboxen, Toolbar und Statusleiste
+
+**Periodentrennlinie — Schnellumschalter**
+- Neuer auswählbarer Eintrag im Ansichts-Menü: "Show period separator line"
+- Sofort die gestrichelte `------` Linie zwischen Dekodierperioden ein-/ausblenden
+- Kein Öffnen der Einstellungen nötig — ein Klick
+
+**Vorherige: Absturz-Fix — Stabilitätsverbesserung beim Start**
 - Potenzieller Null-Pointer-Absturz in `readSettings()` behoben, wenn `QApplication::primaryScreen()` null zurückgibt (kann bei Remote Desktop oder VMs ohne Display auftreten)
 - Veraltete `QApplication::desktop()` API im Startbanner durch moderne `QScreen` API ersetzt
 - Beide Fixes verhindern stille Abstürze, die von einigen Benutzern gemeldet wurden ("öffnet nicht, schließt sofort")
@@ -154,8 +199,8 @@ Entrambi gli installer sono firmati digitalmente.
 - Andockbare Steuerelemente mit Layout-Vorlagen und Layout zurücksetzen
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603231408_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603231408_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603232100_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603232100_x86_Setup.exe`
 
 Beide Installer sind digital signiert.
 
