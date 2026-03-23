@@ -8,70 +8,47 @@
 
 ### What's New in Build 2603231547
 
-**AutoCQ loop fix — callers no longer ignored after ~10 contacts**
-- Fixed critical bug where AutoCQ stopped responding to callers after completing ~10 QSOs
-- Root cause 1: `on_logQSOButton_clicked` was scheduling a `QTimer::singleShot(500ms)` for every QSO. After many QSOs, accumulated timers fired out of order, calling `processNextInQueue()` and resetting state at wrong moments — causing callers to be ignored
-- Root cause 2: `on_stopTxButton_clicked` was resetting `m_bAutoReply = false` without guarding for AutoCQ mode, sometimes silently killing AutoCQ's ability to detect CQ replies
-- Root cause 3: `msgLength==0` guard could trigger `on_stopTxButton_clicked` during AutoCQ transitions
-- Fix: removed timer accumulation — CQ restart is now handled exclusively by `clearDX()` which is already called synchronously after each QSO
+**Splash screen — FT2 Shannon Edition**
+- New branding: "FT2 Shannon Edition" subtitle with the bilingual motto:
+  *"It's not about more power. It's about better math."*
+  *"Non ci vuole più potenza. Ci vuole più matematica."*
+- Splash timer: 10 seconds with smooth fade-out
 
-**Splash screen — FT2 Shannon Edition branding + 10-second timer**
-- Splash screen now shows "FT2 Shannon Edition" subtitle with the bilingual quote:
-  *"It's not about more power. It's about better math."* / *"Non ci vuole più potenza. Ci vuole più matematica."*
-- Splash timer set to 10 seconds with smooth fade-out
-
-**Floating dock windows — positions correctly restored on restart**
-- Fixed bug where floating dock widget positions were lost after restarting the application
+**Floating dock windows — positions restored correctly on restart**
+- Fixed bug where floating dock widget positions were lost after restarting
 - Root cause: `restoreState()` was called before the window was shown — Qt cannot position floating docks until the window is visible
-- Fix: a deferred second `restoreState()` call fires after the event loop starts (after `show()`), correctly repositioning all floating docks
+- Fix: deferred second `restoreState()` call fires after the event loop starts, correctly repositioning all floating docks
+
+**AutoCQ loop fix — callers no longer ignored after ~10 QSOs**
+- Fixed critical bug where AutoCQ kept sending CQ indefinitely, ignoring all callers after ~10 completed QSOs
+- Root cause 1: `on_logQSOButton_clicked` queued a `QTimer::singleShot(500ms)` for every QSO — after many QSOs, accumulated timers fired out of order, calling `processNextInQueue()` at wrong moments
+- Root cause 2: `on_stopTxButton_clicked` reset `m_bAutoReply = false` without AutoCQ guard, silently killing CQ reply detection
+- Root cause 3: `msgLength==0` guard could trigger `on_stopTxButton_clicked` during AutoCQ transitions
+- Fix: timer accumulation eliminated — CQ restart is now handled exclusively by `clearDX()`, called synchronously after each QSO
 
 **RF Amber theme — new original theme**
 - New "RF Amber" theme in View → Theme menu
 - Dark background with amber/gold accents inspired by vintage radio equipment
-- Phosphor amber clock display, amber frequency readout, dark cognac dock titles
-- Accent colors across tabs, menus, checkboxes, toolbar and status bar
+- Phosphor amber clock, amber frequency readout, dark cognac dock titles
+- Accent colors on tabs, menus, checkboxes, toolbar and status bar
 
 **Period separator line — quick toggle**
 - New checkable item in View menu: "Show period separator line"
-- Instantly show or hide the dashed `------` line between decoding periods
-- No need to go into Settings dialog — one click toggle
+- Instantly show/hide the dashed `------` line between decoding periods
+- One click — no need to open the Settings dialog
 
-**Previous: Crash fix — Startup stability improvement**
-- Fixed potential null pointer crash in `readSettings()` when `QApplication::primaryScreen()` returns null (can happen in Remote Desktop sessions or VMs without display)
-- Replaced deprecated `QApplication::desktop()` API in startup banner with modern `QScreen` API (Qt 5.14+)
-- Both fixes prevent silent crashes reported by some users ("doesn't open, closes immediately")
+### Highlights from Recent Builds
 
-**Previous: ADIF 3.17 Compliance — FT2 logged correctly**
-- FT2 QSOs are now logged as `<MODE:4>MFSK <SUBMODE:3>FT2` per ADIF 3.17 specification
-- FT2 is officially listed in ADIF 3.17 as a submode of MFSK (alongside FT4, FST4, Q65, JS8…)
-- Previously FT2 was incorrectly logged as a standalone `<MODE:3>FT2`
-- All major logging software (Log4OM, HRD, CloudLog, N1MM+) will now correctly import FT2 QSOs
-
-**Previous build highlights:**
-- Auto CQ Fix — Callers no longer ignored
-- Fixed a critical bug where Auto CQ silently ignored all stations responding to our CQ
-- Root cause: internal flag `m_bAutoReply` was reset to `false` by the Auto TX button logic, preventing `auto_sequence()` from processing any incoming replies
-- Manual double-click still worked because it bypasses that flag — now both paths work correctly
-
-**Windows 10 Download Compatibility (from build 2603221428)**
-- Fixed file downloads (cty.dat, Hamlib, country files) failing on Windows 10
-- Removed `NoLessSafeRedirectPolicy` which blocked HTTPS→HTTP redirect chains used by SourceForge and country-files.com
-- Downloads now work on Windows 10 and Windows 11
-
-**Shannon Decoder for FT8/FT4 (from build 2603221328)**
-- New best-of-N Costas synchronization for improved decoding
-- Adaptive sync algorithm
-- RR73 loop break optimization
-
-**Previous builds highlights:**
-- Hamlib 4.7 download from GitHub Releases (no more broken SourceForge links)
-- Session QSO counter (resets on program start, not at UTC midnight)
-- Ghost filter fix — decodes no longer blocked by stale filter entries
-- AutoCQ panel with caller queue management
-- Dark mode / theme system (Shannon Light, Shannon Dark, Midnight, Classic)
-- Toolbar, QSO progress indicator, status bar improvements
-- DXped mode bugfixes
-- Dockable controls with layout presets and Reset Layout
+- **Crash fix**: null pointer crash on startup in Remote Desktop / VM without display — fixed
+- **ADIF 3.17**: FT2 QSOs logged as `<MODE:4>MFSK <SUBMODE:3>FT2` (Log4OM, HRD, CloudLog, N1MM+ compatible)
+- **Windows 10 downloads**: cty.dat, Hamlib, country files now download correctly on Windows 10
+- **Shannon Decoder**: best-of-N Costas sync, adaptive algorithm, RR73 loop-break optimization
+- **Hamlib 4.7**: downloaded from GitHub Releases (no broken SourceForge links)
+- **Session QSO counter**: resets on program start, not at UTC midnight
+- **Ghost filter fix**: decodes no longer blocked by stale filter entries
+- **AutoCQ panel**: caller queue with SNR-based ordering
+- **Theme system**: Shannon Light, Shannon Dark, Midnight, Classic, RF Amber
+- **Dockable controls**: layout presets, Reset Layout, floating windows
 
 ### Download
 - **Windows x64**: `Decodium_FT2_2603231547_x64_Setup.exe`
@@ -90,22 +67,23 @@ Both installers are code-signed.
 
 ### Novità nella Build 2603231547
 
-**Fix loop AutoCQ — i chiamanti non vengono più ignorati dopo ~10 QSO**
-- Risolto bug critico dove AutoCQ smetteva di rispondere ai chiamanti dopo circa 10 QSO completati
-- Causa 1: `on_logQSOButton_clicked` avviava un `QTimer::singleShot(500ms)` per ogni QSO. Dopo molti QSO, i timer accumulati sparavano fuori ordine, chiamando `processNextInQueue()` e resettando lo stato in momenti sbagliati — i chiamanti venivano ignorati
-- Causa 2: `on_stopTxButton_clicked` resettava `m_bAutoReply = false` senza guardia per AutoCQ, uccidendo silenziosamente la capacità di rilevare risposte al CQ
-- Causa 3: la guardia `msgLength==0` poteva attivare `on_stopTxButton_clicked` durante le transizioni AutoCQ
-- Fix: eliminata l'accumulazione di timer — il restart CQ è ora gestito esclusivamente da `clearDX()` che già viene chiamata sincronamente dopo ogni QSO
-
-**Splash screen — brand FT2 Shannon Edition + timer 10 secondi**
-- La splash screen mostra ora il sottotitolo "FT2 Shannon Edition" con la citazione bilingue:
-  *"It's not about more power. It's about better math."* / *"Non ci vuole più potenza. Ci vuole più matematica."*
-- Timer splash impostato a 10 secondi con dissolvenza finale
+**Splash screen — FT2 Shannon Edition**
+- Nuovo branding: sottotitolo "FT2 Shannon Edition" con il motto bilingue:
+  *"It's not about more power. It's about better math."*
+  *"Non ci vuole più potenza. Ci vuole più matematica."*
+- Timer splash: 10 secondi con dissolvenza finale
 
 **Finestre dock flottanti — posizioni ripristinate correttamente al riavvio**
 - Risolto bug per cui le posizioni delle finestre dock flottanti venivano perse dopo il riavvio
 - Causa: `restoreState()` veniva chiamata prima che la finestra fosse visibile — Qt non può posizionare i dock flottanti finché la finestra non è mostrata
-- Fix: una seconda chiamata differita a `restoreState()` scatta dopo l'avvio dell'event loop (dopo `show()`), riposizionando correttamente tutti i dock flottanti
+- Fix: una seconda chiamata differita a `restoreState()` scatta dopo l'avvio dell'event loop, riposizionando correttamente tutti i dock flottanti
+
+**Fix loop AutoCQ — i chiamanti non vengono più ignorati dopo ~10 QSO**
+- Risolto bug critico dove AutoCQ continuava a mandare CQ all'infinito ignorando tutti i chiamanti dopo circa 10 QSO completati
+- Causa 1: `on_logQSOButton_clicked` avviava un `QTimer::singleShot(500ms)` per ogni QSO — dopo molti QSO i timer accumulati sparavano fuori ordine, chiamando `processNextInQueue()` in momenti sbagliati
+- Causa 2: `on_stopTxButton_clicked` resettava `m_bAutoReply = false` senza guardia per AutoCQ, uccidendo silenziosamente il rilevamento delle risposte al CQ
+- Causa 3: la guardia `msgLength==0` poteva attivare `on_stopTxButton_clicked` durante le transizioni AutoCQ
+- Fix: eliminata l'accumulazione di timer — il restart CQ è ora gestito esclusivamente da `clearDX()`, chiamata sincronamente dopo ogni QSO
 
 **Tema RF Amber — nuovo tema originale**
 - Nuovo tema "RF Amber" nel menu Visualizza → Tema
@@ -116,44 +94,20 @@ Both installers are code-signed.
 **Linea separatrice periodi — toggle rapido**
 - Nuova voce selezionabile nel menu Visualizza: "Show period separator line"
 - Mostra/nascondi istantaneamente la linea tratteggiata `------` tra i periodi di decodifica
-- Senza entrare nelle impostazioni — un solo click
+- Un solo click — senza aprire il dialogo Impostazioni
 
-**Precedente: Fix crash — Stabilità all'avvio**
-- Risolto potenziale crash con null pointer in `readSettings()` quando `QApplication::primaryScreen()` restituisce null (può accadere in sessioni Remote Desktop o VM senza display)
-- Sostituita API deprecata `QApplication::desktop()` nel banner di avvio con API moderna `QScreen`
-- Entrambi i fix prevengono crash silenziosi segnalati da alcuni utenti ("non si apre, si chiude subito")
+### Highlights dalle Build Recenti
 
-**Precedente: Conformità ADIF 3.17 — FT2 loggato correttamente**
-- I QSO FT2 vengono ora loggati come `<MODE:4>MFSK <SUBMODE:3>FT2` secondo la specifica ADIF 3.17
-- FT2 è ufficialmente elencato in ADIF 3.17 come submode di MFSK (insieme a FT4, FST4, Q65, JS8…)
-- In precedenza FT2 veniva loggato erroneamente come modo standalone `<MODE:3>FT2`
-- Tutti i principali software di log (Log4OM, HRD, CloudLog, N1MM+) importeranno correttamente i QSO FT2
-
-**Novità dalle build precedenti:**
-- Fix Auto CQ — I chiamanti non vengono più ignorati
-- Risolto un bug critico dove Auto CQ ignorava silenziosamente tutte le stazioni che rispondevano al nostro CQ
-- Causa: il flag interno `m_bAutoReply` veniva resettato a `false` dalla logica del pulsante Auto TX, impedendo ad `auto_sequence()` di processare le risposte in arrivo
-- Il doppio-click manuale funzionava perché bypassa quel flag — ora entrambi i percorsi funzionano
-
-**Compatibilità Download su Windows 10 (dalla build 2603221428)**
-- Risolti i download di file (cty.dat, Hamlib, country files) che fallivano su Windows 10
-- Rimosso `NoLessSafeRedirectPolicy` che bloccava i redirect HTTPS→HTTP usati da SourceForge e country-files.com
-- I download funzionano ora su Windows 10 e Windows 11
-
-**Decoder Shannon per FT8/FT4 (dalla build 2603221328)**
-- Nuova sincronizzazione best-of-N Costas per decodifica migliorata
-- Algoritmo di sync adattivo
-- Ottimizzazione loop break RR73
-
-**Novità dalle build precedenti:**
-- Download Hamlib 4.7 da GitHub Releases (niente più link SourceForge rotti)
-- Contatore QSO di sessione (si resetta all'avvio, non a mezzanotte UTC)
-- Fix filtro ghost — le decodifiche non vengono più bloccate da filtri obsoleti
-- Pannello AutoCQ con gestione coda chiamanti
-- Dark mode / sistema temi (Shannon Light, Shannon Dark, Midnight, Classic)
-- Toolbar, indicatore progresso QSO, miglioramenti barra di stato
-- Bugfix modalità DXped
-- Controlli agganciabili (dock) con preset di layout e Reset Layout
+- **Fix crash**: crash null pointer all'avvio in sessioni Remote Desktop / VM senza display — risolto
+- **ADIF 3.17**: QSO FT2 loggati come `<MODE:4>MFSK <SUBMODE:3>FT2` (compatibile Log4OM, HRD, CloudLog, N1MM+)
+- **Download su Windows 10**: cty.dat, Hamlib, country files scaricano correttamente su Windows 10
+- **Decoder Shannon**: sincronizzazione best-of-N Costas, algoritmo adattivo, ottimizzazione loop-break RR73
+- **Hamlib 4.7**: scaricato da GitHub Releases (nessun link SourceForge rotto)
+- **Contatore QSO di sessione**: si resetta all'avvio del programma, non a mezzanotte UTC
+- **Fix filtro ghost**: le decodifiche non vengono più bloccate da filtri obsoleti
+- **Pannello AutoCQ**: coda chiamanti ordinata per SNR
+- **Sistema temi**: Shannon Light, Shannon Dark, Midnight, Classic, RF Amber
+- **Controlli agganciabili**: preset di layout, Reset Layout, finestre flottanti
 
 ### Download
 - **Windows x64**: `Decodium_FT2_2603231547_x64_Setup.exe`
@@ -172,70 +126,47 @@ Entrambi gli installer sono firmati digitalmente.
 
 ### Neuerungen in Build 2603231547
 
-**AutoCQ-Schleifenfix — Anrufer werden nach ~10 QSOs nicht mehr ignoriert**
-- Kritischen Bug behoben, bei dem AutoCQ nach etwa 10 abgeschlossenen QSOs aufhörte, auf Anrufer zu reagieren
-- Ursache 1: `on_logQSOButton_clicked` startete für jeden QSO einen `QTimer::singleShot(500ms)`. Nach vielen QSOs feuerten die angesammelten Timer außerhalb der Reihenfolge, riefen `processNextInQueue()` auf und setzten den Zustand zu falschen Zeitpunkten zurück
-- Ursache 2: `on_stopTxButton_clicked` setzte `m_bAutoReply = false` ohne AutoCQ-Guard, was lautlos die Fähigkeit zerstörte, CQ-Antworten zu erkennen
-- Ursache 3: die `msgLength==0`-Prüfung konnte `on_stopTxButton_clicked` während AutoCQ-Übergängen auslösen
-- Fix: Timer-Anhäufung eliminiert — CQ-Neustart wird jetzt ausschließlich von `clearDX()` synchron nach jedem QSO verwaltet
-
-**Splash-Screen — FT2 Shannon Edition Branding + 10-Sekunden-Timer**
-- Splash-Screen zeigt jetzt den Untertitel "FT2 Shannon Edition" mit zweisprachigem Zitat:
-  *"It's not about more power. It's about better math."* / *"Non ci vuole più potenza. Ci vuole più matematica."*
-- Splash-Timer auf 10 Sekunden mit sanftem Ausblenden gesetzt
+**Splash-Screen — FT2 Shannon Edition**
+- Neues Branding: Untertitel "FT2 Shannon Edition" mit zweisprachigem Motto:
+  *"It's not about more power. It's about better math."*
+  *"Non ci vuole più potenza. Ci vuole più matematica."*
+- Splash-Timer: 10 Sekunden mit sanftem Ausblenden
 
 **Schwebende Dock-Fenster — Positionen nach Neustart korrekt wiederhergestellt**
 - Fehler behoben, bei dem schwebende Dock-Fenster nach dem Neustart ihre Position verloren
-- Ursache: `restoreState()` wurde aufgerufen bevor das Fenster sichtbar war — Qt kann schwebende Docks erst positionieren, wenn das Fenster angezeigt wird
-- Fix: ein verzögerter zweiter `restoreState()`-Aufruf startet nach dem Event-Loop-Start (nach `show()`), alle schwebenden Docks werden korrekt positioniert
+- Ursache: `restoreState()` wurde aufgerufen, bevor das Fenster sichtbar war — Qt kann schwebende Docks erst positionieren, wenn das Fenster angezeigt wird
+- Fix: ein verzögerter zweiter `restoreState()`-Aufruf startet nach dem Event-Loop-Start und positioniert alle schwebenden Docks korrekt
+
+**AutoCQ-Schleifenfix — Anrufer werden nach ~10 QSOs nicht mehr ignoriert**
+- Kritischen Bug behoben, bei dem AutoCQ nach ~10 QSOs endlos CQ sendete und alle Anrufer ignorierte
+- Ursache 1: `on_logQSOButton_clicked` startete für jeden QSO einen `QTimer::singleShot(500ms)` — nach vielen QSOs feuerten die angesammelten Timer außer der Reihe und riefen `processNextInQueue()` zum falschen Zeitpunkt auf
+- Ursache 2: `on_stopTxButton_clicked` setzte `m_bAutoReply = false` ohne AutoCQ-Guard und zerstörte lautlos die CQ-Antworterkennung
+- Ursache 3: die `msgLength==0`-Prüfung konnte `on_stopTxButton_clicked` während AutoCQ-Übergängen auslösen
+- Fix: Timer-Anhäufung eliminiert — CQ-Neustart wird jetzt ausschließlich von `clearDX()` synchron nach jedem QSO verwaltet
 
 **RF Amber-Theme — neues Originaltheme**
 - Neues "RF Amber"-Theme im Menü Ansicht → Theme
-- Dunkler Hintergrund mit Bernstein-/Goldakzenten, inspiriert von Vintage-Funkausrüstungen
+- Dunkler Hintergrund mit Bernstein-/Goldakzenten, inspiriert von Vintage-Funkgeräten
 - Phosphor-Bernstein-Uhr, goldene Frequenzanzeige, dunkel-cognacfarbene Dock-Titelleisten
 - Akzentfarben in Tabs, Menüs, Checkboxen, Toolbar und Statusleiste
 
 **Periodentrennlinie — Schnellumschalter**
 - Neuer auswählbarer Eintrag im Ansichts-Menü: "Show period separator line"
-- Sofort die gestrichelte `------` Linie zwischen Dekodierperioden ein-/ausblenden
-- Kein Öffnen der Einstellungen nötig — ein Klick
+- Gestrichelte `------` Linie zwischen Dekodierperioden sofort ein-/ausblenden
+- Ein Klick — kein Öffnen der Einstellungen nötig
 
-**Vorherige: Absturz-Fix — Stabilitätsverbesserung beim Start**
-- Potenzieller Null-Pointer-Absturz in `readSettings()` behoben, wenn `QApplication::primaryScreen()` null zurückgibt (kann bei Remote Desktop oder VMs ohne Display auftreten)
-- Veraltete `QApplication::desktop()` API im Startbanner durch moderne `QScreen` API ersetzt
-- Beide Fixes verhindern stille Abstürze, die von einigen Benutzern gemeldet wurden ("öffnet nicht, schließt sofort")
+### Highlights aus neueren Builds
 
-**Vorherige: ADIF 3.17 Konformität — FT2 wird korrekt geloggt**
-- FT2-QSOs werden jetzt gemäß ADIF 3.17 als `<MODE:4>MFSK <SUBMODE:3>FT2` geloggt
-- FT2 ist offiziell in ADIF 3.17 als Submode von MFSK gelistet (zusammen mit FT4, FST4, Q65, JS8…)
-- Zuvor wurde FT2 fälschlicherweise als eigenständiger Modus `<MODE:3>FT2` geloggt
-- Alle gängigen Logging-Programme (Log4OM, HRD, CloudLog, N1MM+) importieren FT2-QSOs nun korrekt
-
-**Highlights früherer Builds:**
-- Auto CQ Fix — Anrufer werden nicht mehr ignoriert
-- Kritischer Bug behoben, bei dem Auto CQ alle Stationen, die auf unseren CQ-Ruf antworteten, stillschweigend ignorierte
-- Ursache: Das interne Flag `m_bAutoReply` wurde durch die Auto-TX-Taste auf `false` zurückgesetzt, wodurch `auto_sequence()` keine eingehenden Antworten mehr verarbeitete
-- Manueller Doppelklick funktionierte weiterhin, da er dieses Flag umgeht — jetzt funktionieren beide Wege korrekt
-
-**Windows 10 Download-Kompatibilität (ab Build 2603221428)**
-- Datei-Downloads (cty.dat, Hamlib, Country-Dateien) auf Windows 10 repariert
-- `NoLessSafeRedirectPolicy` entfernt, die HTTPS→HTTP-Weiterleitungen blockierte (SourceForge, country-files.com)
-- Downloads funktionieren jetzt unter Windows 10 und Windows 11
-
-**Shannon-Decoder für FT8/FT4 (ab Build 2603221328)**
-- Neue Best-of-N Costas-Synchronisation für verbesserte Dekodierung
-- Adaptiver Sync-Algorithmus
-- RR73 Loop-Break-Optimierung
-
-**Highlights früherer Builds:**
-- Hamlib 4.7 Download von GitHub Releases (keine defekten SourceForge-Links mehr)
-- Sitzungs-QSO-Zähler (Reset beim Programmstart, nicht um Mitternacht UTC)
-- Ghost-Filter-Fix — Dekodierungen werden nicht mehr durch veraltete Filtereinträge blockiert
-- AutoCQ-Panel mit Anruferwarteschlange
-- Dark Mode / Theme-System (Shannon Light, Shannon Dark, Midnight, Classic)
-- Toolbar, QSO-Fortschrittsanzeige, Statusleisten-Verbesserungen
-- DXped-Modus Bugfixes
-- Andockbare Steuerelemente mit Layout-Vorlagen und Layout zurücksetzen
+- **Absturz-Fix**: Null-Pointer-Absturz beim Start in Remote Desktop / VM ohne Anzeige — behoben
+- **ADIF 3.17**: FT2-QSOs werden als `<MODE:4>MFSK <SUBMODE:3>FT2` geloggt (Log4OM, HRD, CloudLog, N1MM+ kompatibel)
+- **Windows 10 Downloads**: cty.dat, Hamlib, Country-Dateien laden korrekt unter Windows 10
+- **Shannon-Decoder**: Best-of-N Costas-Synchronisation, adaptiver Algorithmus, RR73 Loop-Break-Optimierung
+- **Hamlib 4.7**: Download von GitHub Releases (keine defekten SourceForge-Links mehr)
+- **Sitzungs-QSO-Zähler**: Reset beim Programmstart, nicht um Mitternacht UTC
+- **Ghost-Filter-Fix**: Dekodierungen werden nicht mehr durch veraltete Filtereinträge blockiert
+- **AutoCQ-Panel**: Anruferwarteschlange mit SNR-basierter Sortierung
+- **Theme-System**: Shannon Light, Shannon Dark, Midnight, Classic, RF Amber
+- **Andockbare Steuerelemente**: Layout-Vorlagen, Layout zurücksetzen, schwebende Fenster
 
 ### Download
 - **Windows x64**: `Decodium_FT2_2603231547_x64_Setup.exe`
