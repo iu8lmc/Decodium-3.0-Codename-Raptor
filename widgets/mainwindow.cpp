@@ -2416,15 +2416,32 @@ void MainWindow::readSettings()
   geometries (current_view_mode, the_geometries);
   restoreState (m_settings->value ("state").toByteArray (), 4);
 
-  // Auto-fit window to screen if it exceeds available size
-  if (QApplication::primaryScreen ()) {
-    QRect avail = QApplication::primaryScreen ()->availableGeometry ();
+  // Auto-fit window to screen if it exceeds available size.
+  // Controlla TUTTI gli schermi: su configurazioni multi-monitor la finestra
+  // può trovarsi su un monitor secondario — non deve essere spostata al primario.
+  {
     QRect geo = geometry ();
+    // Calcola il rettangolo totale di tutti gli schermi
+    QRect totalAvail;
+    for (auto *screen : QApplication::screens ())
+      totalAvail = totalAvail.united (screen->availableGeometry ());
+
+    // Trova lo schermo che contiene il centro della finestra (o il primario come fallback)
+    QScreen *targetScreen = QApplication::primaryScreen ();
+    for (auto *screen : QApplication::screens ()) {
+      if (screen->availableGeometry ().contains (geo.center ())) {
+        targetScreen = screen;
+        break;
+      }
+    }
+    QRect avail = targetScreen ? targetScreen->availableGeometry ()
+                               : QApplication::primaryScreen ()->availableGeometry ();
+
     bool adjusted = false;
-    if (geo.width () > avail.width ()) { geo.setWidth (avail.width () - 20); adjusted = true; }
+    if (geo.width () > avail.width ())  { geo.setWidth (avail.width () - 20);  adjusted = true; }
     if (geo.height () > avail.height ()) { geo.setHeight (avail.height () - 40); adjusted = true; }
-    if (geo.left () < avail.left () || geo.right () > avail.right ()
-        || geo.top () < avail.top () || geo.bottom () > avail.bottom ()) {
+    // Sposta solo se completamente fuori da TUTTI gli schermi
+    if (!totalAvail.intersects (geo)) {
       geo.moveCenter (avail.center ());
       adjusted = true;
     }
