@@ -1,4 +1,4 @@
-# Decodium Shannon v3.0 — Build 2603232200
+# Decodium Shannon v3.0 — Build 2603231547
 
 ## [English](#english) | [Italiano](#italiano) | [Deutsch](#deutsch)
 
@@ -6,7 +6,7 @@
 
 ## English
 
-### What's New in Build 2603232200
+### What's New in Build 2603231547
 
 **AutoCQ loop fix — callers no longer ignored after ~10 contacts**
 - Fixed critical bug where AutoCQ stopped responding to callers after completing ~10 QSOs
@@ -15,9 +15,15 @@
 - Root cause 3: `msgLength==0` guard could trigger `on_stopTxButton_clicked` during AutoCQ transitions
 - Fix: removed timer accumulation — CQ restart is now handled exclusively by `clearDX()` which is already called synchronously after each QSO
 
-**Startup performance — 20-second delay eliminated**
-- Reduced splash screen timer from 20 seconds to 3 seconds
-- The application now opens almost instantly instead of making the user wait
+**Splash screen — FT2 Shannon Edition branding + 10-second timer**
+- Splash screen now shows "FT2 Shannon Edition" subtitle with the bilingual quote:
+  *"It's not about more power. It's about better math."* / *"Non ci vuole più potenza. Ci vuole più matematica."*
+- Splash timer set to 10 seconds with smooth fade-out
+
+**Floating dock windows — positions correctly restored on restart**
+- Fixed bug where floating dock widget positions were lost after restarting the application
+- Root cause: `restoreState()` was called before the window was shown — Qt cannot position floating docks until the window is visible
+- Fix: a deferred second `restoreState()` call fires after the event loop starts (after `show()`), correctly repositioning all floating docks
 
 **RF Amber theme — new original theme**
 - New "RF Amber" theme in View → Theme menu
@@ -68,8 +74,8 @@
 - Dockable controls with layout presets and Reset Layout
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232200_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232200_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603231547_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603231547_x86_Setup.exe`
 
 Both installers are code-signed.
 
@@ -82,7 +88,7 @@ Both installers are code-signed.
 
 ## Italiano
 
-### Novità nella Build 2603232200
+### Novità nella Build 2603231547
 
 **Fix loop AutoCQ — i chiamanti non vengono più ignorati dopo ~10 QSO**
 - Risolto bug critico dove AutoCQ smetteva di rispondere ai chiamanti dopo circa 10 QSO completati
@@ -91,9 +97,15 @@ Both installers are code-signed.
 - Causa 3: la guardia `msgLength==0` poteva attivare `on_stopTxButton_clicked` durante le transizioni AutoCQ
 - Fix: eliminata l'accumulazione di timer — il restart CQ è ora gestito esclusivamente da `clearDX()` che già viene chiamata sincronamente dopo ogni QSO
 
-**Performance all'avvio — ritardo di 20 secondi eliminato**
-- Ridotto il timer della splash screen da 20 secondi a 3 secondi
-- Il programma si apre quasi istantaneamente invece di far attendere l'utente
+**Splash screen — brand FT2 Shannon Edition + timer 10 secondi**
+- La splash screen mostra ora il sottotitolo "FT2 Shannon Edition" con la citazione bilingue:
+  *"It's not about more power. It's about better math."* / *"Non ci vuole più potenza. Ci vuole più matematica."*
+- Timer splash impostato a 10 secondi con dissolvenza finale
+
+**Finestre dock flottanti — posizioni ripristinate correttamente al riavvio**
+- Risolto bug per cui le posizioni delle finestre dock flottanti venivano perse dopo il riavvio
+- Causa: `restoreState()` veniva chiamata prima che la finestra fosse visibile — Qt non può posizionare i dock flottanti finché la finestra non è mostrata
+- Fix: una seconda chiamata differita a `restoreState()` scatta dopo l'avvio dell'event loop (dopo `show()`), riposizionando correttamente tutti i dock flottanti
 
 **Tema RF Amber — nuovo tema originale**
 - Nuovo tema "RF Amber" nel menu Visualizza → Tema
@@ -144,8 +156,8 @@ Both installers are code-signed.
 - Controlli agganciabili (dock) con preset di layout e Reset Layout
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232200_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232200_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603231547_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603231547_x86_Setup.exe`
 
 Entrambi gli installer sono firmati digitalmente.
 
@@ -158,7 +170,7 @@ Entrambi gli installer sono firmati digitalmente.
 
 ## Deutsch
 
-### Neuerungen in Build 2603232200
+### Neuerungen in Build 2603231547
 
 **AutoCQ-Schleifenfix — Anrufer werden nach ~10 QSOs nicht mehr ignoriert**
 - Kritischen Bug behoben, bei dem AutoCQ nach etwa 10 abgeschlossenen QSOs aufhörte, auf Anrufer zu reagieren
@@ -167,9 +179,15 @@ Entrambi gli installer sono firmati digitalmente.
 - Ursache 3: die `msgLength==0`-Prüfung konnte `on_stopTxButton_clicked` während AutoCQ-Übergängen auslösen
 - Fix: Timer-Anhäufung eliminiert — CQ-Neustart wird jetzt ausschließlich von `clearDX()` synchron nach jedem QSO verwaltet
 
-**Startperformance — 20-Sekunden-Verzögerung eliminiert**
-- Splash-Screen-Timer von 20 Sekunden auf 3 Sekunden reduziert
-- Das Programm öffnet sich jetzt fast sofort statt den Benutzer warten zu lassen
+**Splash-Screen — FT2 Shannon Edition Branding + 10-Sekunden-Timer**
+- Splash-Screen zeigt jetzt den Untertitel "FT2 Shannon Edition" mit zweisprachigem Zitat:
+  *"It's not about more power. It's about better math."* / *"Non ci vuole più potenza. Ci vuole più matematica."*
+- Splash-Timer auf 10 Sekunden mit sanftem Ausblenden gesetzt
+
+**Schwebende Dock-Fenster — Positionen nach Neustart korrekt wiederhergestellt**
+- Fehler behoben, bei dem schwebende Dock-Fenster nach dem Neustart ihre Position verloren
+- Ursache: `restoreState()` wurde aufgerufen bevor das Fenster sichtbar war — Qt kann schwebende Docks erst positionieren, wenn das Fenster angezeigt wird
+- Fix: ein verzögerter zweiter `restoreState()`-Aufruf startet nach dem Event-Loop-Start (nach `show()`), alle schwebenden Docks werden korrekt positioniert
 
 **RF Amber-Theme — neues Originaltheme**
 - Neues "RF Amber"-Theme im Menü Ansicht → Theme
@@ -220,8 +238,8 @@ Entrambi gli installer sono firmati digitalmente.
 - Andockbare Steuerelemente mit Layout-Vorlagen und Layout zurücksetzen
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232200_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232200_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603231547_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603231547_x86_Setup.exe`
 
 Beide Installer sind digital signiert.
 
