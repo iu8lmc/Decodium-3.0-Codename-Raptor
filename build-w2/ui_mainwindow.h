@@ -325,11 +325,9 @@ public:
     QCheckBox *cbAsyncDecode;
     QLabel *labelAsyncL2Active;
     QLabel *labelAsymxBadge;
+    QPushButton *btnQuickQSO;
     QCheckBox *cbSpeedyContest;
     QCheckBox *cbDigitalMorse;
-    QHBoxLayout *hboxLayout;
-    QLabel *labelQsoMsgs;
-    QComboBox *cbQsoMsgCount;
     QPushButton *btnTxNow;
     QStackedWidget *opt_controls_stack;
     QWidget *page_0;
@@ -526,7 +524,7 @@ public:
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
         MainWindow->resize(880, 685);
-        MainWindow->setMinimumSize(QSize(750, 0));
+        MainWindow->setMinimumSize(QSize(640, 480));
         MainWindow->setStyleSheet(QString::fromUtf8(""));
         actionExit = new QAction(MainWindow);
         actionExit->setObjectName(QString::fromUtf8("actionExit"));
@@ -1906,6 +1904,24 @@ public:
 
         verticalLayout_13->addWidget(labelAsymxBadge);
 
+        btnQuickQSO = new QPushButton(QSO_controls_widget);
+        btnQuickQSO->setObjectName(QString::fromUtf8("btnQuickQSO"));
+        btnQuickQSO->setFocusPolicy(Qt::StrongFocus);
+        btnQuickQSO->setStyleSheet(QString::fromUtf8("QPushButton:checked {\n"
+"	color: white;\n"
+"	background-color: #cc6600;\n"
+"	border-style: outset;\n"
+"	border-width: 1px;\n"
+"	border-radius: 5px;\n"
+"	border-color: black;\n"
+"	min-width: 5em;\n"
+"	padding: 3px;\n"
+"}"));
+        btnQuickQSO->setCheckable(true);
+        btnQuickQSO->setVisible(false);
+
+        verticalLayout_13->addWidget(btnQuickQSO);
+
         cbSpeedyContest = new QCheckBox(QSO_controls_widget);
         cbSpeedyContest->setObjectName(QString::fromUtf8("cbSpeedyContest"));
         cbSpeedyContest->setVisible(false);
@@ -1917,27 +1933,6 @@ public:
         cbDigitalMorse->setVisible(false);
 
         verticalLayout_13->addWidget(cbDigitalMorse);
-
-        hboxLayout = new QHBoxLayout();
-        hboxLayout->setSpacing(6);
-        hboxLayout->setObjectName(QString::fromUtf8("hboxLayout"));
-        labelQsoMsgs = new QLabel(QSO_controls_widget);
-        labelQsoMsgs->setObjectName(QString::fromUtf8("labelQsoMsgs"));
-        labelQsoMsgs->setVisible(false);
-
-        hboxLayout->addWidget(labelQsoMsgs);
-
-        cbQsoMsgCount = new QComboBox(QSO_controls_widget);
-        cbQsoMsgCount->addItem(QString());
-        cbQsoMsgCount->addItem(QString());
-        cbQsoMsgCount->addItem(QString());
-        cbQsoMsgCount->setObjectName(QString::fromUtf8("cbQsoMsgCount"));
-        cbQsoMsgCount->setVisible(false);
-
-        hboxLayout->addWidget(cbQsoMsgCount);
-
-
-        verticalLayout_13->addLayout(hboxLayout);
 
         btnTxNow = new QPushButton(QSO_controls_widget);
         btnTxNow->setObjectName(QString::fromUtf8("btnTxNow"));
@@ -3523,7 +3518,7 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "Decodium Fast Track 2", nullptr));
+        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "Decodium Shannon", nullptr));
 #if QT_CONFIG(tooltip)
         MainWindow->setToolTip(QString());
 #endif // QT_CONFIG(tooltip)
@@ -3532,7 +3527,7 @@ public:
 #if QT_CONFIG(tooltip)
         actionCheck_for_Updates->setToolTip(QCoreApplication::translate("MainWindow", "Controlla su GitHub se \303\250 disponibile una nuova versione", nullptr));
 #endif // QT_CONFIG(tooltip)
-        actionAbout->setText(QCoreApplication::translate("MainWindow", "About Decodium Fast Track 2", nullptr));
+        actionAbout->setText(QCoreApplication::translate("MainWindow", "About Decodium Shannon", nullptr));
         actionWide_Waterfall->setText(QCoreApplication::translate("MainWindow", "Waterfall", nullptr));
         actionOpen->setText(QCoreApplication::translate("MainWindow", "Open", nullptr));
 #if QT_CONFIG(shortcut)
@@ -3639,14 +3634,14 @@ public:
         actionDefault_event_logging->setText(QCoreApplication::translate("MainWindow", "Default event logging", nullptr));
         actionDiagnostic_mode->setText(QCoreApplication::translate("MainWindow", "Diagnostic mode", nullptr));
         actionDisable_event_logging->setText(QCoreApplication::translate("MainWindow", "Disable event logging", nullptr));
-        actionQuick_Start_Guide_to_WSJT_X_2_7_and_QMAP->setText(QCoreApplication::translate("MainWindow", "Quick-Start Guide to Decodium Fast Track 2 and QMAP", nullptr));
-        actionWSJT_X_improved_Home_Page->setText(QCoreApplication::translate("MainWindow", "Decodium Fast Track 2 Home Page", nullptr));
+        actionQuick_Start_Guide_to_WSJT_X_2_7_and_QMAP->setText(QCoreApplication::translate("MainWindow", "Quick-Start Guide to Decodium Shannon and QMAP", nullptr));
+        actionWSJT_X_improved_Home_Page->setText(QCoreApplication::translate("MainWindow", "Decodium Shannon Home Page", nullptr));
 #if QT_CONFIG(whatsthis)
-        actionWSJT_X_improved_Home_Page->setWhatsThis(QCoreApplication::translate("MainWindow", "<html><head/><body><p>Go to the Decodium Fast Track 2 home page.</p></body></html>", nullptr));
+        actionWSJT_X_improved_Home_Page->setWhatsThis(QCoreApplication::translate("MainWindow", "<html><head/><body><p>Go to the Decodium Shannon home page.</p></body></html>", nullptr));
 #endif // QT_CONFIG(whatsthis)
-        actionThe_additional_features_of_wsjt_x_improved->setText(QCoreApplication::translate("MainWindow", "The additional features of Decodium Fast Track 2", nullptr));
+        actionThe_additional_features_of_wsjt_x_improved->setText(QCoreApplication::translate("MainWindow", "The additional features of Decodium Shannon", nullptr));
 #if QT_CONFIG(whatsthis)
-        actionThe_additional_features_of_wsjt_x_improved->setWhatsThis(QCoreApplication::translate("MainWindow", "<html><head/><body><p>Overview on the additional features of Decodium Fast Track 2.</p></body></html>", nullptr));
+        actionThe_additional_features_of_wsjt_x_improved->setWhatsThis(QCoreApplication::translate("MainWindow", "<html><head/><body><p>Overview on the additional features of Decodium Shannon.</p></body></html>", nullptr));
 #endif // QT_CONFIG(whatsthis)
         actionRecommended_Audio_Settings->setText(QCoreApplication::translate("MainWindow", "Recommended audio settings", nullptr));
 #if QT_CONFIG(whatsthis)
@@ -4063,8 +4058,12 @@ public:
         labelAsymxBadge->setText(QCoreApplication::translate("MainWindow", " FT2 ", nullptr));
         labelAsymxBadge->setStyleSheet(QCoreApplication::translate("MainWindow", "background-color: #00cc44; color: #ffffff; font-weight: bold; font-size: 12px; border-radius: 4px; padding: 1px 6px;", nullptr));
 #if QT_CONFIG(tooltip)
-        labelAsymxBadge->setToolTip(QCoreApplication::translate("MainWindow", "Fast Track 2: Async FT2 decoder attivo \342\200\224 decodifica continua senza periodi", nullptr));
+        labelAsymxBadge->setToolTip(QCoreApplication::translate("MainWindow", "Shannon: Async FT2 decoder attivo \342\200\224 decodifica continua senza periodi", nullptr));
 #endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        btnQuickQSO->setToolTip(QCoreApplication::translate("MainWindow", "Quick QSO: report+TU in un messaggio, scambio ~3 passaggi", nullptr));
+#endif // QT_CONFIG(tooltip)
+        btnQuickQSO->setText(QCoreApplication::translate("MainWindow", "Quick QSO", nullptr));
 #if QT_CONFIG(tooltip)
         cbSpeedyContest->setToolTip(QCoreApplication::translate("MainWindow", "Contest: double-click su decode = TX immediato (~20ms)", nullptr));
 #endif // QT_CONFIG(tooltip)
@@ -4073,14 +4072,6 @@ public:
         cbDigitalMorse->setToolTip(QCoreApplication::translate("MainWindow", "Digital Morse: Spacebar = TX manuale del messaggio pre-caricato", nullptr));
 #endif // QT_CONFIG(tooltip)
         cbDigitalMorse->setText(QCoreApplication::translate("MainWindow", "D-CW", nullptr));
-        labelQsoMsgs->setText(QCoreApplication::translate("MainWindow", "QSO:", nullptr));
-        cbQsoMsgCount->setItemText(0, QCoreApplication::translate("MainWindow", "2 msg", nullptr));
-        cbQsoMsgCount->setItemText(1, QCoreApplication::translate("MainWindow", "3 msg", nullptr));
-        cbQsoMsgCount->setItemText(2, QCoreApplication::translate("MainWindow", "5 msg", nullptr));
-
-#if QT_CONFIG(tooltip)
-        cbQsoMsgCount->setToolTip(QCoreApplication::translate("MainWindow", "Number of TX messages per QSO: 2=ultra-fast, 3=normal, 5=full exchange", nullptr));
-#endif // QT_CONFIG(tooltip)
         btnTxNow->setText(QCoreApplication::translate("MainWindow", "TX NOW", nullptr));
         btnTxNow->setStyleSheet(QCoreApplication::translate("MainWindow", "QPushButton { background-color: #cc0000; color: #ffffff; font-weight: bold; font-size: 16px; border-radius: 6px; padding: 4px 16px; min-height: 28px; } QPushButton:hover { background-color: #ff2222; } QPushButton:pressed { background-color: #990000; }", nullptr));
 #if QT_CONFIG(tooltip)

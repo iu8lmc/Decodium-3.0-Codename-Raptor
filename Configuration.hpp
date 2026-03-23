@@ -185,6 +185,7 @@ public:
   bool log4digitGrids() const;
   bool decodes_from_top () const;
   bool insert_blank () const;
+  void set_insert_blank (bool);
   bool detailed_blank () const;
   bool DXCC () const;
   bool GridMap() const;

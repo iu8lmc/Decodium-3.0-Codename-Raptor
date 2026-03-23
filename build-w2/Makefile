@@ -2790,6 +2790,30 @@ Decoder/decodedtext.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\decodium.dir\build.make CMakeFiles/decodium.dir/Decoder/decodedtext.cpp.s
 .PHONY : Decoder/decodedtext.cpp.s
 
+DecodiumCertificate.obj: DecodiumCertificate.cpp.obj
+.PHONY : DecodiumCertificate.obj
+
+# target to build an object file
+DecodiumCertificate.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\decodium.dir\build.make CMakeFiles/decodium.dir/DecodiumCertificate.cpp.obj
+.PHONY : DecodiumCertificate.cpp.obj
+
+DecodiumCertificate.i: DecodiumCertificate.cpp.i
+.PHONY : DecodiumCertificate.i
+
+# target to preprocess a source file
+DecodiumCertificate.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\decodium.dir\build.make CMakeFiles/decodium.dir/DecodiumCertificate.cpp.i
+.PHONY : DecodiumCertificate.cpp.i
+
+DecodiumCertificate.s: DecodiumCertificate.cpp.s
+.PHONY : DecodiumCertificate.s
+
+# target to generate assembly for a file
+DecodiumCertificate.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\decodium.dir\build.make CMakeFiles/decodium.dir/DecodiumCertificate.cpp.s
+.PHONY : DecodiumCertificate.cpp.s
+
 Detector/Detector.obj: Detector/Detector.cpp.obj
 .PHONY : Detector/Detector.obj
 
@@ -17040,6 +17064,30 @@ widgets/MessageBox.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\wsjt_qt.dir\build.make CMakeFiles/wsjt_qt.dir/widgets/MessageBox.cpp.s
 .PHONY : widgets/MessageBox.cpp.s
 
+widgets/QSOProgressWidget.obj: widgets/QSOProgressWidget.cpp.obj
+.PHONY : widgets/QSOProgressWidget.obj
+
+# target to build an object file
+widgets/QSOProgressWidget.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\decodium.dir\build.make CMakeFiles/decodium.dir/widgets/QSOProgressWidget.cpp.obj
+.PHONY : widgets/QSOProgressWidget.cpp.obj
+
+widgets/QSOProgressWidget.i: widgets/QSOProgressWidget.cpp.i
+.PHONY : widgets/QSOProgressWidget.i
+
+# target to preprocess a source file
+widgets/QSOProgressWidget.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\decodium.dir\build.make CMakeFiles/decodium.dir/widgets/QSOProgressWidget.cpp.i
+.PHONY : widgets/QSOProgressWidget.cpp.i
+
+widgets/QSOProgressWidget.s: widgets/QSOProgressWidget.cpp.s
+.PHONY : widgets/QSOProgressWidget.s
+
+# target to generate assembly for a file
+widgets/QSOProgressWidget.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\decodium.dir\build.make CMakeFiles/decodium.dir/widgets/QSOProgressWidget.cpp.s
+.PHONY : widgets/QSOProgressWidget.cpp.s
+
 widgets/QSYMessage.obj: widgets/QSYMessage.cpp.obj
 .PHONY : widgets/QSYMessage.obj
 
@@ -17864,6 +17912,9 @@ help:
 	@echo ... Decoder/decodedtext.obj
 	@echo ... Decoder/decodedtext.i
 	@echo ... Decoder/decodedtext.s
+	@echo ... DecodiumCertificate.obj
+	@echo ... DecodiumCertificate.i
+	@echo ... DecodiumCertificate.s
 	@echo ... Detector/Detector.obj
 	@echo ... Detector/Detector.i
 	@echo ... Detector/Detector.s
@@ -19499,6 +19550,9 @@ help:
 	@echo ... widgets/MessageBox.obj
 	@echo ... widgets/MessageBox.i
 	@echo ... widgets/MessageBox.s
+	@echo ... widgets/QSOProgressWidget.obj
+	@echo ... widgets/QSOProgressWidget.i
+	@echo ... widgets/QSOProgressWidget.s
 	@echo ... widgets/QSYMessage.obj
 	@echo ... widgets/QSYMessage.i
 	@echo ... widgets/QSYMessage.s

@@ -82,7 +82,7 @@ public:
 
     void retranslateUi(QDialog *CAboutDlg)
     {
-        CAboutDlg->setWindowTitle(QCoreApplication::translate("CAboutDlg", "About Decodium v3.0 FT2 \"Raptor\" \342\200\224 Build 2603161508", nullptr));
+        CAboutDlg->setWindowTitle(QCoreApplication::translate("CAboutDlg", "About Decodium Shannon v3.0 \342\200\224 Build 2603221027", nullptr));
         labelTxt->setText(QString());
         okButton->setText(QCoreApplication::translate("CAboutDlg", "OK", nullptr));
     } // retranslateUi

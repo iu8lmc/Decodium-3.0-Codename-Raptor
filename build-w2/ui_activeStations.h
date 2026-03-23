@@ -192,7 +192,7 @@ public:
 #endif // QT_CONFIG(tooltip)
         bandChanges->setText(QCoreApplication::translate("ActiveStations", "0", nullptr));
 #if QT_CONFIG(tooltip)
-        RecentStationsPlainTextEdit->setToolTip(QCoreApplication::translate("ActiveStations", "<html><head/><body><p>Click on a line to call that station. </p><p>When using QMAP, single click to transfer QSO data and sked frequency to Decodium v3.0 FT2 Raptor 2603161508, and double click to call that station.</p></body></html>", nullptr));
+        RecentStationsPlainTextEdit->setToolTip(QCoreApplication::translate("ActiveStations", "<html><head/><body><p>Click on a line to call that station. </p><p>When using QMAP, single click to transfer QSO data and sked frequency to Decodium v3.0 Shannon 2603161508, and double click to call that station.</p></body></html>", nullptr));
 #endif // QT_CONFIG(tooltip)
         header_label2->setText(QString());
     } // retranslateUi

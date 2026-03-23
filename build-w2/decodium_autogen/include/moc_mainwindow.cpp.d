@@ -3,6 +3,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/moc
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Audio/AudioDevice.hpp \
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Configuration.hpp \
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/DXpedCertificate.hpp \
+  C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/DecodiumCertificate.hpp \
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/DisplayManual.hpp \
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Network/Cloudlog.hpp \
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/Network/NetworkAccessManager.hpp \
@@ -26,6 +27,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/moc
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/udp_export.h \
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/MessageBox.hpp \
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/MultiGeometryWidget.hpp \
+  C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/QSOProgressWidget.h \
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/QSYMessage.h \
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/QSYMessageCreator.h \
   C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/widgets/astro.h \
@@ -35,6 +37,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/moc
   C:/msys64/mingw64/include/QtCore/QChar \
   C:/msys64/mingw64/include/QtCore/QCryptographicHash \
   C:/msys64/mingw64/include/QtCore/QDataStream \
+  C:/msys64/mingw64/include/QtCore/QDate \
   C:/msys64/mingw64/include/QtCore/QDateTime \
   C:/msys64/mingw64/include/QtCore/QDebug \
   C:/msys64/mingw64/include/QtCore/QDir \
@@ -180,6 +183,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/moc
   C:/msys64/mingw64/include/QtCore/qversiontagging.h \
   C:/msys64/mingw64/include/QtGui/QCloseEvent \
   C:/msys64/mingw64/include/QtGui/QFont \
+  C:/msys64/mingw64/include/QtGui/QPainter \
   C:/msys64/mingw64/include/QtGui/qbrush.h \
   C:/msys64/mingw64/include/QtGui/qcolor.h \
   C:/msys64/mingw64/include/QtGui/qcursor.h \
@@ -192,6 +196,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/moc
   C:/msys64/mingw64/include/QtGui/qkeysequence.h \
   C:/msys64/mingw64/include/QtGui/qmatrix.h \
   C:/msys64/mingw64/include/QtGui/qpaintdevice.h \
+  C:/msys64/mingw64/include/QtGui/qpainter.h \
   C:/msys64/mingw64/include/QtGui/qpalette.h \
   C:/msys64/mingw64/include/QtGui/qpen.h \
   C:/msys64/mingw64/include/QtGui/qpixelformat.h \
@@ -253,6 +258,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/moc
   C:/msys64/mingw64/include/QtWidgets/QScrollBar \
   C:/msys64/mingw64/include/QtWidgets/QTabWidget \
   C:/msys64/mingw64/include/QtWidgets/QTableWidget \
+  C:/msys64/mingw64/include/QtWidgets/QToolBar \
   C:/msys64/mingw64/include/QtWidgets/QWidget \
   C:/msys64/mingw64/include/QtWidgets/qabstractbutton.h \
   C:/msys64/mingw64/include/QtWidgets/qabstractitemdelegate.h \
@@ -260,6 +266,8 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/moc
   C:/msys64/mingw64/include/QtWidgets/qabstractscrollarea.h \
   C:/msys64/mingw64/include/QtWidgets/qabstractslider.h \
   C:/msys64/mingw64/include/QtWidgets/qabstractspinbox.h \
+  C:/msys64/mingw64/include/QtWidgets/qaction.h \
+  C:/msys64/mingw64/include/QtWidgets/qactiongroup.h \
   C:/msys64/mingw64/include/QtWidgets/qcheckbox.h \
   C:/msys64/mingw64/include/QtWidgets/qdialog.h \
   C:/msys64/mingw64/include/QtWidgets/qdockwidget.h \
@@ -281,6 +289,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/moc
   C:/msys64/mingw64/include/QtWidgets/qtableview.h \
   C:/msys64/mingw64/include/QtWidgets/qtablewidget.h \
   C:/msys64/mingw64/include/QtWidgets/qtabwidget.h \
+  C:/msys64/mingw64/include/QtWidgets/qtoolbar.h \
   C:/msys64/mingw64/include/QtWidgets/qtwidgets-config.h \
   C:/msys64/mingw64/include/QtWidgets/qtwidgetsglobal.h \
   C:/msys64/mingw64/include/QtWidgets/qwidget.h \

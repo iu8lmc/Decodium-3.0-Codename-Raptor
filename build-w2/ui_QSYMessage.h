@@ -60,7 +60,7 @@ public:
 
     void retranslateUi(QWidget *QSYMessage)
     {
-        QSYMessage->setWindowTitle(QCoreApplication::translate("QSYMessage", "Decodium v3.0 FT2 Raptor 2603161508", nullptr));
+        QSYMessage->setWindowTitle(QCoreApplication::translate("QSYMessage", "Decodium v3.0 Shannon 2603161508", nullptr));
         label->setText(QCoreApplication::translate("QSYMessage", "TextLabel", nullptr));
         yesButton->setText(QCoreApplication::translate("QSYMessage", "Reply \n"
 "Yes", nullptr));

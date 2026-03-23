@@ -93,8 +93,7 @@ C:/Users/IU8LMC/Downloads/WSJTX_3.0_Source/build-w2/decodium_autogen/include/moc
   C:/msys64/mingw64/include/QtGui/qtransform.h \
   C:/msys64/mingw64/include/QtGui/qwindowdefs.h \
   C:/msys64/mingw64/include/QtGui/qwindowdefs_win.h \
-  C:/msys64/mingw64/include/QtWidgets/QDialog \
-  C:/msys64/mingw64/include/QtWidgets/qdialog.h \
+  C:/msys64/mingw64/include/QtWidgets/QWidget \
   C:/msys64/mingw64/include/QtWidgets/qsizepolicy.h \
   C:/msys64/mingw64/include/QtWidgets/qtwidgets-config.h \
   C:/msys64/mingw64/include/QtWidgets/qtwidgetsglobal.h \

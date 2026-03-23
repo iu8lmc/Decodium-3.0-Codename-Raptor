@@ -1055,6 +1055,12 @@ bool Configuration::ZZ00() const {return m_->ZZ00_;}
 bool Configuration::log4digitGrids() const {return m_->log4digitGrids_;}
 bool Configuration::decodes_from_top () const {return m_->decodes_from_top_;}
 bool Configuration::insert_blank () const {return m_->insert_blank_;}
+void Configuration::set_insert_blank (bool b) {
+  m_->insert_blank_ = b;
+  m_->settings_->setValue ("InsertBlank", b);
+  // sync the checkbox in the settings dialog if it's open
+  m_->ui_->insert_blank_check_box->setChecked (b);
+}
 bool Configuration::detailed_blank () const {return m_->detailed_blank_;}
 bool Configuration::DXCC () const {return m_->DXCC_;}
 bool Configuration::GridMap() const { return m_->gridMap_;}
