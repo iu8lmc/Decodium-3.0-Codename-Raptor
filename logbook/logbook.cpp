@@ -1,6 +1,8 @@
 #include "logbook.h"
 
 #include <QDateTime>
+#include <QFile>
+#include <QRegularExpression>
 #include "Configuration.hpp"
 #include "AD1CCty.hpp"
 #include "Multiplier.hpp"
@@ -9,6 +11,38 @@
 #include "models/FoxLog.hpp"
 
 #include "moc_logbook.cpp"
+
+// ADIF 3.17 migration: converts <MODE:3>FT2 → <MODE:4>MFSK <SUBMODE:3>FT2
+// FT2 is officially listed in ADIF 3.17 as a submode of MFSK.
+int LogBook::migrateAdif317 (QString const& path)
+{
+  QFile f {path};
+  if (!f.exists ()) return 0;
+  if (!f.open (QIODevice::ReadOnly)) return 0;
+  QByteArray data = f.readAll ();
+  f.close ();
+
+  // Fast check before any regex (case-insensitive byte search)
+  if (!data.toLower ().contains ("<mode:3>ft2")) return 0;
+
+  // Make a one-time backup before modifying
+  QString backupPath {path + ".pre317bak"};
+  if (!QFile::exists (backupPath))
+    QFile::copy (path, backupPath);
+
+  // Replace all occurrences (case-insensitive)
+  QString text = QString::fromUtf8 (data);
+  QRegularExpression rx {"<mode:3>FT2", QRegularExpression::CaseInsensitiveOption};
+  int count = text.count (rx);
+  text.replace (rx, "<MODE:4>MFSK <SUBMODE:3>FT2");
+
+  if (!f.open (QIODevice::WriteOnly | QIODevice::Truncate)) return -1;
+  f.write (text.toUtf8 ());
+  f.close ();
+
+  qDebug () << "ADIF 3.17: migrated" << count << "FT2 record(s) in" << path;
+  return count;
+}
 
 LogBook::LogBook (Configuration const * configuration)
   : config_ {configuration}
@@ -85,7 +119,7 @@ QByteArray LogBook::QSOToADIF (QString const& hisCall, QString const& hisGrid, Q
   QString t;
   t = "<call:" + QString::number(hisCall.size()) + ">" + hisCall;
   t += " <gridsquare:" + QString::number(hisGrid.size()) + ">" + hisGrid;
-  if (mode != "FT4" && mode != "FST4" && mode != "Q65")
+  if (mode != "FT4" && mode != "FST4" && mode != "Q65" && mode != "FT2")
     {
       t += " <mode:" + QString::number(mode.size()) + ">" + mode;
     }

@@ -1,4 +1,5 @@
 ﻿#include "WorkedBefore.hpp"
+#include "logbook.h"
 
 #include <functional>
 #include <stdexcept>
@@ -418,6 +419,8 @@ QString WorkedBefore::cty_version () const
 
 void WorkedBefore::reload ()
 {
+  // ADIF 3.17 migration: run once before loading, fixes <MODE:3>FT2 → <MODE:4>MFSK <SUBMODE:3>FT2
+  LogBook::migrateAdif317 (m_->path_);
   m_->reload ();
 }
 

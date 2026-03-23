@@ -49,6 +49,11 @@ public:
 
   QString const cty_version() const;
 
+  // ADIF 3.17 migration: replaces <MODE:3>FT2 → <MODE:4>MFSK <SUBMODE:3>FT2 in-place.
+  // Returns number of records migrated (0 = nothing to do, -1 = error).
+  // Makes a .pre317bak backup on first migration. Safe to call multiple times.
+  static int migrateAdif317 (QString const& path);
+
   Q_SIGNAL void finished_loading (int worked_before_record_count, QString const cty_version, QString const& error) const;
 
   CabrilloLog * contest_log ();

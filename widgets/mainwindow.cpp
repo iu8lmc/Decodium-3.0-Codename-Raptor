@@ -117,6 +117,7 @@
 #include "EqualizationToolsDialog.hpp"
 #include "Network/LotWUsers.hpp"
 #include "logbook/AD1CCty.hpp"
+#include "logbook/logbook.h"
 #include "models/FoxLog.hpp"
 #include "models/CabrilloLog.hpp"
 #include "FoxLogWindow.hpp"
@@ -20654,13 +20655,14 @@ void MainWindow::downloadQsoComplete(bool result)
       return;
     }
     //rename downloaded file to log file
+    LogBook::migrateAdif317 (tmpFilePathName);  // ADIF 3.17: fix FT2 before rename
     QString logFilePathName = m_config.writeable_data_dir().absolutePath() + "/" + FULL_LOG_FNAME;
     if (QFile::exists(logFilePathName)) {
       QString savFilePathName = m_config.writeable_data_dir().absolutePath() + "/" + QDateTime::currentDateTimeUtc().toString("yyMMdd_hhmmss").toLocal8Bit() + "_" + FULL_LOG_FNAME;
       QFile::rename(logFilePathName, savFilePathName);
     }
     QFile::rename(tmpFilePathName, logFilePathName);
-    
+
     MessageBox::information_message (this, tr ("Download QSOs from LOTW succeeded."));
     m_logbookRead = false;        //block settings changes and requesting download
     debugToFile("dlLotwCom    m_logbookRead:false");
@@ -20726,9 +20728,13 @@ void MainWindow::downloadQslComplete(bool result)
 
   bool success = false;
   
+  // ADIF 3.17: fix FT2 mode in both LoTW source files before merging
+  LogBook::migrateAdif317 (m_config.writeable_data_dir().absolutePath() + "/" + TEMP_LOG_QSL_FNAME);
+  LogBook::migrateAdif317 (m_config.writeable_data_dir().absolutePath() + "/" + TEMP_LOG_FNAME);
+
   //create merged QSL/QSO file
   QString line;
-    
+
   //decodium_log.adi
   QString ofFilePathName = m_config.writeable_data_dir().absolutePath() + "/" + FULL_LOG_TMP_FNAME;
   if (QFile::exists(ofFilePathName)) QFile::remove(ofFilePathName);
