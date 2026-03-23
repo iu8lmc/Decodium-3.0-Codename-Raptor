@@ -43,6 +43,8 @@ public:
   void setHighlightedHoundText(QString text);
   void new_period ();
   QString CQPriority(){return m_CQPriority;};
+  void setStrikeoutEnabled (bool enabled) { m_strikeoutEnabled = enabled; }
+  bool strikeoutEnabled () const { return m_strikeoutEnabled; }
   qint32 m_points;
   bool m_bDisplayPoints;
 
@@ -81,6 +83,7 @@ private:
   QMetaObject::Connection vertical_scroll_connection_;
   long long modified_vertical_scrollbar_max_;
   bool m_strikeout {false};
+  bool m_strikeoutEnabled {true};   // toggle from View menu
   int m_lineCount {0};
 };
 
