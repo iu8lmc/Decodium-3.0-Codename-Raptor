@@ -51,8 +51,11 @@
 - **Dockable controls**: layout presets, Reset Layout, floating windows
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232208_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232208_x86_Setup.exe`
+
+**[⬇ Download from GitHub Releases](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/latest)**
+
+- **Windows x64**: [`Decodium_FT2_2603232208_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x64_Setup.exe)
+- **Windows x86**: [`Decodium_FT2_2603232208_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x86_Setup.exe)
 
 Both installers are code-signed.
 
@@ -110,8 +113,11 @@ Both installers are code-signed.
 - **Controlli agganciabili**: preset di layout, Reset Layout, finestre flottanti
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232208_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232208_x86_Setup.exe`
+
+**[⬇ Scarica da GitHub Releases](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/latest)**
+
+- **Windows x64**: [`Decodium_FT2_2603232208_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x64_Setup.exe)
+- **Windows x86**: [`Decodium_FT2_2603232208_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x86_Setup.exe)
 
 Entrambi gli installer sono firmati digitalmente.
 
@@ -169,8 +175,11 @@ Entrambi gli installer sono firmati digitalmente.
 - **Andockbare Steuerelemente**: Layout-Vorlagen, Layout zurücksetzen, schwebende Fenster
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232208_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232208_x86_Setup.exe`
+
+**[⬇ Download von GitHub Releases](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/latest)**
+
+- **Windows x64**: [`Decodium_FT2_2603232208_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x64_Setup.exe)
+- **Windows x86**: [`Decodium_FT2_2603232208_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x86_Setup.exe)
 
 Beide Installer sind digital signiert.
 
