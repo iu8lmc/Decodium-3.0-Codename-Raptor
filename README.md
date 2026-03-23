@@ -1,4 +1,4 @@
-# Decodium Shannon v3.0 — Build 2603232158
+# Decodium Shannon v3.0 — Build 2603232208
 
 ## [English](#english) | [Italiano](#italiano) | [Deutsch](#deutsch)
 
@@ -6,7 +6,7 @@
 
 ## English
 
-### What's New in Build 2603232158
+### What's New in Build 2603232208
 
 **Splash screen — FT2 Shannon Edition**
 - New branding: "FT2 Shannon Edition" subtitle with the bilingual motto:
@@ -51,8 +51,8 @@
 - **Dockable controls**: layout presets, Reset Layout, floating windows
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232158_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232158_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603232208_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603232208_x86_Setup.exe`
 
 Both installers are code-signed.
 
@@ -65,7 +65,7 @@ Both installers are code-signed.
 
 ## Italiano
 
-### Novità nella Build 2603232158
+### Novità nella Build 2603232208
 
 **Splash screen — FT2 Shannon Edition**
 - Nuovo branding: sottotitolo "FT2 Shannon Edition" con il motto bilingue:
@@ -110,8 +110,8 @@ Both installers are code-signed.
 - **Controlli agganciabili**: preset di layout, Reset Layout, finestre flottanti
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232158_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232158_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603232208_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603232208_x86_Setup.exe`
 
 Entrambi gli installer sono firmati digitalmente.
 
@@ -124,7 +124,7 @@ Entrambi gli installer sono firmati digitalmente.
 
 ## Deutsch
 
-### Neuerungen in Build 2603232158
+### Neuerungen in Build 2603232208
 
 **Splash-Screen — FT2 Shannon Edition**
 - Neues Branding: Untertitel "FT2 Shannon Edition" mit zweisprachigem Motto:
@@ -169,8 +169,8 @@ Entrambi gli installer sono firmati digitalmente.
 - **Andockbare Steuerelemente**: Layout-Vorlagen, Layout zurücksetzen, schwebende Fenster
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232158_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232158_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603232208_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603232208_x86_Setup.exe`
 
 Beide Installer sind digital signiert.
 
