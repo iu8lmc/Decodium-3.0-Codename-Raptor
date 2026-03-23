@@ -736,10 +736,12 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     a->setChecked (locked);
     a->setToolTip (tr ("Prevent dock windows from floating — classic WSJT-X fixed layout"));
     auto applyLock = [this](bool lock) {
-      QList<QDockWidget*> docks = { m_waterfallDock, m_bandActivityDock,
-                                    m_rxFreqDock, m_controlsDock, m_clusterDock };
+      // I dock vengono creati in fasi diverse del costruttore — null-check obbligatorio
+      QList<QDockWidget*> docks = { m_bandActivityDock, m_rxFreqDock,
+                                    m_controlsDock, m_clusterDock, m_waterfallDock };
       if (m_activeStationsDock) docks.append (m_activeStationsDock);
       for (auto *d : docks) {
+        if (!d) continue;   // non ancora inizializzato
         if (lock) {
           d->setFeatures (d->features () & ~QDockWidget::DockWidgetFloatable);
           if (d->isFloating ()) { d->setFloating (false); }
@@ -748,7 +750,10 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
         }
       }
     };
-    applyLock (locked);
+    // Defer al post-costruttore: a quest'ora m_waterfallDock e m_clusterDock
+    // non sono ancora stati creati (rispettivamente riga ~1011 e ~825)
+    if (locked)
+      QTimer::singleShot (0, this, [applyLock]() { applyLock (true); });
     connect (a, &QAction::toggled, this, [this, applyLock](bool checked) {
       m_settings->setValue ("DocksLocked", checked);
       applyLock (checked);
