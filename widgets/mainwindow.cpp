@@ -9055,7 +9055,7 @@ void MainWindow::guiUpdate()
     int msgLength=txMsg.trimmed().length();
     // In DXped mode il contenuto TX viene da dxpedTxSequencer(), non dai campi tx1...tx6
     // quindi non usare msgLength per lo stop automatico
-    if(msgLength==0 and !m_tune and !m_bDXpedMode) on_stopTxButton_clicked();
+    if(msgLength==0 and !m_tune and !m_bDXpedMode and !m_autoCQ) on_stopTxButton_clicked();
 
     // DXped mode: non alzare il PTT se la coda caller è vuota e gli slot sono vuoti
     bool dxpedSilent = m_bDXpedMode && m_callerQueue.isEmpty();
@@ -13102,23 +13102,13 @@ void MainWindow::on_logQSOButton_clicked()                 //Log QSO button
 
   // Auto CQ: restart CQ calling after logging the QSO
   // DXped mode: skip reset, la macchina a stati DXped gestisce la continuazione
-  if (m_autoCQ && !m_bDXpedMode) {
-    QTimer::singleShot(500, [this] {
-      if (!m_autoCQ || m_bDXpedMode) return;
-      // Se la coda ha caller in attesa, carica il prossimo invece di tornare a CQ
-      if (!m_callerQueue.isEmpty()) {
-        processNextInQueue();
-        return;
-      }
-      m_ntx = 6;
-      ui->txrb6->setChecked(true);
-      m_QSOProgress = CALLING;
-      m_bCallingCQ = true;
-      m_bAutoReply = true;   // FIX: deve restare true, altrimenti auto_sequence ignora le risposte al CQ
-      ui->dxCallEntry->clear();
-      ui->dxGridEntry->clear();
-      genStdMsgs(QString{});
-    });
+  // FIX: non usare QTimer::singleShot — accumulava timer per ogni QSO causando
+  //      race conditions dopo ~10 contatti (processNextInQueue() chiamato più volte,
+  //      m_bAutoReply resettato in momenti sbagliati, callers ignorati).
+  //      clearDX() gestisce già il restart (chiamata da acceptQSO se clear_DXcall=true).
+  //      Se clear_DXcall=false, lo chiamiamo qui direttamente.
+  if (m_autoCQ && !m_bDXpedMode && !m_config.clear_DXcall ()) {
+    clearDX ();
   }
 }
 
@@ -14868,8 +14858,13 @@ void MainWindow::on_stopTxButton_clicked()                    // Stop Tx
   }
 
   m_btxok=false;
-  m_bCallingCQ = false;
-  m_bAutoReply = false;         // ready for next
+  // In AutoCQ mode, preserve m_bAutoReply/m_bCallingCQ so auto_sequence
+  // can still detect CQ replies when we return to CQ after a QSO.
+  // clearDX() and the AutoCQ state machine manage these flags correctly.
+  if (!m_autoCQ) {
+    m_bCallingCQ = false;
+    m_bAutoReply = false;         // ready for next
+  }
   m_maxPoints=-1;
   if (ui->DX_Call_Button->isChecked()) ui->DX_Call_Button->click ();
   stopWRTimer.stop();           // Stop any Wait & Reply timeout

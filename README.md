@@ -1,4 +1,4 @@
-# Decodium Shannon v3.0 — Build 2603232100
+# Decodium Shannon v3.0 — Build 2603232200
 
 ## [English](#english) | [Italiano](#italiano) | [Deutsch](#deutsch)
 
@@ -6,7 +6,14 @@
 
 ## English
 
-### What's New in Build 2603232100
+### What's New in Build 2603232200
+
+**AutoCQ loop fix — callers no longer ignored after ~10 contacts**
+- Fixed critical bug where AutoCQ stopped responding to callers after completing ~10 QSOs
+- Root cause 1: `on_logQSOButton_clicked` was scheduling a `QTimer::singleShot(500ms)` for every QSO. After many QSOs, accumulated timers fired out of order, calling `processNextInQueue()` and resetting state at wrong moments — causing callers to be ignored
+- Root cause 2: `on_stopTxButton_clicked` was resetting `m_bAutoReply = false` without guarding for AutoCQ mode, sometimes silently killing AutoCQ's ability to detect CQ replies
+- Root cause 3: `msgLength==0` guard could trigger `on_stopTxButton_clicked` during AutoCQ transitions
+- Fix: removed timer accumulation — CQ restart is now handled exclusively by `clearDX()` which is already called synchronously after each QSO
 
 **Startup performance — 20-second delay eliminated**
 - Reduced splash screen timer from 20 seconds to 3 seconds
@@ -61,8 +68,8 @@
 - Dockable controls with layout presets and Reset Layout
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232100_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232100_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603232200_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603232200_x86_Setup.exe`
 
 Both installers are code-signed.
 
@@ -75,7 +82,14 @@ Both installers are code-signed.
 
 ## Italiano
 
-### Novità nella Build 2603232100
+### Novità nella Build 2603232200
+
+**Fix loop AutoCQ — i chiamanti non vengono più ignorati dopo ~10 QSO**
+- Risolto bug critico dove AutoCQ smetteva di rispondere ai chiamanti dopo circa 10 QSO completati
+- Causa 1: `on_logQSOButton_clicked` avviava un `QTimer::singleShot(500ms)` per ogni QSO. Dopo molti QSO, i timer accumulati sparavano fuori ordine, chiamando `processNextInQueue()` e resettando lo stato in momenti sbagliati — i chiamanti venivano ignorati
+- Causa 2: `on_stopTxButton_clicked` resettava `m_bAutoReply = false` senza guardia per AutoCQ, uccidendo silenziosamente la capacità di rilevare risposte al CQ
+- Causa 3: la guardia `msgLength==0` poteva attivare `on_stopTxButton_clicked` durante le transizioni AutoCQ
+- Fix: eliminata l'accumulazione di timer — il restart CQ è ora gestito esclusivamente da `clearDX()` che già viene chiamata sincronamente dopo ogni QSO
 
 **Performance all'avvio — ritardo di 20 secondi eliminato**
 - Ridotto il timer della splash screen da 20 secondi a 3 secondi
@@ -130,8 +144,8 @@ Both installers are code-signed.
 - Controlli agganciabili (dock) con preset di layout e Reset Layout
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232100_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232100_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603232200_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603232200_x86_Setup.exe`
 
 Entrambi gli installer sono firmati digitalmente.
 
@@ -144,7 +158,14 @@ Entrambi gli installer sono firmati digitalmente.
 
 ## Deutsch
 
-### Neuerungen in Build 2603232100
+### Neuerungen in Build 2603232200
+
+**AutoCQ-Schleifenfix — Anrufer werden nach ~10 QSOs nicht mehr ignoriert**
+- Kritischen Bug behoben, bei dem AutoCQ nach etwa 10 abgeschlossenen QSOs aufhörte, auf Anrufer zu reagieren
+- Ursache 1: `on_logQSOButton_clicked` startete für jeden QSO einen `QTimer::singleShot(500ms)`. Nach vielen QSOs feuerten die angesammelten Timer außerhalb der Reihenfolge, riefen `processNextInQueue()` auf und setzten den Zustand zu falschen Zeitpunkten zurück
+- Ursache 2: `on_stopTxButton_clicked` setzte `m_bAutoReply = false` ohne AutoCQ-Guard, was lautlos die Fähigkeit zerstörte, CQ-Antworten zu erkennen
+- Ursache 3: die `msgLength==0`-Prüfung konnte `on_stopTxButton_clicked` während AutoCQ-Übergängen auslösen
+- Fix: Timer-Anhäufung eliminiert — CQ-Neustart wird jetzt ausschließlich von `clearDX()` synchron nach jedem QSO verwaltet
 
 **Startperformance — 20-Sekunden-Verzögerung eliminiert**
 - Splash-Screen-Timer von 20 Sekunden auf 3 Sekunden reduziert
@@ -199,8 +220,8 @@ Entrambi gli installer sono firmati digitalmente.
 - Andockbare Steuerelemente mit Layout-Vorlagen und Layout zurücksetzen
 
 ### Download
-- **Windows x64**: `Decodium_FT2_2603232100_x64_Setup.exe`
-- **Windows x86**: `Decodium_FT2_2603232100_x86_Setup.exe`
+- **Windows x64**: `Decodium_FT2_2603232200_x64_Setup.exe`
+- **Windows x86**: `Decodium_FT2_2603232200_x86_Setup.exe`
 
 Beide Installer sind digital signiert.
 
