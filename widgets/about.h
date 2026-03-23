@@ -4,6 +4,8 @@
 
 #include <QDialog>
 #include <QScopedPointer>
+#include <QSettings>
+#include <QCloseEvent>
 
 namespace Ui {
   class CAboutDlg;
@@ -15,7 +17,11 @@ class CAboutDlg
 public:
 	explicit CAboutDlg(QWidget *parent = nullptr);
   ~CAboutDlg ();
-  
+
+protected:
+  void showEvent (QShowEvent *) override;
+  void closeEvent (QCloseEvent *) override;
+
 private:
 	QScopedPointer<Ui::CAboutDlg> ui;
 };

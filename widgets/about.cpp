@@ -3,6 +3,9 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QString>
+#include <QSettings>
+#include <QShowEvent>
+#include <QCloseEvent>
 
 #include "revision_utils.hpp"
 
@@ -71,4 +74,19 @@ CAboutDlg::CAboutDlg(QWidget *parent) :
 
 CAboutDlg::~CAboutDlg()
 {
+}
+
+void CAboutDlg::showEvent (QShowEvent *e)
+{
+  QDialog::showEvent (e);
+  QSettings s;
+  auto geo = s.value ("AboutDlg/geometry").toByteArray ();
+  if (!geo.isEmpty ()) restoreGeometry (geo);
+}
+
+void CAboutDlg::closeEvent (QCloseEvent *e)
+{
+  QSettings s;
+  s.setValue ("AboutDlg/geometry", saveGeometry ());
+  QDialog::closeEvent (e);
 }

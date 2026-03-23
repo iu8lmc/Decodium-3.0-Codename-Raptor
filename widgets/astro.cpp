@@ -87,7 +87,9 @@ void Astro::read_settings ()
     case 5: ui_->rbCallDx->setChecked (true); break;
     case 10: ui_->rbNoDoppler->setChecked (true); break;
     }
-  move (settings_->value ("window/pos", pos ()).toPoint ());
+  auto geo = settings_->value ("window/geometry").toByteArray ();
+  if (!geo.isEmpty ()) restoreGeometry (geo);
+  else move (settings_->value ("window/pos", pos ()).toPoint ());
 }
 
 void Astro::write_settings ()
@@ -96,6 +98,7 @@ void Astro::write_settings ()
   settings_->setValue ("DopplerTracking", ui_->cbDopplerTracking->isChecked());
   settings_->setValue ("DopplerMethod",m_DopplerMethod);
   settings_->setValue ("window/pos", pos ());
+  settings_->setValue ("window/geometry", saveGeometry ());
   settings_->setValue ("EnableShift", ui_->cbEnableShift->isChecked());
   settings_->setValue ("ShiftValue",ui_->sbibShift->value());
 }

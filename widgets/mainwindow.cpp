@@ -710,6 +710,51 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     });
   }
 
+  // ── Strike-through worked callsigns toggle ────────────────────────
+  {
+    auto *a = ui->menuView->addAction (tr ("Strike-through worked callsigns (B4)"));
+    a->setCheckable (true);
+    bool strikeEnabled = m_settings->value ("ShowStrikeout", true).toBool ();
+    a->setChecked (strikeEnabled);
+    a->setToolTip (tr ("Show/hide the strike-through line on already-worked callsigns"));
+    connect (a, &QAction::toggled, this, [this](bool checked) {
+      m_settings->setValue ("ShowStrikeout", checked);
+      ui->decodedTextBrowser->setStrikeoutEnabled (checked);
+      ui->decodedTextBrowser2->setStrikeoutEnabled (checked);
+    });
+    // Apply initial state
+    ui->decodedTextBrowser->setStrikeoutEnabled (strikeEnabled);
+    ui->decodedTextBrowser2->setStrikeoutEnabled (strikeEnabled);
+  }
+
+  // ── Lock docks (no floating windows) ─────────────────────────────
+  ui->menuView->addSeparator ();
+  {
+    auto *a = ui->menuView->addAction (tr ("Lock layout (no floating windows)"));
+    a->setCheckable (true);
+    bool locked = m_settings->value ("DocksLocked", false).toBool ();
+    a->setChecked (locked);
+    a->setToolTip (tr ("Prevent dock windows from floating — classic WSJT-X fixed layout"));
+    auto applyLock = [this](bool lock) {
+      QList<QDockWidget*> docks = { m_waterfallDock, m_bandActivityDock,
+                                    m_rxFreqDock, m_controlsDock, m_clusterDock };
+      if (m_activeStationsDock) docks.append (m_activeStationsDock);
+      for (auto *d : docks) {
+        if (lock) {
+          d->setFeatures (d->features () & ~QDockWidget::DockWidgetFloatable);
+          if (d->isFloating ()) { d->setFloating (false); }
+        } else {
+          d->setFeatures (d->features () | QDockWidget::DockWidgetFloatable);
+        }
+      }
+    };
+    applyLock (locked);
+    connect (a, &QAction::toggled, this, [this, applyLock](bool checked) {
+      m_settings->setValue ("DocksLocked", checked);
+      applyLock (checked);
+    });
+  }
+
   // ASYMX: hide period 1/2 selector — async mode has no period concept
   ui->txFirstCheckBox->hide();
 
