@@ -1,4 +1,4 @@
-# Decodium Shannon v3.0 — Build 2603232208
+# Decodium Shannon v3.0 — Build 2603240022
 
 ## [English](#english) | [Italiano](#italiano) | [Deutsch](#deutsch)
 
@@ -6,7 +6,7 @@
 
 ## English
 
-### What's New in Build 2603232208
+### What's New in Build 2603240022
 
 **Splash screen — FT2 Shannon Edition**
 - New branding: "FT2 Shannon Edition" subtitle with the bilingual motto:
@@ -54,8 +54,8 @@
 
 **[⬇ Download from GitHub Releases](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/latest)**
 
-- **Windows x64**: [`Decodium_FT2_2603232208_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x64_Setup.exe)
-- **Windows x86**: [`Decodium_FT2_2603232208_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x86_Setup.exe)
+- **Windows x64**: [`Decodium_FT2_2603240022_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x64_Setup.exe)
+- **Windows x86**: [`Decodium_FT2_2603240022_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x86_Setup.exe)
 
 Both installers are code-signed.
 
@@ -68,7 +68,7 @@ Both installers are code-signed.
 
 ## Italiano
 
-### Novità nella Build 2603232208
+### Novità nella Build 2603240022
 
 **Splash screen — FT2 Shannon Edition**
 - Nuovo branding: sottotitolo "FT2 Shannon Edition" con il motto bilingue:
@@ -116,8 +116,8 @@ Both installers are code-signed.
 
 **[⬇ Scarica da GitHub Releases](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/latest)**
 
-- **Windows x64**: [`Decodium_FT2_2603232208_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x64_Setup.exe)
-- **Windows x86**: [`Decodium_FT2_2603232208_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x86_Setup.exe)
+- **Windows x64**: [`Decodium_FT2_2603240022_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x64_Setup.exe)
+- **Windows x86**: [`Decodium_FT2_2603240022_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x86_Setup.exe)
 
 Entrambi gli installer sono firmati digitalmente.
 
@@ -130,7 +130,7 @@ Entrambi gli installer sono firmati digitalmente.
 
 ## Deutsch
 
-### Neuerungen in Build 2603232208
+### Neuerungen in Build 2603240022
 
 **Splash-Screen — FT2 Shannon Edition**
 - Neues Branding: Untertitel "FT2 Shannon Edition" mit zweisprachigem Motto:
@@ -178,8 +178,8 @@ Entrambi gli installer sono firmati digitalmente.
 
 **[⬇ Download von GitHub Releases](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/latest)**
 
-- **Windows x64**: [`Decodium_FT2_2603232208_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x64_Setup.exe)
-- **Windows x86**: [`Decodium_FT2_2603232208_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603232208/Decodium_FT2_2603232208_x86_Setup.exe)
+- **Windows x64**: [`Decodium_FT2_2603240022_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x64_Setup.exe)
+- **Windows x86**: [`Decodium_FT2_2603240022_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x86_Setup.exe)
 
 Beide Installer sind digital signiert.
 
