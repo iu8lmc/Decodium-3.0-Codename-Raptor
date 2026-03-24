@@ -1,4 +1,4 @@
-# Decodium Shannon v3.0 — Build 2603240022
+# Decodium Shannon v3.0 — Build 2603241200
 
 ## [English](#english) | [Italiano](#italiano) | [Deutsch](#deutsch)
 
@@ -6,39 +6,29 @@
 
 ## English
 
-### What's New in Build 2603240022
+### What's New in Build 2603241200
 
-**Splash screen — FT2 Shannon Edition**
-- New branding: "FT2 Shannon Edition" subtitle with the bilingual motto:
-  *"It's not about more power. It's about better math."*
-  *"Non ci vuole più potenza. Ci vuole più matematica."*
-- Splash timer: 10 seconds with smooth fade-out
+**WSJT-X Classic (locked) — one-click preset**
+- New entry in View → Layout → **WSJT-X Classic (locked)**
+- One click: applies Classic WSJT-X 3.0 colors + original positions + all dock windows locked
+- Docks cannot be floated or dragged — exact faithful reproduction of original WSJT-X 3.0 appearance
 
-**Floating dock windows — positions restored correctly on restart**
-- Fixed bug where floating dock widget positions were lost after restarting
-- Root cause: `restoreState()` was called before the window was shown — Qt cannot position floating docks until the window is visible
-- Fix: deferred second `restoreState()` call fires after the event loop starts, correctly repositioning all floating docks
+**True layout lock fix**
+- Fixed: "Lock layout" previously only removed `DockWidgetFloatable` — docks could still be dragged
+- Fix: now also removes `DockWidgetMovable` — complete dock lock
+- Unlock restores both Floatable and Movable flags
 
-**AutoCQ loop fix — callers no longer ignored after ~10 QSOs**
-- Fixed critical bug where AutoCQ kept sending CQ indefinitely, ignoring all callers after ~10 completed QSOs
-- Root cause 1: `on_logQSOButton_clicked` queued a `QTimer::singleShot(500ms)` for every QSO — after many QSOs, accumulated timers fired out of order, calling `processNextInQueue()` at wrong moments
-- Root cause 2: `on_stopTxButton_clicked` reset `m_bAutoReply = false` without AutoCQ guard, silently killing CQ reply detection
-- Root cause 3: `msgLength==0` guard could trigger `on_stopTxButton_clicked` during AutoCQ transitions
-- Fix: timer accumulation eliminated — CQ restart is now handled exclusively by `clearDX()`, called synchronously after each QSO
-
-**RF Amber theme — new original theme**
-- New "RF Amber" theme in View → Theme menu
-- Dark background with amber/gold accents inspired by vintage radio equipment
-- Phosphor amber clock, amber frequency readout, dark cognac dock titles
-- Accent colors on tabs, menus, checkboxes, toolbar and status bar
-
-**Period separator line — quick toggle**
-- New checkable item in View menu: "Show period separator line"
-- Instantly show/hide the dashed `------` line between decoding periods
-- One click — no need to open the Settings dialog
+**Decode browser cleared on mode change**
+- Band activity and Rx/Tx frequency windows are now cleared when changing operating mode
+- Consistent with existing behavior on band change (when "Erase on band change" is enabled)
 
 ### Highlights from Recent Builds
 
+- **Splash screen**: "FT2 Shannon Edition" branding with bilingual motto (IT/EN)
+- **Floating dock fix**: positions correctly restored after restart
+- **AutoCQ loop fix**: callers no longer ignored after ~10 QSOs
+- **RF Amber theme**: dark background with amber/gold vintage radio accents
+- **Period separator**: quick View menu toggle for the `------` line
 - **Crash fix**: null pointer crash on startup in Remote Desktop / VM without display — fixed
 - **ADIF 3.17**: FT2 QSOs logged as `<MODE:4>MFSK <SUBMODE:3>FT2` (Log4OM, HRD, CloudLog, N1MM+ compatible)
 - **Windows 10 downloads**: cty.dat, Hamlib, country files now download correctly on Windows 10
@@ -54,8 +44,8 @@
 
 **[⬇ Download from GitHub Releases](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/latest)**
 
-- **Windows x64**: [`Decodium_FT2_2603240022_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x64_Setup.exe)
-- **Windows x86**: [`Decodium_FT2_2603240022_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x86_Setup.exe)
+- **Windows x64**: [`Decodium_FT2_2603241200_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603241200/Decodium_FT2_2603241200_x64_Setup.exe)
+- **Windows x86**: [`Decodium_FT2_2603241200_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603241200/Decodium_FT2_2603241200_x86_Setup.exe)
 
 Both installers are code-signed.
 
@@ -68,40 +58,30 @@ Both installers are code-signed.
 
 ## Italiano
 
-### Novità nella Build 2603240022
+### Novità nella Build 2603241200
 
-**Splash screen — FT2 Shannon Edition**
-- Nuovo branding: sottotitolo "FT2 Shannon Edition" con il motto bilingue:
-  *"It's not about more power. It's about better math."*
-  *"Non ci vuole più potenza. Ci vuole più matematica."*
-- Timer splash: 10 secondi con dissolvenza finale
+**WSJT-X Classic (bloccato) — preset con un click**
+- Nuova voce in Visualizza → Layout → **WSJT-X Classic (locked)**
+- Un solo click: applica i colori Classic WSJT-X 3.0 + posizioni originali + tutte le finestre dock bloccate
+- I dock non possono essere portati in floating né trascinati — riproduzione fedele dell'interfaccia originale WSJT-X 3.0
 
-**Finestre dock flottanti — posizioni ripristinate correttamente al riavvio**
-- Risolto bug per cui le posizioni delle finestre dock flottanti venivano perse dopo il riavvio
-- Causa: `restoreState()` veniva chiamata prima che la finestra fosse visibile — Qt non può posizionare i dock flottanti finché la finestra non è mostrata
-- Fix: una seconda chiamata differita a `restoreState()` scatta dopo l'avvio dell'event loop, riposizionando correttamente tutti i dock flottanti
+**Fix vero blocco layout**
+- Corretto: "Blocca layout" rimuoveva solo `DockWidgetFloatable` — i dock potevano ancora essere trascinati
+- Fix: ora rimuove anche `DockWidgetMovable` — blocco completo dei dock
+- Lo sblocco ripristina entrambi i flag Floatable e Movable
 
-**Fix loop AutoCQ — i chiamanti non vengono più ignorati dopo ~10 QSO**
-- Risolto bug critico dove AutoCQ continuava a mandare CQ all'infinito ignorando tutti i chiamanti dopo circa 10 QSO completati
-- Causa 1: `on_logQSOButton_clicked` avviava un `QTimer::singleShot(500ms)` per ogni QSO — dopo molti QSO i timer accumulati sparavano fuori ordine, chiamando `processNextInQueue()` in momenti sbagliati
-- Causa 2: `on_stopTxButton_clicked` resettava `m_bAutoReply = false` senza guardia per AutoCQ, uccidendo silenziosamente il rilevamento delle risposte al CQ
-- Causa 3: la guardia `msgLength==0` poteva attivare `on_stopTxButton_clicked` durante le transizioni AutoCQ
-- Fix: eliminata l'accumulazione di timer — il restart CQ è ora gestito esclusivamente da `clearDX()`, chiamata sincronamente dopo ogni QSO
-
-**Tema RF Amber — nuovo tema originale**
-- Nuovo tema "RF Amber" nel menu Visualizza → Tema
-- Sfondo scuro con accenti ambra/oro ispirati alle apparecchiature radio vintage
-- Orologio ambra fosforescente, frequenza in oro, titoli dock color cognac scuro
-- Colori accent su tab, menu, checkbox, toolbar e barra di stato
-
-**Linea separatrice periodi — toggle rapido**
-- Nuova voce selezionabile nel menu Visualizza: "Show period separator line"
-- Mostra/nascondi istantaneamente la linea tratteggiata `------` tra i periodi di decodifica
-- Un solo click — senza aprire il dialogo Impostazioni
+**Browser decodifiche cancellato al cambio modo**
+- Le finestre Band activity e Rx/Tx frequency vengono ora cancellate al cambio modo operativo
+- Comportamento coerente con il già esistente cancellamento al cambio banda
 
 ### Highlights dalle Build Recenti
 
-- **Fix crash**: crash null pointer all'avvio in sessioni Remote Desktop / VM senza display — risolto
+- **Splash screen**: branding "FT2 Shannon Edition" con motto bilingue (IT/EN)
+- **Fix dock flottanti**: posizioni ripristinate correttamente al riavvio
+- **Fix loop AutoCQ**: i chiamanti non vengono più ignorati dopo ~10 QSO
+- **Tema RF Amber**: sfondo scuro con accenti ambra/oro stile radio vintage
+- **Separatore periodi**: toggle rapido nel menu Visualizza per la linea `------`
+- **Fix crash**: crash null pointer all'avvio in Remote Desktop / VM senza display — risolto
 - **ADIF 3.17**: QSO FT2 loggati come `<MODE:4>MFSK <SUBMODE:3>FT2` (compatibile Log4OM, HRD, CloudLog, N1MM+)
 - **Download su Windows 10**: cty.dat, Hamlib, country files scaricano correttamente su Windows 10
 - **Decoder Shannon**: sincronizzazione best-of-N Costas, algoritmo adattivo, ottimizzazione loop-break RR73
@@ -116,8 +96,8 @@ Both installers are code-signed.
 
 **[⬇ Scarica da GitHub Releases](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/latest)**
 
-- **Windows x64**: [`Decodium_FT2_2603240022_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x64_Setup.exe)
-- **Windows x86**: [`Decodium_FT2_2603240022_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x86_Setup.exe)
+- **Windows x64**: [`Decodium_FT2_2603241200_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603241200/Decodium_FT2_2603241200_x64_Setup.exe)
+- **Windows x86**: [`Decodium_FT2_2603241200_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603241200/Decodium_FT2_2603241200_x86_Setup.exe)
 
 Entrambi gli installer sono firmati digitalmente.
 
@@ -130,39 +110,29 @@ Entrambi gli installer sono firmati digitalmente.
 
 ## Deutsch
 
-### Neuerungen in Build 2603240022
+### Neuerungen in Build 2603241200
 
-**Splash-Screen — FT2 Shannon Edition**
-- Neues Branding: Untertitel "FT2 Shannon Edition" mit zweisprachigem Motto:
-  *"It's not about more power. It's about better math."*
-  *"Non ci vuole più potenza. Ci vuole più matematica."*
-- Splash-Timer: 10 Sekunden mit sanftem Ausblenden
+**WSJT-X Classic (gesperrt) — Ein-Klick-Voreinstellung**
+- Neuer Eintrag unter Ansicht → Layout → **WSJT-X Classic (locked)**
+- Ein Klick: wendet Classic WSJT-X 3.0 Farben + Originalpositionen + alle gesperrten Dock-Fenster an
+- Docks können weder schwebend noch ziehbar sein — originalgetreue Wiedergabe von WSJT-X 3.0
 
-**Schwebende Dock-Fenster — Positionen nach Neustart korrekt wiederhergestellt**
-- Fehler behoben, bei dem schwebende Dock-Fenster nach dem Neustart ihre Position verloren
-- Ursache: `restoreState()` wurde aufgerufen, bevor das Fenster sichtbar war — Qt kann schwebende Docks erst positionieren, wenn das Fenster angezeigt wird
-- Fix: ein verzögerter zweiter `restoreState()`-Aufruf startet nach dem Event-Loop-Start und positioniert alle schwebenden Docks korrekt
+**Echter Layout-Sperren-Fix**
+- Behoben: "Layout sperren" entfernte bisher nur `DockWidgetFloatable` — Docks konnten noch gezogen werden
+- Fix: entfernt jetzt auch `DockWidgetMovable` — vollständige Dock-Sperre
+- Entsperren stellt beide Flags Floatable und Movable wieder her
 
-**AutoCQ-Schleifenfix — Anrufer werden nach ~10 QSOs nicht mehr ignoriert**
-- Kritischen Bug behoben, bei dem AutoCQ nach ~10 QSOs endlos CQ sendete und alle Anrufer ignorierte
-- Ursache 1: `on_logQSOButton_clicked` startete für jeden QSO einen `QTimer::singleShot(500ms)` — nach vielen QSOs feuerten die angesammelten Timer außer der Reihe und riefen `processNextInQueue()` zum falschen Zeitpunkt auf
-- Ursache 2: `on_stopTxButton_clicked` setzte `m_bAutoReply = false` ohne AutoCQ-Guard und zerstörte lautlos die CQ-Antworterkennung
-- Ursache 3: die `msgLength==0`-Prüfung konnte `on_stopTxButton_clicked` während AutoCQ-Übergängen auslösen
-- Fix: Timer-Anhäufung eliminiert — CQ-Neustart wird jetzt ausschließlich von `clearDX()` synchron nach jedem QSO verwaltet
-
-**RF Amber-Theme — neues Originaltheme**
-- Neues "RF Amber"-Theme im Menü Ansicht → Theme
-- Dunkler Hintergrund mit Bernstein-/Goldakzenten, inspiriert von Vintage-Funkgeräten
-- Phosphor-Bernstein-Uhr, goldene Frequenzanzeige, dunkel-cognacfarbene Dock-Titelleisten
-- Akzentfarben in Tabs, Menüs, Checkboxen, Toolbar und Statusleiste
-
-**Periodentrennlinie — Schnellumschalter**
-- Neuer auswählbarer Eintrag im Ansichts-Menü: "Show period separator line"
-- Gestrichelte `------` Linie zwischen Dekodierperioden sofort ein-/ausblenden
-- Ein Klick — kein Öffnen der Einstellungen nötig
+**Decode-Browser bei Moduswechsel geleert**
+- Band-Aktivitäts- und Rx/Tx-Frequenzfenster werden jetzt beim Wechsel des Betriebsmodus geleert
+- Konsistentes Verhalten mit dem bestehenden Leeren beim Bandwechsel
 
 ### Highlights aus neueren Builds
 
+- **Splash-Screen**: „FT2 Shannon Edition" Branding mit zweisprachigem Motto (IT/EN)
+- **Dock-Fenster-Fix**: Positionen nach Neustart korrekt wiederhergestellt
+- **AutoCQ-Schleifenfix**: Anrufer werden nach ~10 QSOs nicht mehr ignoriert
+- **RF Amber-Theme**: dunkler Hintergrund mit Bernstein-/Goldakzenten im Vintage-Funk-Stil
+- **Periodentrennlinie**: Schnellumschalter im Ansichts-Menü für die `------` Linie
 - **Absturz-Fix**: Null-Pointer-Absturz beim Start in Remote Desktop / VM ohne Anzeige — behoben
 - **ADIF 3.17**: FT2-QSOs werden als `<MODE:4>MFSK <SUBMODE:3>FT2` geloggt (Log4OM, HRD, CloudLog, N1MM+ kompatibel)
 - **Windows 10 Downloads**: cty.dat, Hamlib, Country-Dateien laden korrekt unter Windows 10
@@ -178,8 +148,8 @@ Entrambi gli installer sono firmati digitalmente.
 
 **[⬇ Download von GitHub Releases](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/latest)**
 
-- **Windows x64**: [`Decodium_FT2_2603240022_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x64_Setup.exe)
-- **Windows x86**: [`Decodium_FT2_2603240022_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603240022/Decodium_FT2_2603240022_x86_Setup.exe)
+- **Windows x64**: [`Decodium_FT2_2603241200_x64_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603241200/Decodium_FT2_2603241200_x64_Setup.exe)
+- **Windows x86**: [`Decodium_FT2_2603241200_x86_Setup.exe`](https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/download/v3.0.2603241200/Decodium_FT2_2603241200_x86_Setup.exe)
 
 Beide Installer sind digital signiert.
 

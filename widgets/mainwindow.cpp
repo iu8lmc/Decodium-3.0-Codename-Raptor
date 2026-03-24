@@ -670,6 +670,28 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   addPreset (tr ("FT2 Operator — all visible"),       6);
   layoutMenu->addSeparator ();
   addPreset (tr ("Reset to Default"),                 0);
+  {
+    auto *a = layoutMenu->addAction (tr ("WSJT-X Classic (locked)"));
+    a->setToolTip (tr ("Apply Classic WSJT-X 3.0 layout + colors and lock all dock windows"));
+    connect (a, &QAction::triggered, this, [this]() {
+      applyTheme (3);          // Classic WSJT-X colors
+      applyLayoutPreset (0);   // Classic WSJT-X positions
+      // Lock all docks (remove both Floatable and Movable)
+      QList<QDockWidget *> docks = {m_bandActivityDock, m_rxFreqDock,
+                                    m_controlsDock, m_clusterDock, m_waterfallDock};
+      if (m_activeStationsDock) docks.append (m_activeStationsDock);
+      for (auto *d : docks) {
+        if (!d) continue;
+        d->setFeatures (d->features ()
+                        & ~QDockWidget::DockWidgetFloatable
+                        & ~QDockWidget::DockWidgetMovable);
+        if (d->isFloating ()) d->setFloating (false);
+      }
+      m_settings->setValue ("DocksLocked", true);
+      m_settings->setValue ("CurrentTheme", 3);
+      statusBar ()->showMessage (tr ("Layout: WSJT-X Classic (locked)"), 3000);
+    });
+  }
 
   // ── Reset Layout — azione diretta nel menu View ────────────────
   ui->menuView->addSeparator ();
@@ -743,10 +765,15 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
       for (auto *d : docks) {
         if (!d) continue;   // non ancora inizializzato
         if (lock) {
-          d->setFeatures (d->features () & ~QDockWidget::DockWidgetFloatable);
+          // Rimuovi sia Floatable che Movable per blocco completo
+          d->setFeatures (d->features ()
+                          & ~QDockWidget::DockWidgetFloatable
+                          & ~QDockWidget::DockWidgetMovable);
           if (d->isFloating ()) { d->setFloating (false); }
         } else {
-          d->setFeatures (d->features () | QDockWidget::DockWidgetFloatable);
+          d->setFeatures (d->features ()
+                          | QDockWidget::DockWidgetFloatable
+                          | QDockWidget::DockWidgetMovable);
         }
       }
     };
@@ -14317,6 +14344,11 @@ void MainWindow::switch_mode (Mode mode)
 {
   no_a7_decodes = true;  // Don't allow a7 decodes during the first period because they can be leftovers from the previous mode
   msk144qsy = false;     // MSK144 QSY
+  // Cancella le finestre decode al cambio modo (come avviene al cambio banda)
+  if (m_config.erase_BandActivity ()) {
+    ui->decodedTextBrowser->erase ();
+    ui->decodedTextBrowser2->erase ();
+  }
   QTimer::singleShot ((int(1500.0*m_TRperiod)), [=] {no_a7_decodes = false;});
   if (m_mode != "Q65" && m_specOp==SpecOp::Q65_PILEUP) {
       m_config.setSpecial_None();
