@@ -54,13 +54,13 @@ jobs:
         run: make -C build-linux -j1 wsjt_fort_omp
 
       - name: Build applications
-        run: make -C build-linux -j$(nproc) wsjtx jt9 wsprd message_aggregator
+        run: make -C build-linux -j$(nproc) decodium jt9 wsprd message_aggregator
 
       - name: Verify executables
         run: |
           echo "=== Built executables ==="
-          file build-linux/wsjtx build-linux/jt9 build-linux/wsprd build-linux/message_aggregator
-          ls -lh build-linux/wsjtx build-linux/jt9 build-linux/wsprd build-linux/message_aggregator
+          file build-linux/decodium build-linux/jt9 build-linux/wsprd build-linux/message_aggregator
+          ls -lh build-linux/decodium build-linux/jt9 build-linux/wsprd build-linux/message_aggregator
 
       - name: Create distribution package
         run: |
@@ -69,7 +69,7 @@ jobs:
           mkdir -p "$DIST_DIR/bin" "$DIST_DIR/share/wsjtx"
 
           # Executables
-          cp build-linux/wsjtx build-linux/jt9 build-linux/wsprd build-linux/message_aggregator "$DIST_DIR/bin/"
+          cp build-linux/decodium build-linux/jt9 build-linux/wsprd build-linux/message_aggregator "$DIST_DIR/bin/"
           strip "$DIST_DIR/bin/"*
 
           # Data files
@@ -78,14 +78,13 @@ jobs:
           cp -r Palettes "$DIST_DIR/share/wsjtx/" 2>/dev/null || true
 
           # Launcher script
-          cat > "$DIST_DIR/wsjtx.sh" << 'LAUNCHER'
+          cat > "$DIST_DIR/decodium.sh" << 'LAUNCHER'
           #!/bin/bash
           DIR="$(cd "$(dirname "$0")" && pwd)"
           export PATH="$DIR/bin:$PATH"
-          export WSJTX_DATA_DIR="$DIR/share/wsjtx"
-          exec "$DIR/bin/wsjtx" "$@"
+          exec "$DIR/bin/decodium" "$@"
           LAUNCHER
-          chmod +x "$DIST_DIR/wsjtx.sh"
+          chmod +x "$DIST_DIR/decodium.sh"
 
           # Runtime dependency installer for target machines
           cat > "$DIST_DIR/install-deps.sh" << 'DEPS'
@@ -117,12 +116,12 @@ jobs:
           chmod +x "$DIST_DIR/install-deps.sh"
 
           # Create tarball
-          tar czf wsjtx_3.0_linux_x86_64.tar.gz "$DIST_DIR"
+          tar czf decodium_linux_x86_64.tar.gz "$DIST_DIR"
           echo "=== Package created ==="
-          ls -lh wsjtx_3.0_linux_x86_64.tar.gz
+          ls -lh decodium_linux_x86_64.tar.gz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wsjtx_3.0_linux_x86_64
-          path: wsjtx_3.0_linux_x86_64.tar.gz
+          name: decodium_linux_x86_64
+          path: decodium_linux_x86_64.tar.gz
