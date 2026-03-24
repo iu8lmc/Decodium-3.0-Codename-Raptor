@@ -327,7 +327,15 @@
         <number>0</number>
        </property>
        <item>
-        <layout class="QGridLayout" name="Band_buttons_Layout">
+        <widget class="QWidget" name="band_container" native="true">
+         <layout class="QVBoxLayout" name="vl_band">
+          <property name="leftMargin"><number>0</number></property>
+          <property name="topMargin"><number>0</number></property>
+          <property name="rightMargin"><number>0</number></property>
+          <property name="bottomMargin"><number>0</number></property>
+          <property name="spacing"><number>0</number></property>
+          <item>
+           <layout class="QGridLayout" name="Band_buttons_Layout">
          <property name="spacing">
           <number>3</number>
          </property>
@@ -703,9 +711,20 @@
           </widget>
          </item>
         </layout>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,2,2,2,2,2,0,2,2,2,2,1">
+        <widget class="QWidget" name="toolbar_container" native="true">
+         <layout class="QVBoxLayout" name="vl_toolbar">
+          <property name="leftMargin"><number>0</number></property>
+          <property name="topMargin"><number>0</number></property>
+          <property name="rightMargin"><number>0</number></property>
+          <property name="bottomMargin"><number>0</number></property>
+          <property name="spacing"><number>0</number></property>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,0,2,2,2,2,2,0,2,2,2,2,1">
          <item>
           <widget class="QCheckBox" name="cbCQonly">
            <property name="toolTip">
@@ -1072,9 +1091,20 @@
           </widget>
          </item>
         </layout>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item>
-        <layout class="QGridLayout" name="gridLayout_5" rowstretch="1,0,0" columnstretch="0,0,0,0,1,1,5,0">
+        <widget class="QWidget" name="qso_container" native="true">
+         <layout class="QVBoxLayout" name="vl_qso">
+          <property name="leftMargin"><number>0</number></property>
+          <property name="topMargin"><number>0</number></property>
+          <property name="rightMargin"><number>0</number></property>
+          <property name="bottomMargin"><number>0</number></property>
+          <property name="spacing"><number>0</number></property>
+          <item>
+           <layout class="QGridLayout" name="gridLayout_5" rowstretch="1,0,0" columnstretch="0,0,0,0,1,1,5,0">
          <item row="1" column="4" colspan="2">
           <widget class="QWidget" name="DX_controls_widget" native="true">
            <property name="sizePolicy">
@@ -5002,6 +5032,9 @@ QPushButton[state=&quot;ok&quot;] {
           </layout>
          </item>
         </layout>
+          </item>
+         </layout>
+        </widget>
        </item>
       </layout>
      </widget>

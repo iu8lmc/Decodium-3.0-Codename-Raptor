@@ -179,6 +179,7 @@ private:
   void showQSYMessage(QString message);
   void applyLayoutPreset (int preset);
   void applyTheme (int theme);
+  void rebuildSavedLayoutsMenu ();
 
 private slots:
   void initialize_fonts ();
@@ -584,6 +585,8 @@ private:
   QDockWidget *m_rxFreqDock {nullptr};
   QDockWidget *m_activeStationsDock {nullptr};
   QDockWidget *m_controlsDock {nullptr};
+
+  QMenu       *m_savedLayoutsMenu {nullptr};
 
   QToolBar    *m_mainToolBar {nullptr};
   QSOProgressWidget *m_qsoProgress {nullptr};

@@ -643,31 +643,60 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     lay->removeWidget (ui->decodes_splitter);
   }
 
-  // Controls panel (frequency, band, clock, TX)
-  if (auto *lay = ui->centralWidget->layout ()) {
+  // ── Controls panel: sub-QMainWindow con 3 dock annidati sganci/riagganci ─────
+  if (auto *lay = ui->centralWidget->layout ())
     lay->removeWidget (ui->lower_panel_widget);
-  }
-  // Size policy: Expanding in entrambe le direzioni, nessun vincolo fisso
-  ui->lower_panel_widget->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
-  ui->lower_panel_widget->setMinimumSize (0, 0);
-  ui->lower_panel_widget->setMaximumSize (QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
 
-  // Avvolgi in QScrollArea per resize H+V libero — i controlli scrollano
-  // quando il dock è più piccolo del contenuto naturale
-  auto *m_controlsScroll = new QScrollArea (this);
-  m_controlsScroll->setWidget (ui->lower_panel_widget);
-  m_controlsScroll->setWidgetResizable (true);
-  m_controlsScroll->setFrameShape (QFrame::NoFrame);
-  m_controlsScroll->setHorizontalScrollBarPolicy (Qt::ScrollBarAsNeeded);
-  m_controlsScroll->setVerticalScrollBarPolicy   (Qt::ScrollBarAsNeeded);
-  m_controlsScroll->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+  // Sub-QMainWindow — ospita i 3 dock interni
+  auto *innerMain = new QMainWindow (this);
+  innerMain->setDockOptions (QMainWindow::AllowNestedDocks | QMainWindow::AllowTabbedDocks);
+  innerMain->setDockNestingEnabled (true);
+  innerMain->setWindowFlags (Qt::Widget);   // embedded, non finestra top-level
+
+  auto const innerFeatures = QDockWidget::DockWidgetMovable
+                             | QDockWidget::DockWidgetFloatable
+                             | QDockWidget::DockWidgetClosable;
+
+  // Sub-dock 1: pulsanti banda
+  ui->band_container->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
+  auto *bandDock = new QDockWidget (tr ("Bands"), innerMain);
+  bandDock->setObjectName ("bandDock");
+  bandDock->setWidget (ui->band_container);
+  bandDock->setAllowedAreas (Qt::AllDockWidgetAreas);
+  bandDock->setFeatures (innerFeatures);
+  innerMain->addDockWidget (Qt::TopDockWidgetArea, bandDock);
+
+  // Sub-dock 2: toolbar azioni (Log, Monitor, Decode, Auto…)
+  ui->toolbar_container->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
+  auto *toolbarDock = new QDockWidget (tr ("Toolbar"), innerMain);
+  toolbarDock->setObjectName ("toolbarDock");
+  toolbarDock->setWidget (ui->toolbar_container);
+  toolbarDock->setAllowedAreas (Qt::AllDockWidgetAreas);
+  toolbarDock->setFeatures (innerFeatures);
+  innerMain->addDockWidget (Qt::TopDockWidgetArea, toolbarDock);
+
+  // Sub-dock 3: controlli QSO (freq, DX call, TX messages, signal meter)
+  ui->qso_container->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+  auto *qsoDock = new QDockWidget (tr ("QSO Controls"), innerMain);
+  qsoDock->setObjectName ("qsoDock");
+  qsoDock->setWidget (ui->qso_container);
+  qsoDock->setAllowedAreas (Qt::AllDockWidgetAreas);
+  qsoDock->setFeatures (innerFeatures);
+  innerMain->addDockWidget (Qt::BottomDockWidgetArea, qsoDock);
+
+  // innerMain in ScrollArea per sicurezza su schermi piccoli
+  auto *ctrlScroll = new QScrollArea (this);
+  ctrlScroll->setWidget (innerMain);
+  ctrlScroll->setWidgetResizable (true);
+  ctrlScroll->setFrameShape (QFrame::NoFrame);
+  ctrlScroll->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
 
   m_controlsDock = new QDockWidget (tr ("Controls"), this);
   m_controlsDock->setObjectName ("controlsDock");
-  m_controlsDock->setWidget (m_controlsScroll);
+  m_controlsDock->setWidget (ctrlScroll);
   m_controlsDock->setAllowedAreas (Qt::AllDockWidgetAreas);
   m_controlsDock->setFeatures (dockFeatures);
-  m_controlsDock->setMinimumSize (100, 40);   // permette dock molto compatto
+  m_controlsDock->setMinimumSize (100, 40);
   addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
 
   // ── Layout presets submenu in View ───────────────────────────────
@@ -707,6 +736,31 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
       m_settings->setValue ("CurrentTheme", 3);
       statusBar ()->showMessage (tr ("Layout: WSJT-X Classic (locked)"), 3000);
     });
+  }
+
+  // ── Save Layout / Load saved layouts ───────────────────────────
+  ui->menuView->addSeparator ();
+  {
+    auto *saveLayoutAction = ui->menuView->addAction (tr ("Save Layout…"));
+    saveLayoutAction->setToolTip (tr ("Salva la posizione attuale di tutte le finestre con un nome"));
+    connect (saveLayoutAction, &QAction::triggered, this, [this]() {
+      bool ok = false;
+      QString name = QInputDialog::getText (this, tr ("Salva Layout"),
+                                            tr ("Nome del layout:"),
+                                            QLineEdit::Normal,
+                                            tr ("Layout 1"), &ok);
+      if (!ok || name.trimmed ().isEmpty ()) return;
+      name = name.trimmed ();
+      m_settings->setValue (QStringLiteral ("SavedLayouts/") + name, saveState (4));
+      m_settings->setValue (QStringLiteral ("SavedGeometries/") + name, saveGeometry ());
+      // Aggiorna il submenu layout con il nuovo nome
+      rebuildSavedLayoutsMenu ();
+      statusBar ()->showMessage (tr ("Layout '%1' salvato").arg (name), 3000);
+    });
+
+    // Submenu layout salvati dall'utente
+    m_savedLayoutsMenu = ui->menuView->addMenu (tr ("Carica Layout Salvato"));
+    rebuildSavedLayoutsMenu ();
   }
 
   // ── Reset Layout — azione diretta nel menu View ────────────────
@@ -5511,6 +5565,46 @@ void MainWindow::subProcessError (QProcess * process, QProcess::ProcessError)
 //  0 = Classic (WSJT-X):   waterfall top, decodes L+R, controls bottom
 //  1 = Wide:               decodes L+R, waterfall bottom, controls bottom (tabbed)
 //  2 = Stacked:            all vertical top→bottom
+// ──────────────────────────────────────────────────────────────────────────────
+void MainWindow::rebuildSavedLayoutsMenu ()
+{
+  if (!m_savedLayoutsMenu) return;
+  m_savedLayoutsMenu->clear ();
+
+  m_settings->beginGroup ("SavedLayouts");
+  QStringList names = m_settings->childKeys ();
+  m_settings->endGroup ();
+
+  if (names.isEmpty ()) {
+    auto *empty = m_savedLayoutsMenu->addAction (tr ("(nessun layout salvato)"));
+    empty->setEnabled (false);
+    return;
+  }
+
+  for (auto const& name : names) {
+    auto *a = m_savedLayoutsMenu->addAction (name);
+    connect (a, &QAction::triggered, this, [this, name]() {
+      QByteArray state = m_settings->value (QStringLiteral ("SavedLayouts/") + name).toByteArray ();
+      QByteArray geo   = m_settings->value (QStringLiteral ("SavedGeometries/") + name).toByteArray ();
+      if (!geo.isEmpty ())   restoreGeometry (geo);
+      if (!state.isEmpty ()) restoreState (state, 4);
+      statusBar ()->showMessage (tr ("Layout '%1' ripristinato").arg (name), 3000);
+    });
+  }
+
+  m_savedLayoutsMenu->addSeparator ();
+  auto *delMenu = m_savedLayoutsMenu->addMenu (tr ("Elimina…"));
+  for (auto const& name : names) {
+    auto *a = delMenu->addAction (name);
+    connect (a, &QAction::triggered, this, [this, name]() {
+      m_settings->remove (QStringLiteral ("SavedLayouts/") + name);
+      m_settings->remove (QStringLiteral ("SavedGeometries/") + name);
+      rebuildSavedLayoutsMenu ();
+      statusBar ()->showMessage (tr ("Layout '%1' eliminato").arg (name), 3000);
+    });
+  }
+}
+
 //  3 = Operator:           waterfall+controls top (tabbed), decodes bottom L+R
 //  4 = Compact:            waterfall top, decodes+controls bottom (tabbed)
 //  5 = DXpedition:         band activity floating, rest docked
