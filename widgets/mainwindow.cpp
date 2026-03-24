@@ -3,6 +3,7 @@
 #include "asyncmodewidget.h"
 
 #include <QToolButton>
+#include <QScrollArea>
 #include <QAudio>
 #include <QAudioOutput>
 #include <QSound>
@@ -646,14 +647,27 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   if (auto *lay = ui->centralWidget->layout ()) {
     lay->removeWidget (ui->lower_panel_widget);
   }
-  ui->lower_panel_widget->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
-  ui->lower_panel_widget->setMinimumHeight (0);
-  ui->lower_panel_widget->setMaximumHeight (16777215);  // QWIDGETSIZE_MAX
+  // Size policy: Expanding in entrambe le direzioni, nessun vincolo fisso
+  ui->lower_panel_widget->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+  ui->lower_panel_widget->setMinimumSize (0, 0);
+  ui->lower_panel_widget->setMaximumSize (QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+
+  // Avvolgi in QScrollArea per resize H+V libero — i controlli scrollano
+  // quando il dock è più piccolo del contenuto naturale
+  auto *m_controlsScroll = new QScrollArea (this);
+  m_controlsScroll->setWidget (ui->lower_panel_widget);
+  m_controlsScroll->setWidgetResizable (true);
+  m_controlsScroll->setFrameShape (QFrame::NoFrame);
+  m_controlsScroll->setHorizontalScrollBarPolicy (Qt::ScrollBarAsNeeded);
+  m_controlsScroll->setVerticalScrollBarPolicy   (Qt::ScrollBarAsNeeded);
+  m_controlsScroll->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
+
   m_controlsDock = new QDockWidget (tr ("Controls"), this);
   m_controlsDock->setObjectName ("controlsDock");
-  m_controlsDock->setWidget (ui->lower_panel_widget);
+  m_controlsDock->setWidget (m_controlsScroll);
   m_controlsDock->setAllowedAreas (Qt::AllDockWidgetAreas);
   m_controlsDock->setFeatures (dockFeatures);
+  m_controlsDock->setMinimumSize (100, 40);   // permette dock molto compatto
   addDockWidget (Qt::BottomDockWidgetArea, m_controlsDock);
 
   // ── Layout presets submenu in View ───────────────────────────────
