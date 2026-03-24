@@ -597,7 +597,9 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
 {
   ui->setupUi(this);
   setUnifiedTitleAndToolBarOnMac (true);
-  setDockNestingEnabled (true);        // allow complex nested dock layouts
+  // AllowNestedDocks + AllowTabbedDocks, ma NO AnimatedDocks (causa inceppamenti)
+  setDockOptions (QMainWindow::AllowNestedDocks | QMainWindow::AllowTabbedDocks);
+  setDockNestingEnabled (true);
   createStatusBar();
 
   add_child_to_event_filter (this);
@@ -19389,6 +19391,10 @@ void MainWindow::applyTheme (int theme)
       "QLabel { font-family: MS Shell Dlg 2; font-size: 16pt;"
       " color: yellow; background-color: black; }"
       "QLabel[oob=\"true\"] { background-color: red; }");
+    // Separator padding zero anche per il tema Classic
+    qApp->setStyleSheet (qApp->styleSheet () +
+      "QMainWindow::separator { width: 1px; height: 1px; margin: 0px; padding: 0px; }"
+      "QMainWindow::separator:hover { background: #888888; }");
     return;
   }
 
@@ -19444,11 +19450,18 @@ void MainWindow::applyTheme (int theme)
       break;
   }
 
-  // Dock title bars — append solo le regole dock senza toccare il resto
+  // Dock title bars + separatori a padding zero
   QString dockSs = QString (
     "QDockWidget::title {"
     "  background: %1; color: %2; padding: 5px;"
     "  border: 1px solid %3; border-radius: 3px;"
+    "}"
+    "QMainWindow::separator {"
+    "  width: 1px; height: 1px;"
+    "  margin: 0px; padding: 0px;"
+    "}"
+    "QMainWindow::separator:hover {"
+    "  background: #888888;"
     "}"
   ).arg (dockTitleBg, dockTitleFg, dockBorder);
   QString extraSs;
