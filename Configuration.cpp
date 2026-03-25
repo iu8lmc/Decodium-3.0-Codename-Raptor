@@ -1134,6 +1134,13 @@ bool Configuration::pwrBandTxMemory () const {return m_->pwrBandTxMemory_;}
 bool Configuration::pwrBandTuneMemory () const {return m_->pwrBandTuneMemory_;}
 LotWUsers const& Configuration::lotw_users () const {return m_->lotw_users_;}
 DecodeHighlightingModel const& Configuration::decode_highlighting () const {return m_->decode_highlighing_model_;}
+
+void Configuration::update_decode_highlighting (DecodeHighlightingModel::HighlightItems items)
+{
+  m_->decode_highlighing_model_.items (items);
+  m_->settings_->setValue ("DecodeHighlighting", QVariant::fromValue (items));
+  Q_EMIT decode_highlighting_changed (m_->decode_highlighing_model_);
+}
 bool Configuration::highlight_by_mode () const {return m_->highlight_by_mode_;}
 bool Configuration::highlight_only_fields () const {return m_->highlight_only_fields_;}
 bool Configuration::include_WAE_entities () const {return m_->include_WAE_entities_;}
