@@ -1,4 +1,4 @@
-# Decodium Shannon v3.0 — Build 2603260100
+# Decodium Shannon v3.0 — Build 2603261400
 
 ## [Italiano](#italiano) | [English](#english)
 
@@ -56,7 +56,7 @@ Crea un file JSON portabile con: layout completo + colori personalizzati + calls
 Anteprima con nome, autore, data e descrizione prima di applicare. Scelta separata se applicare i colori inclusi.
 
 ### 🌍 Interfaccia in 12 lingue
-Italiano · English · Deutsch · Español · Català · Dansk · Magyar · 日本語 · Русский · 中文(简体) · 中文(繁體) · English (GB)
+Italiano · English · English (GB) · Deutsch · Español · Català · Dansk · Magyar · 日本語 · Русский · 中文(简体) · 中文(繁體)
 
 ### 📊 Contatore QSO di sessione
 Status bar: `QSO:n | Up:m` — conta dall'avvio del programma, nessun reset a mezzanotte UTC.
@@ -66,14 +66,15 @@ Se `decodium_original.dlay` è presente nella cartella dell'applicazione, al pri
 
 ---
 
-## Fix recenti (build 2603252200 → 2603260100)
+## Fix recenti (build 2603252200 → 2603261400)
 
 | Build | Fix |
 |-------|-----|
 | 2603252200 | Tab "Testo Decode" nel personalizzatore colori — 16 tipi di highlight modificabili |
 | 2603252330 | Export: colori nel `.dlay` solo se tema Custom · Import: tema base applicato prima dei colori · Dialog colori: parte da valori chiari se tema chiaro attivo |
 | 2603252359 | i18n completo: tutti i testi estratti da `.ui` + `.cpp`, EN e IT a 0 stringhe non tradotte, 12 lingue aggiornate |
-| 2603260100 | i18n UI: incluse 1002 stringhe da `mainwindow.ui` / `Configuration.ui` · carica `.dlay` default al primo avvio · fix coerenza colori al cambio tema |
+| 2603261400 | i18n UI: incluse 1002 stringhe da `mainwindow.ui` / `Configuration.ui` · carica `.dlay` default al primo avvio · fix coerenza colori al cambio tema |
+| 2603261400 | Fix lingue: Deutsch e Magyar ora funzionanti · menu lingue aggiornato (rimossi fr/pt/ko/tr senza traduzioni) · aggiunto en_GB, hu, ca, da, ru al selettore |
 
 ---
 
@@ -81,8 +82,8 @@ Se `decodium_original.dlay` è presente nella cartella dell'applicazione, al pri
 
 | Architettura | File |
 |-------------|------|
-| Windows x64 | `Decodium_FT2_2603260100_x64_Setup.exe` |
-| Windows x86 | `Decodium_FT2_2603260100_x86_Setup.exe` |
+| Windows x64 | `Decodium_FT2_2603261400_x64_Setup.exe` |
+| Windows x86 | `Decodium_FT2_2603261400_x86_Setup.exe` |
 
 📖 Guida completa: [`LAYOUT_GUIDE.md`](LAYOUT_GUIDE.md)
 
@@ -145,7 +146,7 @@ Creates a portable JSON file with: full layout + custom colors + author callsign
 Preview showing name, author, date and description before applying. Separate choice to apply included colors.
 
 ### 🌍 Interface in 12 languages
-Italiano · English · Deutsch · Español · Català · Dansk · Magyar · 日本語 · Русский · 中文(简体) · 中文(繁體) · English (GB)
+Italiano · English · English (GB) · Deutsch · Español · Català · Dansk · Magyar · 日本語 · Русский · 中文(简体) · 中文(繁體)
 
 ### 📊 Session QSO counter
 Status bar: `QSO:n | Up:m` — counts from program start, no reset at UTC midnight.
@@ -155,14 +156,15 @@ If `decodium_original.dlay` is present in the application folder, it is loaded a
 
 ---
 
-## Recent fixes (builds 2603252200 → 2603260100)
+## Recent fixes (builds 2603252200 → 2603261400)
 
 | Build | Fix |
 |-------|-----|
 | 2603252200 | "Decode Text" tab in color customizer — 16 highlight types editable |
 | 2603252330 | Export: colors in `.dlay` only when Custom theme active · Import: base theme applied before asking about colors · Color dialog: starts with light defaults when light theme is active |
 | 2603252359 | Full i18n: all texts extracted from `.ui` + `.cpp`, EN and IT at 0 untranslated strings, 12 languages updated |
-| 2603260100 | i18n UI: 1002 strings from `mainwindow.ui` / `Configuration.ui` included · auto-load default `.dlay` on first run · fix color coherence when switching themes |
+| 2603261400 | i18n UI: 1002 strings from `mainwindow.ui` / `Configuration.ui` included · auto-load default `.dlay` on first run · fix color coherence when switching themes |
+| 2603261400 | Language fix: Deutsch and Magyar now working · language menu updated (removed fr/pt/ko/tr with no translations) · added en_GB, hu, ca, da, ru to selector |
 
 ---
 
@@ -170,8 +172,8 @@ If `decodium_original.dlay` is present in the application folder, it is loaded a
 
 | Architecture | File |
 |-------------|------|
-| Windows x64 | `Decodium_FT2_2603260100_x64_Setup.exe` |
-| Windows x86 | `Decodium_FT2_2603260100_x86_Setup.exe` |
+| Windows x64 | `Decodium_FT2_2603261400_x64_Setup.exe` |
+| Windows x86 | `Decodium_FT2_2603261400_x86_Setup.exe` |
 
 📖 Full guide: [`LAYOUT_GUIDE.md`](LAYOUT_GUIDE.md)
 

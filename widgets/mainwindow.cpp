@@ -1015,15 +1015,17 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     struct LangInfo { const char *code; const char *name; };
     static const LangInfo langs[] = {
       {"en",    "English"},
+      {"en_GB", "English (GB)"},
       {"it",    "Italiano"},
-      {"es",    "Español"},
-      {"fr",    "Français"},
       {"de",    "Deutsch"},
-      {"pt",    "Português"},
+      {"es",    "Español"},
+      {"ca",    "Català"},
+      {"da",    "Dansk"},
+      {"hu",    "Magyar"},
       {"ja",    "日本語"},
-      {"zh",    "中文"},
-      {"ko",    "한국어"},
-      {"tr",    "Türkçe"},
+      {"ru",    "Русский"},
+      {"zh",    "中文(简体)"},
+      {"zh_TW", "中文(繁體)"},
     };
     auto *menuLang = new QMenu (tr ("Language"), this);
     QString currentLang = m_settings->value ("UILanguage").toString ();
