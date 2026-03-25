@@ -65,6 +65,11 @@
 #include <QHeaderView>
 #include <QDockWidget>
 #include <QTableWidget>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QClipboard>
+#include <QTextStream>
+#include <QDateTime>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QSpinBox>
@@ -738,6 +743,17 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     // Submenu layout salvati dall'utente
     m_savedLayoutsMenu = ui->menuView->addMenu (tr ("Carica Layout Salvato"));
     rebuildSavedLayoutsMenu ();
+  }
+
+  // ── Esporta / Importa layout (file .dlay — condivisibile in community) ───
+  {
+    auto *expAct = ui->menuView->addAction (tr ("Esporta Layout (.dlay)…"));
+    expAct->setToolTip (tr ("Salva il layout corrente come file .dlay da condividere con altri operatori"));
+    connect (expAct, &QAction::triggered, this, &MainWindow::exportLayout);
+
+    auto *impAct = ui->menuView->addAction (tr ("Importa Layout (.dlay)…"));
+    impAct->setToolTip (tr ("Carica un layout .dlay ricevuto da altri operatori"));
+    connect (impAct, &QAction::triggered, this, &MainWindow::importLayout);
   }
 
   // ── Reset Layout — azione diretta nel menu View ────────────────
@@ -5540,6 +5556,124 @@ void MainWindow::subProcessError (QProcess * process, QProcess::ProcessError)
 // ── Reset all dock widgets to default positions ────────────────────
 // ── Layout presets ─────────────────────────────────────────────────
 // Helper: undock everything, then re-place according to preset id.
+// ── Esporta layout come file .dlay (JSON) ─────────────────────────────────
+// Formato interscambiabile tra operatori — include metadati + stato Qt
+void MainWindow::exportLayout ()
+{
+  // Chiedi nome e descrizione prima di scegliere il file
+  bool ok = false;
+  QString layoutName = QInputDialog::getText (
+    this, tr ("Esporta Layout"),
+    tr ("Nome del layout (es. FT2 DXpedition Wide):"),
+    QLineEdit::Normal,
+    m_settings->value ("LastExportName", tr ("Il mio Layout")).toString (), &ok);
+  if (!ok || layoutName.trimmed ().isEmpty ()) return;
+  layoutName = layoutName.trimmed ();
+
+  QString description = QInputDialog::getText (
+    this, tr ("Esporta Layout"),
+    tr ("Descrizione (opzionale, visibile a chi importa):"),
+    QLineEdit::Normal, QString (), &ok);
+  // ok == false → descrizione vuota va bene
+
+  // Scegli dove salvare
+  QString defaultPath = QDir::homePath () + "/" +
+    layoutName.replace (QRegularExpression ("[^A-Za-z0-9_\\-]"), "_") + ".dlay";
+  QString filePath = QFileDialog::getSaveFileName (
+    this, tr ("Esporta Layout"), defaultPath,
+    tr ("Decodium Layout (*.dlay);;Tutti i file (*)"));
+  if (filePath.isEmpty ()) return;
+
+  // Costruisce il JSON
+  QJsonObject root;
+  root["format"]      = QStringLiteral ("DecodiumLayout");
+  root["version"]     = 1;
+  root["name"]        = layoutName;
+  root["author"]      = m_config.my_callsign ();
+  root["description"] = description.trimmed ();
+  root["created"]     = QDateTime::currentDateTimeUtc ().toString (Qt::ISODate);
+  root["app_version"] = QStringLiteral ("3.0");
+  // Dati Qt del layout (base64)
+  root["state"]    = QString::fromLatin1 (saveState (4).toBase64 ());
+  root["geometry"] = QString::fromLatin1 (saveGeometry ().toBase64 ());
+
+  QJsonDocument doc (root);
+  QFile f (filePath);
+  if (!f.open (QIODevice::WriteOnly | QIODevice::Text)) {
+    QMessageBox::warning (this, tr ("Esporta Layout"),
+                          tr ("Impossibile scrivere il file:\n%1").arg (filePath));
+    return;
+  }
+  f.write (doc.toJson (QJsonDocument::Indented));
+  f.close ();
+
+  m_settings->setValue ("LastExportName", layoutName);
+  statusBar ()->showMessage (tr ("Layout '%1' esportato in %2").arg (layoutName, filePath), 4000);
+}
+
+// ── Importa layout da file .dlay ──────────────────────────────────────────
+void MainWindow::importLayout ()
+{
+  QString filePath = QFileDialog::getOpenFileName (
+    this, tr ("Importa Layout"),
+    QDir::homePath (),
+    tr ("Decodium Layout (*.dlay);;Tutti i file (*)"));
+  if (filePath.isEmpty ()) return;
+
+  QFile f (filePath);
+  if (!f.open (QIODevice::ReadOnly | QIODevice::Text)) {
+    QMessageBox::warning (this, tr ("Importa Layout"),
+                          tr ("Impossibile aprire il file:\n%1").arg (filePath));
+    return;
+  }
+  QJsonParseError err;
+  QJsonDocument doc = QJsonDocument::fromJson (f.readAll (), &err);
+  f.close ();
+
+  if (doc.isNull () || !doc.isObject ()) {
+    QMessageBox::warning (this, tr ("Importa Layout"),
+                          tr ("File non valido o corrotto:\n%1").arg (err.errorString ()));
+    return;
+  }
+  QJsonObject root = doc.object ();
+  if (root["format"].toString () != QLatin1String ("DecodiumLayout")) {
+    QMessageBox::warning (this, tr ("Importa Layout"),
+                          tr ("Il file non è un layout Decodium."));
+    return;
+  }
+
+  // Mostra info sul layout prima di applicare
+  QString info = tr ("<b>%1</b><br>"
+                     "Autore: %2<br>"
+                     "Creato: %3<br>"
+                     "%4")
+    .arg (root["name"].toString ())
+    .arg (root["author"].toString ().isEmpty () ? tr ("sconosciuto") : root["author"].toString ())
+    .arg (root["created"].toString ())
+    .arg (root["description"].toString ().isEmpty () ? QString () :
+          "<br><i>" + root["description"].toString () + "</i>");
+
+  auto reply = QMessageBox::question (
+    this, tr ("Importa Layout"),
+    tr ("Applicare questo layout?\n\n") + info,
+    QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+  if (reply != QMessageBox::Yes) return;
+
+  // Applica geometria e stato
+  QByteArray geo   = QByteArray::fromBase64 (root["geometry"].toString ().toLatin1 ());
+  QByteArray state = QByteArray::fromBase64 (root["state"].toString ().toLatin1 ());
+  if (!geo.isEmpty ())   restoreGeometry (geo);
+  if (!state.isEmpty ()) restoreState (state, 4);
+
+  // Salva nelle layout locali col nome originale
+  QString name = root["name"].toString ();
+  m_settings->setValue (QStringLiteral ("SavedLayouts/") + name, state);
+  m_settings->setValue (QStringLiteral ("SavedGeometries/") + name, geo);
+  rebuildSavedLayoutsMenu ();
+
+  statusBar ()->showMessage (tr ("Layout '%1' importato e applicato").arg (name), 4000);
+}
+
 //  0 = Classic (WSJT-X):   waterfall top, decodes L+R, controls bottom
 //  1 = Wide:               decodes L+R, waterfall bottom, controls bottom (tabbed)
 //  2 = Stacked:            all vertical top→bottom
@@ -19504,27 +19638,25 @@ void MainWindow::applyTheme (int theme)
   m_currentTheme = theme;
   QFont font = m_config.text_font ();
 
-  // ── Classic: WSJT-X 3.0 originale — stile Qt di sistema, zero override ──
+  // ── Classic: WSJT-X 3.0 originale — stile Qt di sistema, ZERO CSS custom ──
   if (theme == 3) {
     m_useDarkStyle = false;
     ui->actionUse_Dark_Style->setChecked (false);
     qApp->setFont (font);
-    // Reset completo: solo font + separatori + dock title grigi come Qt default
+    // Reset TOTALE — nessun overlay Shannon/dark, usa Windows system look puro
+    // Solo separatori a padding zero (non alterano l'aspetto grafico)
     qApp->setStyleSheet (
       "* {" + font_as_stylesheet (font) + "}"
       "QMainWindow::separator {"
       "  width: 1px; height: 1px; margin: 0px; padding: 0px; }"
       "QMainWindow::separator:hover { background: #888888; }"
-      // Dock title bar neutra come Qt standard (grigio sistema)
-      "QDockWidget::title {"
-      "  background: #d4d0c8; color: #000000;"
-      "  padding: 3px 5px; border: 1px solid #a8a8a8; }"
-      "QDockWidget::title:focus {"
-      "  background: #0078d4; color: #ffffff; }"
     );
     m_wideGraph->setDarkStyle (false);
     ui->tabWidget->setTabShape (QTabWidget::Triangular);
-    // Clock e freq: identici all'originale WSJT-X .ui
+    // Rimuovi stili inline sui decode browsers — torna a colori sistema
+    ui->decodedTextBrowser->setStyleSheet (QString ());
+    ui->decodedTextBrowser2->setStyleSheet (QString ());
+    // Clock e freq: IDENTICI al .ui originale di WSJT-X 3.0
     ui->labUTC->setStyleSheet (
       "QLabel { font-family: 'MS Shell Dlg 2'; font-size: 16pt;"
       " background-color: black; color: yellow; }");

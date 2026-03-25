@@ -180,6 +180,8 @@ private:
   void applyLayoutPreset (int preset);
   void applyTheme (int theme);
   void rebuildSavedLayoutsMenu ();
+  void exportLayout ();
+  void importLayout ();
 
 private slots:
   void initialize_fonts ();
