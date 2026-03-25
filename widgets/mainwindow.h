@@ -584,7 +584,10 @@ private:
   QDockWidget *m_bandActivityDock {nullptr};
   QDockWidget *m_rxFreqDock {nullptr};
   QDockWidget *m_activeStationsDock {nullptr};
-  QDockWidget *m_controlsDock {nullptr};
+  // Controls panel: 3 top-level docks (freely movable anywhere)
+  QDockWidget *m_bandsDock       {nullptr};
+  QDockWidget *m_toolbarDock     {nullptr};
+  QDockWidget *m_qsoControlsDock {nullptr};
 
   QMenu       *m_savedLayoutsMenu {nullptr};
 
