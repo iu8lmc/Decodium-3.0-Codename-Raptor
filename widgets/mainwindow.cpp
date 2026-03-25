@@ -657,13 +657,36 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     lay->removeWidget (ui->lower_panel_widget);
 
   // Dock 1: Bande (26 pulsanti banda)
-  ui->band_container->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
+  ui->band_container->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding);
   m_bandsDock = new QDockWidget (tr ("Bands"), this);
   m_bandsDock->setObjectName ("bandsDock");
   m_bandsDock->setWidget (ui->band_container);
   m_bandsDock->setAllowedAreas (Qt::AllDockWidgetAreas);
   m_bandsDock->setFeatures (dockFeatures);
   addDockWidget (Qt::BottomDockWidgetArea, m_bandsDock);
+
+  // Zero spacing sul grid dei pulsanti banda
+  if (auto *g = ui->band_container->findChild<QGridLayout*> ("Band_buttons_Layout"))
+    g->setSpacing (0);
+
+  // Riorganizzazione automatica pulsanti quando il dock cambia area
+  auto rearrangeBandButtons = [this](Qt::DockWidgetArea area) {
+    auto *g = ui->band_container->findChild<QGridLayout*> ("Band_buttons_Layout");
+    if (!g) return;
+    // Raccoglie tutti i pulsanti in ordine
+    QList<QWidget*> btns;
+    for (int i = 0; i < g->count (); ++i)
+      if (auto *w = g->itemAt (i)->widget ()) btns.append (w);
+    // Rimuove tutti dal grid senza distruggerli
+    for (auto *w : btns) g->removeWidget (w);
+    // Verticale (Left/Right): 3 colonne × N righe — Orizzontale: 1 riga
+    bool vert = (area == Qt::LeftDockWidgetArea || area == Qt::RightDockWidgetArea);
+    int cols = vert ? 3 : btns.size ();
+    for (int i = 0; i < btns.size (); ++i)
+      g->addWidget (btns[i], i / cols, i % cols);
+    g->setSpacing (0);
+  };
+  connect (m_bandsDock, &QDockWidget::dockLocationChanged, this, rearrangeBandButtons);
 
   // Dock 2: Toolbar (Monitor, Decode, AutoCQ, Tx Enable, Log…)
   ui->toolbar_container->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -1138,8 +1161,8 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     a->setChecked (src->isChecked ());
     a->setToolTip (src->toolTip ());
     QString ss = QString (
-      "QToolButton { background: %1; color: #fff; border-radius: 3px; padding: 3px 8px; font-weight: bold; font-size: 9pt; }"
-      "QToolButton:checked { background: %1; border: 2px solid #fff; }"
+      "QToolButton { background: %1; color: #fff; border: none; border-radius: 0px; padding: 0px 6px; font-weight: bold; font-size: 9pt; }"
+      "QToolButton:checked { background: %1; outline: 2px solid #fff; }"
     ).arg (color);
     for (auto *w : m_mainToolBar->findChildren<QToolButton*>()) {
       if (w->defaultAction () == a) { w->setStyleSheet (ss); break; }
@@ -1156,7 +1179,7 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   haltAct->setToolTip (tr ("Stop transmitting"));
   for (auto *w : m_mainToolBar->findChildren<QToolButton*>()) {
     if (w->defaultAction () == haltAct) {
-      w->setStyleSheet ("QToolButton { background: #555; color: #fff; border-radius: 3px; padding: 3px 8px; font-weight: bold; font-size: 9pt; }");
+      w->setStyleSheet ("QToolButton { background: #555; color: #fff; border: none; border-radius: 0px; padding: 0px 6px; font-weight: bold; font-size: 9pt; }");
       break;
     }
   }
@@ -1797,6 +1820,9 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->lh_decodes_headings_label->setText(t);
   ui->rh_decodes_headings_label->setText(t);
   readSettings();            //Restore user's setup parameters
+
+  // Forza spacing=0 su tutti i layout interni all'avvio
+  trim_view (true);
 
   // Floating dock widgets non ripristinano la posizione se restoreState() viene
   // chiamato prima che la finestra sia visibile (bug Qt classico). Ripetiamo
@@ -5838,43 +5864,42 @@ void MainWindow::applyCustomTheme (QMap<QString, QColor> const& colors)
 
   QString css;
   css += "* {" + font_as_stylesheet (font) + "}";
-  css += "QMainWindow::separator { width:1px; height:1px; margin:0; padding:0; }";
+  // Separatori dock: larghezza 1px, zero padding
+  css += "QMainWindow::separator { width:1px; height:1px; margin:0; padding:0; border:none; }";
   css += QString ("QMainWindow::separator:hover { background: %1; }").arg (c ("separator"));
-  // Finestra e widget generici
-  css += QString ("QMainWindow, QDialog, QWidget { background-color: %1; color: %2; }")
+  // Finestra e widget generici — zero margin/padding globale
+  css += QString ("QMainWindow, QDialog, QWidget { background-color: %1; color: %2; margin:0; padding:0; }")
          .arg (c ("win_bg"), c ("win_fg"));
-  // Dock title bar
-  css += QString ("QDockWidget::title { background: %1; color: %2; padding: 4px 6px; "
-                  "border: 1px solid #aaa; }")
+  // Dock title bar — zero padding, nessun bordo
+  css += QString ("QDockWidget::title { background: %1; color: %2; padding: 0px 3px; border: none; }")
          .arg (c ("dock_title_bg"), c ("dock_title_fg"));
-  // Pulsanti
-  css += QString ("QPushButton { background-color: %1; color: %2; "
-                  "border: 1px solid #aaa; border-radius: 3px; padding: 3px 8px; }")
+  // Pulsanti — zero padding, nessun bordo, nessun border-radius
+  css += QString ("QPushButton { background-color: %1; color: %2; border: none; border-radius: 0px; padding: 0px 4px; margin: 0px; }")
          .arg (c ("btn_bg"), c ("btn_fg"));
   css += QString ("QPushButton:hover { background-color: %1; }").arg (c ("btn_hover_bg"));
-  css += QString ("QPushButton:checked { background-color: %1; color: %2; "
-                  "border: 1px solid #555; }").arg (c ("btn_on_bg"), c ("btn_on_fg"));
+  css += QString ("QPushButton:checked { background-color: %1; color: %2; border: none; }").arg (c ("btn_on_bg"), c ("btn_on_fg"));
+  // QToolButton (toolbar)
+  css += "QToolButton { border: none; border-radius: 0px; padding: 0px 4px; margin: 0px; }";
   // Menu
-  css += QString ("QMenuBar { background-color: %1; color: %2; }")
+  css += QString ("QMenuBar { background-color: %1; color: %2; border: none; padding: 0; }")
          .arg (c ("menu_bg"), c ("menu_fg"));
   css += QString ("QMenuBar::item:selected, QMenuBar::item:pressed "
                   "{ background: %1; color: %2; }").arg (c ("menu_sel_bg"), c ("menu_sel_fg"));
-  css += QString ("QMenu { background-color: %1; color: %2; }")
+  css += QString ("QMenu { background-color: %1; color: %2; border: none; padding: 0; }")
          .arg (c ("menu_bg"), c ("menu_fg"));
   css += QString ("QMenu::item:selected { background: %1; color: %2; }")
          .arg (c ("menu_sel_bg"), c ("menu_sel_fg"));
   // Status bar
-  css += QString ("QStatusBar { background-color: %1; color: %2; }")
+  css += QString ("QStatusBar { background-color: %1; color: %2; border: none; padding: 0; }")
          .arg (c ("status_bg"), c ("status_fg"));
-  // Tab bar
-  css += QString ("QTabBar::tab { background: %1; color: %2; padding: 4px 8px; "
-                  "border: 1px solid #aaa; border-bottom: none; }")
+  // Tab bar — padding minimo, nessun bordo
+  css += QString ("QTabBar::tab { background: %1; color: %2; padding: 1px 5px; border: none; border-radius: 0px; }")
          .arg (c ("tab_bg"), c ("tab_fg"));
   css += QString ("QTabBar::tab:selected { background: %1; color: %2; }")
          .arg (c ("tab_sel_bg"), c ("tab_sel_fg"));
   // Input
   css += QString ("QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QTextEdit, QPlainTextEdit "
-                  "{ background-color: %1; color: %2; }")
+                  "{ background-color: %1; color: %2; border: none; padding: 0px 2px; }")
          .arg (c ("input_bg"), c ("input_fg"));
 
   qApp->setStyleSheet (css);
@@ -20170,9 +20195,12 @@ void MainWindow::applyTheme (int theme)
     // Solo separatori a padding zero (non alterano l'aspetto grafico)
     qApp->setStyleSheet (
       "* {" + font_as_stylesheet (font) + "}"
-      "QMainWindow::separator {"
-      "  width: 1px; height: 1px; margin: 0px; padding: 0px; }"
+      "QMainWindow::separator { width: 1px; height: 1px; margin: 0px; padding: 0px; border: none; }"
       "QMainWindow::separator:hover { background: #888888; }"
+      "QPushButton { border: none; border-radius: 0px; padding: 0px 4px; margin: 0px; }"
+      "QToolButton { border: none; border-radius: 0px; padding: 0px 4px; margin: 0px; }"
+      "QDockWidget::title { padding: 0px 3px; border: none; border-radius: 0px; }"
+      "QTabBar::tab { padding: 1px 5px; border: none; border-radius: 0px; }"
     );
     m_wideGraph->setDarkStyle (false);
     ui->tabWidget->setTabShape (QTabWidget::Triangular);
@@ -20250,19 +20278,21 @@ void MainWindow::applyTheme (int theme)
       break;
   }
 
-  // Dock title bars + separatori a padding zero
+  // Dock title bars + separatori + zero padding globale su pulsanti/tab
   QString dockSs = QString (
     "QDockWidget::title {"
-    "  background: %1; color: %2; padding: 5px;"
-    "  border: 1px solid %3; border-radius: 3px;"
+    "  background: %1; color: %2; padding: 0px 3px; border: none; border-radius: 0px;"
     "}"
     "QMainWindow::separator {"
-    "  width: 1px; height: 1px;"
-    "  margin: 0px; padding: 0px;"
+    "  width: 1px; height: 1px; margin: 0px; padding: 0px; border: none;"
     "}"
-    "QMainWindow::separator:hover {"
-    "  background: #888888;"
-    "}"
+    "QMainWindow::separator:hover { background: #888888; }"
+    "QPushButton { border: none; border-radius: 0px; padding: 0px 4px; margin: 0px; }"
+    "QToolButton { border: none; border-radius: 0px; padding: 0px 4px; margin: 0px; }"
+    "QTabBar::tab { padding: 1px 5px; border: none; border-radius: 0px; }"
+    "QMenuBar { border: none; padding: 0; }"
+    "QMenu { border: none; padding: 0; }"
+    "QStatusBar { border: none; padding: 0; }"
   ).arg (dockTitleBg, dockTitleFg, dockBorder);
   QString extraSs;
   if (theme == 4) { // RF Amber — accent color overrides
