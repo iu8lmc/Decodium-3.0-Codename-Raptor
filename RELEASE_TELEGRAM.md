@@ -4,40 +4,37 @@
 
 ---
 
-📡 **Decodium Shannon v3.0 — Build 2603242300**
-*Interfaccia completamente modulare + colori personalizzati*
+📡 **Decodium Shannon v3.0 — Build 2603252359**
+*Interfaccia multilingue + colori decode personalizzabili + fix temi*
 
 🆕 **Cosa c'è di nuovo**
 
-🔧 **Layout totalmente libero**
-Ogni pannello — Waterfall, Decode, Bande, Controlli, QSO — si sposta ovunque. Trascina, affianca, raggruppa in tab, stacca come finestra indipendente. Nessun vincolo.
+🌍 **Interfaccia multilingue coerente — 12 lingue**
+Cambiando lingua dal menu, ora **tutto** l'interfaccia segue: menu, dialoghi, tooltip, messaggi di stato. Niente più mix italiano/inglese.
+Lingue: 🇮🇹 🇬🇧 🇩🇪 🇪🇸 🇨🇦 🇩🇰 🇭🇺 🇯🇵 🇷🇺 🇨🇳 🇹🇼
 
-🎨 **28 colori personalizzabili**
-Menu Visualizza → Theme → Personalizza Colori…
-Cambia il colore di ogni parte dell'interfaccia: sfondo, orologio, frequenza, pulsanti, menu, decode panel, dock title bar. Anteprima live con Apply.
+🎨 **Colori testo decode personalizzabili**
+Visualizza → Theme → Customize Colors… → tab **Testo Decode**
+Modifica sfondo e testo per tutti i 16 tipi di highlight:
+CQ · MyCall · Tx · DXCC · Grid · Continent · CQZone · ITUZone · LoTW…
+Anteprima live, reset singolo per ogni voce.
 
-💾 **Salva il tuo layout**
-Visualizza → Save Layout… → dai un nome → salvato.
-Ricaricabile in qualsiasi momento dal menu.
+🔧 **Fix sistema temi — export/import corretto**
+• Export: i colori vengono salvati nel `.dlay` solo quando il tema è **Custom**. Prima venivano salvati anche con tema preset, portando colori sbagliati.
+• Import: il tema base viene applicato prima dei colori custom.
+• Dialog "Personalizza Colori": si apre con colori chiari quando il tema attivo è chiaro.
 
 📤 **Esporta layout (.dlay)**
-Visualizza → Esporta Layout (.dlay)…
-Crea un file JSON con layout + colori personalizzati + nome autore (callsign).
+Visualizza → Export Layout (.dlay)…
+Il file include layout + colori personalizzati + callsign autore.
 
 📥 **Importa layout da altri radioamatori**
-Visualizza → Importa Layout (.dlay)…
-Vedi anteprima con nome, autore e descrizione prima di applicare.
-Se il layout contiene colori personalizzati, puoi applicarli con un click.
-
-🏛️ **WSJT-X Classic fedele all'originale**
-Visualizza → Layout → WSJT-X Classic (locked)
-Un click: look Windows nativo, colori originali WSJT-X 3.0, tutti i pannelli bloccati in posizione.
-
-📖 Guida completa: `LAYOUT_GUIDE.md` nel repository
+Visualizza → Import Layout (.dlay)…
+Anteprima con nome, autore, data e descrizione prima di applicare.
 
 ⬇️ Download:
-• x64: `Decodium_FT2_2603242300_x64_Setup.exe`
-• x86: `Decodium_FT2_2603242300_x86_Setup.exe`
+• x64: `Decodium_FT2_2603252359_x64_Setup.exe`
+• x86: `Decodium_FT2_2603252359_x86_Setup.exe`
 
 73 de IU8LMC
 
@@ -47,40 +44,37 @@ Un click: look Windows nativo, colori originali WSJT-X 3.0, tutti i pannelli blo
 
 ---
 
-📡 **Decodium Shannon v3.0 — Build 2603242300**
-*Fully modular interface + custom color themes*
+📡 **Decodium Shannon v3.0 — Build 2603252359**
+*Multilingual UI + custom decode text colors + theme fixes*
 
 🆕 **What's New**
 
-🔧 **Fully free layout**
-Every panel — Waterfall, Decodes, Bands, Controls, QSO — can be moved anywhere. Drag, split, group into tabs, detach as a floating window. No fixed positions.
+🌍 **Coherent multilingual interface — 12 languages**
+Switching language now updates **everything**: menus, dialogs, tooltips, status messages. No more Italian/English mix in the UI.
+Languages: 🇮🇹 🇬🇧 🇩🇪 🇪🇸 🇨🇦 🇩🇰 🇭🇺 🇯🇵 🇷🇺 🇨🇳 🇹🇼
 
-🎨 **28 customizable colors**
-View → Theme → Customize Colors…
-Change the color of every UI element: background, clock, frequency display, buttons, menus, decode panels, dock title bars. Live preview with Apply button.
+🎨 **Customizable decode text colors**
+View → Theme → Customize Colors… → **Decode Text** tab
+Set background and foreground color for all 16 highlight types:
+CQ · MyCall · Tx · DXCC · Grid · Continent · CQZone · ITUZone · LoTW…
+Live preview, individual reset button for each entry.
 
-💾 **Save your layout**
-View → Save Layout… → name it → saved locally.
-Restore it anytime from the menu.
+🔧 **Theme system fix — correct export/import**
+• Export: colors are saved in the `.dlay` file only when the active theme is **Custom**. Previously they were always saved, causing wrong colors on re-import.
+• Import: the base theme is applied before custom colors.
+• "Customize Colors" dialog: opens with light defaults when a light theme is active.
 
 📤 **Export layout (.dlay)**
 View → Export Layout (.dlay)…
-Produces a JSON file containing your layout + custom colors + author callsign.
+File includes layout + custom colors + author callsign.
 
 📥 **Import layouts from other operators**
 View → Import Layout (.dlay)…
-Preview shows name, author and description before applying.
-If the file includes custom colors, you can choose to apply them too.
-
-🏛️ **True WSJT-X Classic**
-View → Layout → WSJT-X Classic (locked)
-One click: native Windows look, original WSJT-X 3.0 colors, all panels locked in position.
-
-📖 Full guide: `LAYOUT_GUIDE.md` in the repository
+Preview shows name, author, date and description before applying.
 
 ⬇️ Download:
-• x64: `Decodium_FT2_2603242300_x64_Setup.exe`
-• x86: `Decodium_FT2_2603242300_x86_Setup.exe`
+• x64: `Decodium_FT2_2603252359_x64_Setup.exe`
+• x86: `Decodium_FT2_2603252359_x86_Setup.exe`
 
 73 de IU8LMC
 
@@ -90,40 +84,37 @@ One click: native Windows look, original WSJT-X 3.0 colors, all panels locked in
 
 ---
 
-📡 **Decodium Shannon v3.0 — Build 2603242300**
-*Vollständig modulares Interface + eigene Farbthemen*
+📡 **Decodium Shannon v3.0 — Build 2603252359**
+*Mehrsprachige Oberfläche + anpassbare Decode-Textfarben + Theme-Fixes*
 
 🆕 **Was ist neu**
 
-🔧 **Vollständig freies Layout**
-Jedes Panel — Wasserfall, Dekodierungen, Bänder, Steuerung, QSO — lässt sich frei verschieben. Ziehen, nebeneinander anordnen, als Tabs gruppieren oder als eigenes Fenster ablösen. Keine festen Positionen.
+🌍 **Kohärente mehrsprachige Oberfläche — 12 Sprachen**
+Beim Sprachwechsel wird jetzt **alles** aktualisiert: Menüs, Dialoge, Tooltips, Statusmeldungen. Kein Sprachmix mehr in der Oberfläche.
+Sprachen: 🇮🇹 🇬🇧 🇩🇪 🇪🇸 🇨🇦 🇩🇰 🇭🇺 🇯🇵 🇷🇺 🇨🇳 🇹🇼
 
-🎨 **28 anpassbare Farben**
-Ansicht → Theme → Farben anpassen…
-Ändere die Farbe jedes UI-Elements: Hintergrund, Uhr, Frequenzanzeige, Schaltflächen, Menüs, Decode-Panels, Dock-Titelleisten. Live-Vorschau mit dem Apply-Button.
+🎨 **Anpassbare Decode-Textfarben**
+Ansicht → Theme → Farben anpassen… → Tab **Decode-Text**
+Hintergrund- und Vordergrundfarbe für alle 16 Hervorhebungstypen:
+CQ · MyCall · Tx · DXCC · Grid · Continent · CQZone · ITUZone · LoTW…
+Live-Vorschau, einzelne Reset-Schaltfläche pro Eintrag.
 
-💾 **Layout speichern**
-Ansicht → Layout speichern… → Namen eingeben → gespeichert.
-Jederzeit aus dem Menü wiederherstellbar.
+🔧 **Theme-System-Fix — korrekter Export/Import**
+• Export: Farben werden im `.dlay` nur gespeichert, wenn das aktive Theme **Custom** ist. Vorher wurden sie immer gespeichert, was beim Re-Import zu falschen Farben führte.
+• Import: Das Basis-Theme wird vor den benutzerdefinierten Farben angewendet.
+• Dialog „Farben anpassen": öffnet mit hellen Standardwerten, wenn ein helles Theme aktiv ist.
 
 📤 **Layout exportieren (.dlay)**
 Ansicht → Layout exportieren (.dlay)…
-Erstellt eine JSON-Datei mit Layout + eigenen Farben + Rufzeichen des Autors.
+Die Datei enthält Layout + eigene Farben + Rufzeichen des Autors.
 
 📥 **Layout von anderen Operatoren importieren**
 Ansicht → Layout importieren (.dlay)…
-Vorschau zeigt Name, Autor und Beschreibung vor der Übernahme.
-Falls die Datei eigene Farben enthält, können diese ebenfalls übernommen werden.
-
-🏛️ **Originales WSJT-X Classic**
-Ansicht → Layout → WSJT-X Classic (gesperrt)
-Ein Klick: nativer Windows-Look, originale WSJT-X 3.0 Farben, alle Panels fest verankert.
-
-📖 Vollständige Anleitung: `LAYOUT_GUIDE.md` im Repository
+Vorschau zeigt Name, Autor, Datum und Beschreibung vor der Übernahme.
 
 ⬇️ Download:
-• x64: `Decodium_FT2_2603242300_x64_Setup.exe`
-• x86: `Decodium_FT2_2603242300_x86_Setup.exe`
+• x64: `Decodium_FT2_2603252359_x64_Setup.exe`
+• x86: `Decodium_FT2_2603252359_x86_Setup.exe`
 
 73 de IU8LMC
 
