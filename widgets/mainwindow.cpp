@@ -1801,10 +1801,15 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   // Floating dock widgets non ripristinano la posizione se restoreState() viene
   // chiamato prima che la finestra sia visibile (bug Qt classico). Ripetiamo
   // restoreState dopo che l'event loop è partito (cioè dopo show() in main.cpp).
+  // Il singleShot(0) non basta per i dock height: la finestra non è ancora dipinta.
+  // Secondo restore a 150ms garantisce che le dimensioni siano applicate correttamente.
   QTimer::singleShot(0, this, [this]() {
     auto savedState = m_settings->value("state").toByteArray();
     if (!savedState.isEmpty()) {
       restoreState(savedState, 4);
+      QTimer::singleShot(150, this, [this, savedState]() {
+        restoreState(savedState, 4);
+      });
     } else {
       // First run (no saved state): load decodium_original.dlay if present
       QString defaultDlay = QApplication::applicationDirPath() + "/decodium_original.dlay";
