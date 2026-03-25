@@ -665,25 +665,34 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   m_bandsDock->setFeatures (dockFeatures);
   addDockWidget (Qt::BottomDockWidgetArea, m_bandsDock);
 
-  // Zero spacing sul grid dei pulsanti banda
-  if (auto *g = ui->band_container->findChild<QGridLayout*> ("Band_buttons_Layout"))
+  // Salva l'ordine visivo originale dei pulsanti banda (colonna per colonna, riga 0)
+  // DEVE avvenire PRIMA di qualsiasi riarrangiamento
+  if (auto *g = ui->band_container->findChild<QGridLayout*> ("Band_buttons_Layout")) {
     g->setSpacing (0);
+    // Trova il numero massimo di colonne nel layout originale (1 riga)
+    int maxCol = 0;
+    for (int i = 0; i < g->count (); ++i) {
+      int r, c, rs, cs; g->getItemPosition (i, &r, &c, &rs, &cs);
+      maxCol = qMax (maxCol, c);
+    }
+    // Raccoglie in ordine visivo (colonna crescente, riga 0)
+    for (int col = 0; col <= maxCol; ++col)
+      if (auto *item = g->itemAtPosition (0, col))
+        if (auto *w = item->widget ()) m_bandButtons.append (w);
+  }
 
   // Riorganizzazione automatica pulsanti quando il dock cambia area
   auto rearrangeBandButtons = [this](Qt::DockWidgetArea area) {
+    if (m_bandButtons.isEmpty ()) return;
     auto *g = ui->band_container->findChild<QGridLayout*> ("Band_buttons_Layout");
     if (!g) return;
-    // Raccoglie tutti i pulsanti in ordine
-    QList<QWidget*> btns;
-    for (int i = 0; i < g->count (); ++i)
-      if (auto *w = g->itemAt (i)->widget ()) btns.append (w);
-    // Rimuove tutti dal grid senza distruggerli
-    for (auto *w : btns) g->removeWidget (w);
-    // Verticale (Left/Right): 3 colonne × N righe — Orizzontale: 1 riga
+    // Rimuove tutti senza distruggerli
+    for (auto *w : m_bandButtons) g->removeWidget (w);
+    // Left/Right: 3 colonne — Top/Bottom/floating: riga unica
     bool vert = (area == Qt::LeftDockWidgetArea || area == Qt::RightDockWidgetArea);
-    int cols = vert ? 3 : btns.size ();
-    for (int i = 0; i < btns.size (); ++i)
-      g->addWidget (btns[i], i / cols, i % cols);
+    int cols = vert ? 3 : m_bandButtons.size ();
+    for (int i = 0; i < m_bandButtons.size (); ++i)
+      g->addWidget (m_bandButtons[i], i / cols, i % cols);
     g->setSpacing (0);
   };
   connect (m_bandsDock, &QDockWidget::dockLocationChanged, this, rearrangeBandButtons);
@@ -1821,9 +1830,6 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->rh_decodes_headings_label->setText(t);
   readSettings();            //Restore user's setup parameters
 
-  // Forza spacing=0 su tutti i layout interni all'avvio
-  trim_view (true);
-
   // Floating dock widgets non ripristinano la posizione se restoreState() viene
   // chiamato prima che la finestra sia visibile (bug Qt classico). Ripetiamo
   // restoreState dopo che l'event loop è partito (cioè dopo show() in main.cpp).
@@ -1835,6 +1841,16 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
       restoreState(savedState, 4);
       QTimer::singleShot(150, this, [this, savedState]() {
         restoreState(savedState, 4);
+        // Dopo il restore, riapplica il layout banda in base all'area corrente
+        auto area = dockWidgetArea (m_bandsDock);
+        if (area == Qt::LeftDockWidgetArea || area == Qt::RightDockWidgetArea) {
+          if (auto *g = ui->band_container->findChild<QGridLayout*> ("Band_buttons_Layout")) {
+            for (auto *w : m_bandButtons) g->removeWidget (w);
+            for (int i = 0; i < m_bandButtons.size (); ++i)
+              g->addWidget (m_bandButtons[i], i / 3, i % 3);
+            g->setSpacing (0);
+          }
+        }
       });
     } else {
       // First run (no saved state): load decodium_original.dlay if present

@@ -594,6 +594,7 @@ private:
   QDockWidget *m_bandsDock       {nullptr};
   QDockWidget *m_toolbarDock     {nullptr};
   QDockWidget *m_qsoControlsDock {nullptr};
+  QList<QWidget*> m_bandButtons; // ordine visivo originale dei pulsanti banda
 
   QMenu       *m_savedLayoutsMenu {nullptr};
   QMap<QString, QColor> m_customColors;   // colori personalizzati utente
