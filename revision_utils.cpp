@@ -80,6 +80,6 @@ QString version (bool include_patch)
 
 QString program_title (QString const& revision)
 {
-  QString id {"Decodium Shannon v3.0.2603252200"};
+  QString id {"Decodium Shannon v3.0.2603252330"};
   return id + " " + revision;
 }

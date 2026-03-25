@@ -69,6 +69,8 @@
 #include <QJsonObject>
 #include <QColorDialog>
 #include <QClipboard>
+#include <QTabWidget>
+#include "models/DecodeHighlightingModel.hpp"
 #include <QTextStream>
 #include <QDateTime>
 #include <QGridLayout>
@@ -5612,8 +5614,10 @@ void MainWindow::exportLayout ()
   // Dati Qt del layout (base64)
   root["state"]    = QString::fromLatin1 (saveState (4).toBase64 ());
   root["geometry"] = QString::fromLatin1 (saveGeometry ().toBase64 ());
-  // Colori personalizzati — inclusi solo se tema Custom (5) o se presenti
-  if (!m_customColors.isEmpty ()) {
+  // Colori personalizzati — inclusi SOLO se il tema attivo è Custom (5)
+  // Se il tema è un preset (0-4), non includere colori per evitare di salvare
+  // colori stantii di sessioni precedenti che sovrascriverebbero il preset all'import
+  if (m_currentTheme == 5 && !m_customColors.isEmpty ()) {
     QJsonObject colorObj;
     for (auto it = m_customColors.constBegin (); it != m_customColors.constEnd (); ++it)
       colorObj[it.key ()] = it.value ().name ();
@@ -5688,7 +5692,11 @@ void MainWindow::importLayout ()
   if (!geo.isEmpty ())   restoreGeometry (geo);
   if (!state.isEmpty ()) restoreState (state, 4);
 
-  // Applica colori personalizzati se presenti nel file
+  // Applica SEMPRE il tema numerico dal file come base
+  int fileTheme = root["theme"].toInt (3);
+  applyTheme (fileTheme);
+
+  // Se il file include colori custom (theme==5), chiedi se applicarli
   if (root.contains ("colors") && root["colors"].isObject ()) {
     QJsonObject colorObj = root["colors"].toObject ();
     QMap<QString, QColor> importedColors;
@@ -5710,10 +5718,8 @@ void MainWindow::importLayout ()
         m_settings->setValue ("CurrentTheme", 5);
         applyCustomTheme (m_customColors);
       }
+      // Se l'utente rifiuta i colori, il tema base (fileTheme) rimane attivo
     }
-  } else if (root.contains ("theme")) {
-    // Nessun colore custom — applica il tema numerico salvato
-    applyTheme (root["theme"].toInt (3));
   }
 
   // Salva nelle layout locali col nome originale
@@ -5856,109 +5862,269 @@ void MainWindow::applyCustomTheme (QMap<QString, QColor> const& colors)
 // ── Dialogo personalizzazione colori ─────────────────────────────────────
 void MainWindow::showColorCustomizer ()
 {
-  // Copia locale dei colori da modificare nel dialogo
-  QMap<QString, QColor> workColors = m_customColors;
+  using DHM = DecodeHighlightingModel;
 
-  // Prepopola con i default se mancanti
+  // ── Copie di lavoro ────────────────────────────────────────────────────
+  // Se il tema attivo è Custom (5), parti dai colori correnti.
+  // Altrimenti (preset 0-4) parti sempre dai default chiari — così aprire
+  // il personalizzatore da Shannon Light mostra colori chiari, non quelli
+  // stantii di una sessione precedente con tema scuro.
+  QMap<QString, QColor> workColors;
+  if (m_currentTheme == 5)
+    workColors = m_customColors;
   for (int i = 0; i < kColorSlotCount; ++i) {
     if (!workColors.contains (QLatin1String (kColorSlots[i].key)))
       workColors[QLatin1String (kColorSlots[i].key)] = QColor (QLatin1String (kColorSlots[i].def));
   }
+  DHM::HighlightItems workHighlight = m_config.decode_highlighting ().items ();
 
+  // ── Dialogo principale ─────────────────────────────────────────────────
   auto *dlg = new QDialog (this);
   dlg->setWindowTitle (tr ("Personalizza Colori — Decodium"));
-  dlg->setMinimumWidth (460);
+  dlg->setMinimumSize (560, 480);
   dlg->setSizeGripEnabled (true);
 
   auto *vbox = new QVBoxLayout (dlg);
+  vbox->setContentsMargins (8, 8, 8, 8);
 
-  // Intestazione
-  auto *header = new QLabel (tr ("<b>Modifica i colori di ogni elemento dell'interfaccia.</b><br>"
-    "Clicca su un colore per cambiarlo. I colori vengono inclusi nell'export .dlay."));
-  header->setWordWrap (true);
-  vbox->addWidget (header);
+  auto *tabs = new QTabWidget (dlg);
+  vbox->addWidget (tabs);
 
-  // Griglia colori dentro scroll area
-  auto *scroll = new QScrollArea (dlg);
-  scroll->setWidgetResizable (true);
-  scroll->setFrameShape (QFrame::NoFrame);
-  auto *grid_widget = new QWidget;
-  auto *grid = new QGridLayout (grid_widget);
-  grid->setColumnStretch (1, 1);
-  grid->setHorizontalSpacing (8);
-  grid->setVerticalSpacing (4);
-
-  // Intestazione colonne
-  grid->addWidget (new QLabel (tr ("<b>Elemento</b>")), 0, 0);
-  grid->addWidget (new QLabel (tr ("<b>Colore</b>")),   0, 1);
-  grid->addWidget (new QLabel (tr ("<b>Reset</b>")),    0, 2);
-
-  // Mappa chiave → QPushButton swatch (per aggiornamento live)
-  QMap<QString, QPushButton*> swatches;
-
-  auto makeSwatchColor = [](QColor col) -> QString {
+  // ── Helper swatch ──────────────────────────────────────────────────────
+  auto makeSwatchSS = [] (QColor col, bool hasColor) -> QString {
+    if (!hasColor)
+      return "background-color: #c8c8c8; color: #666; border: 1px solid #999; border-radius: 3px;";
     return QString ("background-color: %1; border: 2px solid #555; border-radius: 3px;")
            .arg (col.name ());
   };
 
-  for (int i = 0; i < kColorSlotCount; ++i) {
-    QString key = QLatin1String (kColorSlots[i].key);
-    QString lbl = QLatin1String (kColorSlots[i].label);
-    QColor  def = QColor (QLatin1String (kColorSlots[i].def));
+  // ══════════════════════════════════════════════════════════════════════
+  // TAB 1 — Interfaccia (28 slot UI)
+  // ══════════════════════════════════════════════════════════════════════
+  {
+    auto *scroll = new QScrollArea;
+    scroll->setWidgetResizable (true);
+    scroll->setFrameShape (QFrame::NoFrame);
+    auto *gw = new QWidget;
+    auto *grid = new QGridLayout (gw);
+    grid->setColumnStretch (1, 1);
+    grid->setHorizontalSpacing (8);
+    grid->setVerticalSpacing (3);
 
-    int row = i + 1;
-    grid->addWidget (new QLabel (lbl), row, 0);
+    grid->addWidget (new QLabel (tr ("<b>Elemento</b>")),  0, 0);
+    grid->addWidget (new QLabel (tr ("<b>Colore</b>")),    0, 1);
+    grid->addWidget (new QLabel (tr ("<b>Reset</b>")),     0, 2);
 
-    auto *swatch = new QPushButton;
-    swatch->setFixedSize (80, 22);
-    swatch->setStyleSheet (makeSwatchColor (workColors.value (key, def)));
-    swatch->setToolTip (tr ("Clicca per cambiare colore"));
-    swatches[key] = swatch;
+    QMap<QString, QPushButton*> swatches;
 
-    // Cattura per riferimento al workColors locale tramite lambda
-    connect (swatch, &QPushButton::clicked, dlg, [=, &workColors] () mutable {
-      QColor cur = workColors.value (key, def);
-      QColor chosen = QColorDialog::getColor (cur, dlg, lbl);
-      if (!chosen.isValid ()) return;
-      workColors[key] = chosen;
-      swatches[key]->setStyleSheet (makeSwatchColor (chosen));
-    });
+    for (int i = 0; i < kColorSlotCount; ++i) {
+      QString key = QLatin1String (kColorSlots[i].key);
+      QString lbl = QLatin1String (kColorSlots[i].label);
+      QColor  def = QColor (QLatin1String (kColorSlots[i].def));
+      int row = i + 1;
 
-    grid->addWidget (swatch, row, 1, Qt::AlignLeft);
+      grid->addWidget (new QLabel (lbl), row, 0);
 
-    auto *resetBtn = new QPushButton (tr ("↺"));
-    resetBtn->setFixedSize (28, 22);
-    resetBtn->setToolTip (tr ("Ripristina il colore di default"));
-    connect (resetBtn, &QPushButton::clicked, dlg, [=, &workColors] () mutable {
-      workColors[key] = def;
-      swatches[key]->setStyleSheet (makeSwatchColor (def));
-    });
-    grid->addWidget (resetBtn, row, 2);
+      auto *sw = new QPushButton;
+      sw->setFixedSize (90, 22);
+      sw->setStyleSheet (makeSwatchSS (workColors.value (key, def), true));
+      sw->setToolTip (tr ("Clicca per cambiare colore"));
+      swatches[key] = sw;
+      connect (sw, &QPushButton::clicked, dlg, [=, &workColors] () mutable {
+        QColor chosen = QColorDialog::getColor (workColors.value (key, def), dlg, lbl);
+        if (!chosen.isValid ()) return;
+        workColors[key] = chosen;
+        swatches[key]->setStyleSheet (makeSwatchSS (chosen, true));
+      });
+      grid->addWidget (sw, row, 1, Qt::AlignLeft);
+
+      auto *rb = new QPushButton (tr ("↺"));
+      rb->setFixedSize (28, 22);
+      rb->setToolTip (tr ("Ripristina default"));
+      connect (rb, &QPushButton::clicked, dlg, [=, &workColors] () mutable {
+        workColors[key] = def;
+        swatches[key]->setStyleSheet (makeSwatchSS (def, true));
+      });
+      grid->addWidget (rb, row, 2);
+    }
+    scroll->setWidget (gw);
+    tabs->addTab (scroll, tr ("Interfaccia"));
   }
 
-  scroll->setWidget (grid_widget);
-  vbox->addWidget (scroll);
+  // ══════════════════════════════════════════════════════════════════════
+  // TAB 2 — Testo Decode (country, CQ, B4, DXCC…)
+  // ══════════════════════════════════════════════════════════════════════
+  {
+    // Nomi leggibili per ogni tipo di highlight
+    static const struct { DHM::Highlight type; const char* label; } kHLNames[] = {
+      { DHM::Highlight::CQ,            "CQ"                         },
+      { DHM::Highlight::MyCall,        "Il mio nominativo"          },
+      { DHM::Highlight::Tx,            "Messaggio trasmesso (Tx)"   },
+      { DHM::Highlight::DXCC,          "Nuovo DXCC"                 },
+      { DHM::Highlight::DXCCBand,      "Nuovo DXCC sulla banda"     },
+      { DHM::Highlight::Grid,          "Nuovo Grid"                 },
+      { DHM::Highlight::GridBand,      "Nuovo Grid sulla banda"     },
+      { DHM::Highlight::Call,          "Nuovo nominativo"           },
+      { DHM::Highlight::CallBand,      "Nuovo nominativo sulla banda"},
+      { DHM::Highlight::Continent,     "Nuovo continente"           },
+      { DHM::Highlight::ContinentBand, "Nuovo continente sulla banda"},
+      { DHM::Highlight::CQZone,        "Nuova zona CQ"              },
+      { DHM::Highlight::CQZoneBand,    "Nuova zona CQ sulla banda"  },
+      { DHM::Highlight::ITUZone,       "Nuova zona ITU"             },
+      { DHM::Highlight::ITUZoneBand,   "Nuova zona ITU sulla banda" },
+      { DHM::Highlight::LotW,          "Utente LoTW"                },
+    };
 
-  // Pulsanti
+    auto *scroll = new QScrollArea;
+    scroll->setWidgetResizable (true);
+    scroll->setFrameShape (QFrame::NoFrame);
+    auto *gw = new QWidget;
+    auto *grid = new QGridLayout (gw);
+    grid->setHorizontalSpacing (6);
+    grid->setVerticalSpacing (3);
+
+    // Intestazione
+    auto hdr = [&](int col, QString text) {
+      auto *l = new QLabel ("<b>" + text + "</b>");
+      grid->addWidget (l, 0, col, Qt::AlignCenter);
+    };
+    hdr (0, tr ("Tipo decode"));
+    hdr (1, tr ("Attivo"));
+    hdr (2, tr ("Sfondo"));
+    hdr (3, tr ("Testo"));
+    hdr (4, tr ("Reset"));
+
+    // Una riga per ogni tipo — opera su workHighlight
+    // Mappa tipo → swatches per aggiornamento
+    struct RowWidgets { QPushButton *bgBtn, *fgBtn; };
+    QMap<int, RowWidgets> rowWidgets;
+
+    for (int ri = 0; ri < (int)(sizeof(kHLNames)/sizeof(kHLNames[0])); ++ri) {
+      DHM::Highlight hlType = kHLNames[ri].type;
+      QString hlLabel = QLatin1String (kHLNames[ri].label);
+      int row = ri + 1;
+
+      // Trova l'item corrispondente in workHighlight
+      auto findItem = [&]() -> DHM::HighlightInfo* {
+        for (auto &item : workHighlight)
+          if (item.type_ == hlType) return &item;
+        return nullptr;
+      };
+      auto *item = findItem ();
+      if (!item) continue;
+
+      grid->addWidget (new QLabel (hlLabel), row, 0);
+
+      // Checkbox attivo/disattivo
+      auto *chk = new QCheckBox;
+      chk->setChecked (item->enabled_);
+      chk->setToolTip (tr ("Abilita/disabilita questo tipo di evidenziazione"));
+      connect (chk, &QCheckBox::toggled, dlg, [=, &workHighlight] (bool on) mutable {
+        for (auto &it : workHighlight)
+          if (it.type_ == hlType) { it.enabled_ = on; break; }
+      });
+      grid->addWidget (chk, row, 1, Qt::AlignCenter);
+
+      // Swatch sfondo
+      bool hasBg = (item->background_.style () != Qt::NoBrush);
+      QColor bgCol = hasBg ? item->background_.color () : QColor ();
+      auto *bgBtn = new QPushButton (hasBg ? QString () : tr ("—"));
+      bgBtn->setFixedSize (70, 22);
+      bgBtn->setStyleSheet (makeSwatchSS (bgCol, hasBg));
+      bgBtn->setToolTip (tr ("Sfondo — clicca per cambiare, tasto destro per rimuovere"));
+      bgBtn->setContextMenuPolicy (Qt::CustomContextMenu);
+      connect (bgBtn, &QPushButton::customContextMenuRequested, dlg, [=, &workHighlight] () mutable {
+        for (auto &it : workHighlight)
+          if (it.type_ == hlType) { it.background_ = QBrush (); break; }
+        bgBtn->setText (tr ("—"));
+        bgBtn->setStyleSheet (makeSwatchSS ({}, false));
+      });
+      connect (bgBtn, &QPushButton::clicked, dlg, [=, &workHighlight] () mutable {
+        bool cur_has = false;
+        QColor cur;
+        for (auto const& it : workHighlight)
+          if (it.type_ == hlType) { cur_has = it.background_.style () != Qt::NoBrush;
+                                     cur = it.background_.color (); break; }
+        QColor chosen = QColorDialog::getColor (cur_has ? cur : QColor (Qt::white), dlg, hlLabel + " — Sfondo");
+        if (!chosen.isValid ()) return;
+        for (auto &it : workHighlight)
+          if (it.type_ == hlType) { it.background_ = QBrush (chosen); break; }
+        bgBtn->setText (QString ());
+        bgBtn->setStyleSheet (makeSwatchSS (chosen, true));
+      });
+      grid->addWidget (bgBtn, row, 2, Qt::AlignCenter);
+
+      // Swatch testo
+      bool hasFg = (item->foreground_.style () != Qt::NoBrush);
+      QColor fgCol = hasFg ? item->foreground_.color () : QColor ();
+      auto *fgBtn = new QPushButton (hasFg ? QString () : tr ("—"));
+      fgBtn->setFixedSize (70, 22);
+      fgBtn->setStyleSheet (makeSwatchSS (fgCol, hasFg));
+      fgBtn->setToolTip (tr ("Testo — clicca per cambiare, tasto destro per rimuovere"));
+      fgBtn->setContextMenuPolicy (Qt::CustomContextMenu);
+      connect (fgBtn, &QPushButton::customContextMenuRequested, dlg, [=, &workHighlight] () mutable {
+        for (auto &it : workHighlight)
+          if (it.type_ == hlType) { it.foreground_ = QBrush (); break; }
+        fgBtn->setText (tr ("—"));
+        fgBtn->setStyleSheet (makeSwatchSS ({}, false));
+      });
+      connect (fgBtn, &QPushButton::clicked, dlg, [=, &workHighlight] () mutable {
+        bool cur_has = false;
+        QColor cur;
+        for (auto const& it : workHighlight)
+          if (it.type_ == hlType) { cur_has = it.foreground_.style () != Qt::NoBrush;
+                                     cur = it.foreground_.color (); break; }
+        QColor chosen = QColorDialog::getColor (cur_has ? cur : QColor (Qt::black), dlg, hlLabel + " — Testo");
+        if (!chosen.isValid ()) return;
+        for (auto &it : workHighlight)
+          if (it.type_ == hlType) { it.foreground_ = QBrush (chosen); break; }
+        fgBtn->setText (QString ());
+        fgBtn->setStyleSheet (makeSwatchSS (chosen, true));
+      });
+      grid->addWidget (fgBtn, row, 3, Qt::AlignCenter);
+
+      rowWidgets[ri] = {bgBtn, fgBtn};
+
+      // Reset ai defaults
+      auto *rb = new QPushButton (tr ("↺"));
+      rb->setFixedSize (28, 22);
+      rb->setToolTip (tr ("Ripristina colori di default per questo tipo"));
+      connect (rb, &QPushButton::clicked, dlg, [=, &workHighlight] () mutable {
+        // Trova default
+        for (auto const& def : DHM::default_items ())
+          if (def.type_ == hlType) {
+            for (auto &it : workHighlight)
+              if (it.type_ == hlType) { it = def; break; }
+            bool dBg = def.background_.style () != Qt::NoBrush;
+            bool dFg = def.foreground_.style () != Qt::NoBrush;
+            bgBtn->setText (dBg ? QString () : tr ("—"));
+            bgBtn->setStyleSheet (makeSwatchSS (def.background_.color (), dBg));
+            fgBtn->setText (dFg ? QString () : tr ("—"));
+            fgBtn->setStyleSheet (makeSwatchSS (def.foreground_.color (), dFg));
+            chk->setChecked (def.enabled_);
+            break;
+          }
+      });
+      grid->addWidget (rb, row, 4, Qt::AlignCenter);
+    }
+
+    // Nota tasto destro
+    auto *note = new QLabel (tr ("<i>Tasto destro su uno swatch → rimuovi colore (usa auto)</i>"));
+    note->setAlignment (Qt::AlignRight);
+    grid->addWidget (note, (int)(sizeof(kHLNames)/sizeof(kHLNames[0])) + 1, 0, 1, 5);
+
+    scroll->setWidget (gw);
+    tabs->addTab (scroll, tr ("Testo Decode"));
+  }
+
+  // ── Pulsanti OK / Apply / Cancel ─────────────────────────────────────
   auto *btnBox = new QDialogButtonBox (
     QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Apply);
   vbox->addWidget (btnBox);
 
-  // Anteprima live con Apply
-  connect (btnBox->button (QDialogButtonBox::Apply), &QPushButton::clicked, dlg,
-    [this, &workColors] () {
-      m_customColors = workColors;
-      m_currentTheme = 5;
-      // Salva in QSettings
-      m_settings->beginGroup ("CustomTheme");
-      for (auto it = m_customColors.constBegin (); it != m_customColors.constEnd (); ++it)
-        m_settings->setValue (it.key (), it.value ().name ());
-      m_settings->endGroup ();
-      m_settings->setValue ("CurrentTheme", 5);
-      applyCustomTheme (m_customColors);
-    });
-
-  connect (btnBox, &QDialogButtonBox::accepted, dlg, [this, dlg, &workColors] () {
+  // Helper: salva e applica entrambi i set
+  auto applyAll = [this, &workColors, &workHighlight] () {
+    // — UI colors —
     m_customColors = workColors;
     m_currentTheme = 5;
     m_settings->beginGroup ("CustomTheme");
@@ -5967,6 +6133,15 @@ void MainWindow::showColorCustomizer ()
     m_settings->endGroup ();
     m_settings->setValue ("CurrentTheme", 5);
     applyCustomTheme (m_customColors);
+    // — Decode highlight colors —
+    m_config.update_decode_highlighting (workHighlight);
+  };
+
+  connect (btnBox->button (QDialogButtonBox::Apply), &QPushButton::clicked, dlg,
+    [applyAll] () { applyAll (); });
+
+  connect (btnBox, &QDialogButtonBox::accepted, dlg, [applyAll, dlg] () {
+    applyAll ();
     dlg->accept ();
   });
   connect (btnBox, &QDialogButtonBox::rejected, dlg, &QDialog::reject);
