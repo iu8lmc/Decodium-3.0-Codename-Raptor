@@ -24,8 +24,8 @@ class StationList;
 class QStringListModel;
 class LotWUsers;
 class Cloudlog;
-class DecodeHighlightingModel;
 class LogBook;
+#include "models/DecodeHighlightingModel.hpp"
 
 //
 // Class Configuration
@@ -261,6 +261,7 @@ public:
   LotWUsers const& lotw_users () const;
   Cloudlog const& cloudlog () const;
   DecodeHighlightingModel const& decode_highlighting () const;
+  void update_decode_highlighting (DecodeHighlightingModel::HighlightItems items);
   bool highlight_by_mode () const;
   bool highlight_only_fields () const;
   bool include_WAE_entities () const;
