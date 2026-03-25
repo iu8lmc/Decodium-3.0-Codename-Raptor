@@ -5604,17 +5604,22 @@ void MainWindow::applyLayoutPreset (int preset)
 
   switch (preset) {
   default:
-  case 0: // Classic — stile WSJT-X originale
-    // Waterfall in cima, decodes sinistra/destra, Controls in basso
+  case 0: // Classic — fedele a WSJT-X 3.0
+    // Esattamente come WSJT-X originale:
+    //   Top:    Waterfall
+    //   Center: Band Activity (sinistra) | Rx Frequency (destra)
+    //   Bottom: [Bands] [Controls] sopra / [QSO] sotto (tutto bottom)
     addDockWidget (Qt::TopDockWidgetArea,    m_waterfallDock);
     addDockWidget (Qt::LeftDockWidgetArea,   m_bandActivityDock);
     addDockWidget (Qt::RightDockWidgetArea,  m_rxFreqDock);
-    // Bottom: Bands | Controls | QSO — poi Cluster in tab con Controls
+    // Bottom row: Bands + Controls side-by-side
     addDockWidget (Qt::BottomDockWidgetArea, m_bandsDock);
     addDockWidget (Qt::BottomDockWidgetArea, m_toolbarDock);
     splitDockWidget (m_bandsDock, m_toolbarDock, Qt::Horizontal);
+    // QSO Controls sotto Controls (split verticale)
     addDockWidget (Qt::BottomDockWidgetArea, m_qsoControlsDock);
     splitDockWidget (m_toolbarDock, m_qsoControlsDock, Qt::Vertical);
+    // Cluster in tab con Controls
     addDockWidget (Qt::BottomDockWidgetArea, m_clusterDock);
     tabifyDockWidget (m_toolbarDock, m_clusterDock);
     if (m_activeStationsDock) {
@@ -19499,22 +19504,38 @@ void MainWindow::applyTheme (int theme)
   m_currentTheme = theme;
   QFont font = m_config.text_font ();
 
-  // ── Classic: ripristina il percorso originale WSJT-X ──────────────
+  // ── Classic: WSJT-X 3.0 originale — stile Qt di sistema, zero override ──
   if (theme == 3) {
-    // Delega completamente al toggle DarkStyle originale
-    on_actionUse_Dark_Style_triggered (ui->actionUse_Dark_Style->isChecked ());
-    // Ripristina stili originali clock/freq dal .ui
+    m_useDarkStyle = false;
+    ui->actionUse_Dark_Style->setChecked (false);
+    qApp->setFont (font);
+    // Reset completo: solo font + separatori + dock title grigi come Qt default
+    qApp->setStyleSheet (
+      "* {" + font_as_stylesheet (font) + "}"
+      "QMainWindow::separator {"
+      "  width: 1px; height: 1px; margin: 0px; padding: 0px; }"
+      "QMainWindow::separator:hover { background: #888888; }"
+      // Dock title bar neutra come Qt standard (grigio sistema)
+      "QDockWidget::title {"
+      "  background: #d4d0c8; color: #000000;"
+      "  padding: 3px 5px; border: 1px solid #a8a8a8; }"
+      "QDockWidget::title:focus {"
+      "  background: #0078d4; color: #ffffff; }"
+    );
+    m_wideGraph->setDarkStyle (false);
+    ui->tabWidget->setTabShape (QTabWidget::Triangular);
+    // Clock e freq: identici all'originale WSJT-X .ui
     ui->labUTC->setStyleSheet (
-      "QLabel { font-family: MS Shell Dlg 2; font-size: 16pt;"
+      "QLabel { font-family: 'MS Shell Dlg 2'; font-size: 16pt;"
       " background-color: black; color: yellow; }");
     ui->labDialFreq->setStyleSheet (
-      "QLabel { font-family: MS Shell Dlg 2; font-size: 16pt;"
+      "QLabel { font-family: 'MS Shell Dlg 2'; font-size: 16pt;"
       " color: yellow; background-color: black; }"
       "QLabel[oob=\"true\"] { background-color: red; }");
-    // Separator padding zero anche per il tema Classic
-    qApp->setStyleSheet (qApp->styleSheet () +
-      "QMainWindow::separator { width: 1px; height: 1px; margin: 0px; padding: 0px; }"
-      "QMainWindow::separator:hover { background: #888888; }");
+    check_button_color ();
+    for (auto &widget : qApp->topLevelWidgets ()) widget->updateGeometry ();
+    statusChanged ();
+    guiUpdate ();
     return;
   }
 
