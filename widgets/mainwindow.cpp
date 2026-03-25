@@ -727,11 +727,11 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   ui->menuView->addSeparator ();
   {
     auto *saveLayoutAction = ui->menuView->addAction (tr ("Save Layout…"));
-    saveLayoutAction->setToolTip (tr ("Salva la posizione attuale di tutte le finestre con un nome"));
+    saveLayoutAction->setToolTip (tr ("Save current window positions with a name"));
     connect (saveLayoutAction, &QAction::triggered, this, [this]() {
       bool ok = false;
-      QString name = QInputDialog::getText (this, tr ("Salva Layout"),
-                                            tr ("Nome del layout:"),
+      QString name = QInputDialog::getText (this, tr ("Save Layout"),
+                                            tr ("Layout name:"),
                                             QLineEdit::Normal,
                                             tr ("Layout 1"), &ok);
       if (!ok || name.trimmed ().isEmpty ()) return;
@@ -740,22 +740,22 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
       m_settings->setValue (QStringLiteral ("SavedGeometries/") + name, saveGeometry ());
       // Aggiorna il submenu layout con il nuovo nome
       rebuildSavedLayoutsMenu ();
-      statusBar ()->showMessage (tr ("Layout '%1' salvato").arg (name), 3000);
+      statusBar ()->showMessage (tr ("Layout '%1' saved").arg (name), 3000);
     });
 
     // Submenu layout salvati dall'utente
-    m_savedLayoutsMenu = ui->menuView->addMenu (tr ("Carica Layout Salvato"));
+    m_savedLayoutsMenu = ui->menuView->addMenu (tr ("Load Saved Layout"));
     rebuildSavedLayoutsMenu ();
   }
 
   // ── Esporta / Importa layout (file .dlay — condivisibile in community) ───
   {
-    auto *expAct = ui->menuView->addAction (tr ("Esporta Layout (.dlay)…"));
-    expAct->setToolTip (tr ("Salva il layout corrente come file .dlay da condividere con altri operatori"));
+    auto *expAct = ui->menuView->addAction (tr ("Export Layout (.dlay)…"));
+    expAct->setToolTip (tr ("Save current layout as .dlay file to share with other operators"));
     connect (expAct, &QAction::triggered, this, &MainWindow::exportLayout);
 
-    auto *impAct = ui->menuView->addAction (tr ("Importa Layout (.dlay)…"));
-    impAct->setToolTip (tr ("Carica un layout .dlay ricevuto da altri operatori"));
+    auto *impAct = ui->menuView->addAction (tr ("Import Layout (.dlay)…"));
+    impAct->setToolTip (tr ("Load a .dlay layout received from other operators"));
     connect (impAct, &QAction::triggered, this, &MainWindow::importLayout);
   }
 
@@ -785,11 +785,11 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   addTheme (tr ("Midnight"),         2);
   addTheme (tr ("Classic (WSJT-X)"), 3);
   addTheme (tr ("RF Amber"),         4);
-  addTheme (tr ("Personalizzato"),   5);
+  addTheme (tr ("Custom"),   5);
   themeMenu->addSeparator ();
   {
-    auto *a = themeMenu->addAction (tr ("Personalizza Colori…"));
-    a->setToolTip (tr ("Apre il pannello di personalizzazione colori per ogni elemento dell'interfaccia"));
+    auto *a = themeMenu->addAction (tr ("Customize Colors\u2026"));
+    a->setToolTip (tr ("Open the color customization panel for every UI element"));
     connect (a, &QAction::triggered, this, &MainWindow::showColorCustomizer);
   }
 
@@ -5580,16 +5580,16 @@ void MainWindow::exportLayout ()
   // Chiedi nome e descrizione prima di scegliere il file
   bool ok = false;
   QString layoutName = QInputDialog::getText (
-    this, tr ("Esporta Layout"),
-    tr ("Nome del layout (es. FT2 DXpedition Wide):"),
+    this, tr ("Export Layout"),
+    tr ("Layout name (e.g. FT2 DXpedition Wide):"),
     QLineEdit::Normal,
-    m_settings->value ("LastExportName", tr ("Il mio Layout")).toString (), &ok);
+    m_settings->value ("LastExportName", tr ("My Layout")).toString (), &ok);
   if (!ok || layoutName.trimmed ().isEmpty ()) return;
   layoutName = layoutName.trimmed ();
 
   QString description = QInputDialog::getText (
-    this, tr ("Esporta Layout"),
-    tr ("Descrizione (opzionale, visibile a chi importa):"),
+    this, tr ("Export Layout"),
+    tr ("Description (optional, visible to importers):"),
     QLineEdit::Normal, QString (), &ok);
   // ok == false → descrizione vuota va bene
 
@@ -5597,8 +5597,8 @@ void MainWindow::exportLayout ()
   QString defaultPath = QDir::homePath () + "/" +
     layoutName.replace (QRegularExpression ("[^A-Za-z0-9_\\-]"), "_") + ".dlay";
   QString filePath = QFileDialog::getSaveFileName (
-    this, tr ("Esporta Layout"), defaultPath,
-    tr ("Decodium Layout (*.dlay);;Tutti i file (*)"));
+    this, tr ("Export Layout"), defaultPath,
+    tr ("Decodium Layout (*.dlay);;All files (*)"));
   if (filePath.isEmpty ()) return;
 
   // Costruisce il JSON
@@ -5627,30 +5627,30 @@ void MainWindow::exportLayout ()
   QJsonDocument doc (root);
   QFile f (filePath);
   if (!f.open (QIODevice::WriteOnly | QIODevice::Text)) {
-    QMessageBox::warning (this, tr ("Esporta Layout"),
-                          tr ("Impossibile scrivere il file:\n%1").arg (filePath));
+    QMessageBox::warning (this, tr ("Export Layout"),
+                          tr ("Cannot write file:\n%1").arg (filePath));
     return;
   }
   f.write (doc.toJson (QJsonDocument::Indented));
   f.close ();
 
   m_settings->setValue ("LastExportName", layoutName);
-  statusBar ()->showMessage (tr ("Layout '%1' esportato in %2").arg (layoutName, filePath), 4000);
+  statusBar ()->showMessage (tr ("Layout '%1' exported to %2").arg (layoutName, filePath), 4000);
 }
 
 // ── Importa layout da file .dlay ──────────────────────────────────────────
 void MainWindow::importLayout ()
 {
   QString filePath = QFileDialog::getOpenFileName (
-    this, tr ("Importa Layout"),
+    this, tr ("Import Layout"),
     QDir::homePath (),
-    tr ("Decodium Layout (*.dlay);;Tutti i file (*)"));
+    tr ("Decodium Layout (*.dlay);;All files (*)"));
   if (filePath.isEmpty ()) return;
 
   QFile f (filePath);
   if (!f.open (QIODevice::ReadOnly | QIODevice::Text)) {
-    QMessageBox::warning (this, tr ("Importa Layout"),
-                          tr ("Impossibile aprire il file:\n%1").arg (filePath));
+    QMessageBox::warning (this, tr ("Import Layout"),
+                          tr ("Cannot open file:\n%1").arg (filePath));
     return;
   }
   QJsonParseError err;
@@ -5658,31 +5658,31 @@ void MainWindow::importLayout ()
   f.close ();
 
   if (doc.isNull () || !doc.isObject ()) {
-    QMessageBox::warning (this, tr ("Importa Layout"),
-                          tr ("File non valido o corrotto:\n%1").arg (err.errorString ()));
+    QMessageBox::warning (this, tr ("Import Layout"),
+                          tr ("Invalid or corrupted file:\n%1").arg (err.errorString ()));
     return;
   }
   QJsonObject root = doc.object ();
   if (root["format"].toString () != QLatin1String ("DecodiumLayout")) {
-    QMessageBox::warning (this, tr ("Importa Layout"),
-                          tr ("Il file non è un layout Decodium."));
+    QMessageBox::warning (this, tr ("Import Layout"),
+                          tr ("File is not a Decodium layout."));
     return;
   }
 
   // Mostra info sul layout prima di applicare
   QString info = tr ("<b>%1</b><br>"
-                     "Autore: %2<br>"
-                     "Creato: %3<br>"
+                     "Author: %2<br>"
+                     "Created: %3<br>"
                      "%4")
     .arg (root["name"].toString ())
-    .arg (root["author"].toString ().isEmpty () ? tr ("sconosciuto") : root["author"].toString ())
+    .arg (root["author"].toString ().isEmpty () ? tr ("unknown") : root["author"].toString ())
     .arg (root["created"].toString ())
     .arg (root["description"].toString ().isEmpty () ? QString () :
           "<br><i>" + root["description"].toString () + "</i>");
 
   auto reply = QMessageBox::question (
-    this, tr ("Importa Layout"),
-    tr ("Applicare questo layout?\n\n") + info,
+    this, tr ("Import Layout"),
+    tr ("Apply this layout?\n\n") + info,
     QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
   if (reply != QMessageBox::Yes) return;
 
@@ -5705,8 +5705,8 @@ void MainWindow::importLayout ()
 
     if (!importedColors.isEmpty ()) {
       auto reply2 = QMessageBox::question (
-        this, tr ("Importa Layout"),
-        tr ("Il layout include anche colori personalizzati. Applicarli?"),
+        this, tr ("Import Layout"),
+        tr ("Layout includes custom colors. Apply them?"),
         QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
       if (reply2 == QMessageBox::Yes) {
         m_customColors = importedColors;
@@ -5728,7 +5728,7 @@ void MainWindow::importLayout ()
   m_settings->setValue (QStringLiteral ("SavedGeometries/") + name, geo);
   rebuildSavedLayoutsMenu ();
 
-  statusBar ()->showMessage (tr ("Layout '%1' importato e applicato").arg (name), 4000);
+  statusBar ()->showMessage (tr ("Layout '%1' imported and applied").arg (name), 4000);
 }
 
 // ── Definizione slot colori personalizzabili ──────────────────────────────
@@ -5880,7 +5880,7 @@ void MainWindow::showColorCustomizer ()
 
   // ── Dialogo principale ─────────────────────────────────────────────────
   auto *dlg = new QDialog (this);
-  dlg->setWindowTitle (tr ("Personalizza Colori — Decodium"));
+  dlg->setWindowTitle (tr ("Customize Colors \u2014 Decodium"));
   dlg->setMinimumSize (560, 480);
   dlg->setSizeGripEnabled (true);
 
@@ -5911,8 +5911,8 @@ void MainWindow::showColorCustomizer ()
     grid->setHorizontalSpacing (8);
     grid->setVerticalSpacing (3);
 
-    grid->addWidget (new QLabel (tr ("<b>Elemento</b>")),  0, 0);
-    grid->addWidget (new QLabel (tr ("<b>Colore</b>")),    0, 1);
+    grid->addWidget (new QLabel (tr ("<b>Element</b>")),  0, 0);
+    grid->addWidget (new QLabel (tr ("<b>Color</b>")),    0, 1);
     grid->addWidget (new QLabel (tr ("<b>Reset</b>")),     0, 2);
 
     QMap<QString, QPushButton*> swatches;
@@ -5928,7 +5928,7 @@ void MainWindow::showColorCustomizer ()
       auto *sw = new QPushButton;
       sw->setFixedSize (90, 22);
       sw->setStyleSheet (makeSwatchSS (workColors.value (key, def), true));
-      sw->setToolTip (tr ("Clicca per cambiare colore"));
+      sw->setToolTip (tr ("Click to change color"));
       swatches[key] = sw;
       connect (sw, &QPushButton::clicked, dlg, [=, &workColors] () mutable {
         QColor chosen = QColorDialog::getColor (workColors.value (key, def), dlg, lbl);
@@ -5940,7 +5940,7 @@ void MainWindow::showColorCustomizer ()
 
       auto *rb = new QPushButton (tr ("↺"));
       rb->setFixedSize (28, 22);
-      rb->setToolTip (tr ("Ripristina default"));
+      rb->setToolTip (tr ("Restore default"));
       connect (rb, &QPushButton::clicked, dlg, [=, &workColors] () mutable {
         workColors[key] = def;
         swatches[key]->setStyleSheet (makeSwatchSS (def, true));
@@ -5948,7 +5948,7 @@ void MainWindow::showColorCustomizer ()
       grid->addWidget (rb, row, 2);
     }
     scroll->setWidget (gw);
-    tabs->addTab (scroll, tr ("Interfaccia"));
+    tabs->addTab (scroll, tr ("Interface"));
   }
 
   // ══════════════════════════════════════════════════════════════════════
@@ -5988,10 +5988,10 @@ void MainWindow::showColorCustomizer ()
       auto *l = new QLabel ("<b>" + text + "</b>");
       grid->addWidget (l, 0, col, Qt::AlignCenter);
     };
-    hdr (0, tr ("Tipo decode"));
-    hdr (1, tr ("Attivo"));
-    hdr (2, tr ("Sfondo"));
-    hdr (3, tr ("Testo"));
+    hdr (0, tr ("Decode type"));
+    hdr (1, tr ("Active"));
+    hdr (2, tr ("Background"));
+    hdr (3, tr ("Text"));
     hdr (4, tr ("Reset"));
 
     // Una riga per ogni tipo — opera su workHighlight
@@ -6018,7 +6018,7 @@ void MainWindow::showColorCustomizer ()
       // Checkbox attivo/disattivo
       auto *chk = new QCheckBox;
       chk->setChecked (item->enabled_);
-      chk->setToolTip (tr ("Abilita/disabilita questo tipo di evidenziazione"));
+      chk->setToolTip (tr ("Enable/disable this highlight type"));
       connect (chk, &QCheckBox::toggled, dlg, [=, &workHighlight] (bool on) mutable {
         for (auto &it : workHighlight)
           if (it.type_ == hlType) { it.enabled_ = on; break; }
@@ -6031,7 +6031,7 @@ void MainWindow::showColorCustomizer ()
       auto *bgBtn = new QPushButton (hasBg ? QString () : tr ("—"));
       bgBtn->setFixedSize (70, 22);
       bgBtn->setStyleSheet (makeSwatchSS (bgCol, hasBg));
-      bgBtn->setToolTip (tr ("Sfondo — clicca per cambiare, tasto destro per rimuovere"));
+      bgBtn->setToolTip (tr ("Background — click to change, right-click to remove"));
       bgBtn->setContextMenuPolicy (Qt::CustomContextMenu);
       connect (bgBtn, &QPushButton::customContextMenuRequested, dlg, [=, &workHighlight] () mutable {
         for (auto &it : workHighlight)
@@ -6045,7 +6045,7 @@ void MainWindow::showColorCustomizer ()
         for (auto const& it : workHighlight)
           if (it.type_ == hlType) { cur_has = it.background_.style () != Qt::NoBrush;
                                      cur = it.background_.color (); break; }
-        QColor chosen = QColorDialog::getColor (cur_has ? cur : QColor (Qt::white), dlg, hlLabel + " — Sfondo");
+        QColor chosen = QColorDialog::getColor (cur_has ? cur : QColor (Qt::white), dlg, hlLabel + " — Background");
         if (!chosen.isValid ()) return;
         for (auto &it : workHighlight)
           if (it.type_ == hlType) { it.background_ = QBrush (chosen); break; }
@@ -6060,7 +6060,7 @@ void MainWindow::showColorCustomizer ()
       auto *fgBtn = new QPushButton (hasFg ? QString () : tr ("—"));
       fgBtn->setFixedSize (70, 22);
       fgBtn->setStyleSheet (makeSwatchSS (fgCol, hasFg));
-      fgBtn->setToolTip (tr ("Testo — clicca per cambiare, tasto destro per rimuovere"));
+      fgBtn->setToolTip (tr ("Text — click to change, right-click to remove"));
       fgBtn->setContextMenuPolicy (Qt::CustomContextMenu);
       connect (fgBtn, &QPushButton::customContextMenuRequested, dlg, [=, &workHighlight] () mutable {
         for (auto &it : workHighlight)
@@ -6074,7 +6074,7 @@ void MainWindow::showColorCustomizer ()
         for (auto const& it : workHighlight)
           if (it.type_ == hlType) { cur_has = it.foreground_.style () != Qt::NoBrush;
                                      cur = it.foreground_.color (); break; }
-        QColor chosen = QColorDialog::getColor (cur_has ? cur : QColor (Qt::black), dlg, hlLabel + " — Testo");
+        QColor chosen = QColorDialog::getColor (cur_has ? cur : QColor (Qt::black), dlg, hlLabel + " — Text");
         if (!chosen.isValid ()) return;
         for (auto &it : workHighlight)
           if (it.type_ == hlType) { it.foreground_ = QBrush (chosen); break; }
@@ -6088,7 +6088,7 @@ void MainWindow::showColorCustomizer ()
       // Reset ai defaults
       auto *rb = new QPushButton (tr ("↺"));
       rb->setFixedSize (28, 22);
-      rb->setToolTip (tr ("Ripristina colori di default per questo tipo"));
+      rb->setToolTip (tr ("Reset to default colors for this type"));
       connect (rb, &QPushButton::clicked, dlg, [=, &workHighlight] () mutable {
         // Trova default
         for (auto const& def : DHM::default_items ())
@@ -6109,12 +6109,12 @@ void MainWindow::showColorCustomizer ()
     }
 
     // Nota tasto destro
-    auto *note = new QLabel (tr ("<i>Tasto destro su uno swatch → rimuovi colore (usa auto)</i>"));
+    auto *note = new QLabel (tr ("<i>Right-click on a swatch → remove color (use auto)</i>"));
     note->setAlignment (Qt::AlignRight);
     grid->addWidget (note, (int)(sizeof(kHLNames)/sizeof(kHLNames[0])) + 1, 0, 1, 5);
 
     scroll->setWidget (gw);
-    tabs->addTab (scroll, tr ("Testo Decode"));
+    tabs->addTab (scroll, tr ("Decode Text"));
   }
 
   // ── Pulsanti OK / Apply / Cancel ─────────────────────────────────────
@@ -6164,7 +6164,7 @@ void MainWindow::rebuildSavedLayoutsMenu ()
   m_settings->endGroup ();
 
   if (names.isEmpty ()) {
-    auto *empty = m_savedLayoutsMenu->addAction (tr ("(nessun layout salvato)"));
+    auto *empty = m_savedLayoutsMenu->addAction (tr ("(no saved layouts)"));
     empty->setEnabled (false);
     return;
   }
@@ -6176,19 +6176,19 @@ void MainWindow::rebuildSavedLayoutsMenu ()
       QByteArray geo   = m_settings->value (QStringLiteral ("SavedGeometries/") + name).toByteArray ();
       if (!geo.isEmpty ())   restoreGeometry (geo);
       if (!state.isEmpty ()) restoreState (state, 4);
-      statusBar ()->showMessage (tr ("Layout '%1' ripristinato").arg (name), 3000);
+      statusBar ()->showMessage (tr ("Layout '%1' restored").arg (name), 3000);
     });
   }
 
   m_savedLayoutsMenu->addSeparator ();
-  auto *delMenu = m_savedLayoutsMenu->addMenu (tr ("Elimina…"));
+  auto *delMenu = m_savedLayoutsMenu->addMenu (tr ("Delete\u2026"));
   for (auto const& name : names) {
     auto *a = delMenu->addAction (name);
     connect (a, &QAction::triggered, this, [this, name]() {
       m_settings->remove (QStringLiteral ("SavedLayouts/") + name);
       m_settings->remove (QStringLiteral ("SavedGeometries/") + name);
       rebuildSavedLayoutsMenu ();
-      statusBar ()->showMessage (tr ("Layout '%1' eliminato").arg (name), 3000);
+      statusBar ()->showMessage (tr ("Layout '%1' deleted").arg (name), 3000);
     });
   }
 }
