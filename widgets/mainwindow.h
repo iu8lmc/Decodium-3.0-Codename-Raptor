@@ -15,6 +15,8 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QList>
+#include <QMap>
+#include <QColor>
 #include <QAudioDeviceInfo>
 #include <QStringList>
 #include <QScopedPointer>
@@ -182,6 +184,8 @@ private:
   void rebuildSavedLayoutsMenu ();
   void exportLayout ();
   void importLayout ();
+  void showColorCustomizer ();
+  void applyCustomTheme (QMap<QString, QColor> const& colors);
 
 private slots:
   void initialize_fonts ();
@@ -592,6 +596,7 @@ private:
   QDockWidget *m_qsoControlsDock {nullptr};
 
   QMenu       *m_savedLayoutsMenu {nullptr};
+  QMap<QString, QColor> m_customColors;   // colori personalizzati utente
 
   QToolBar    *m_mainToolBar {nullptr};
   QSOProgressWidget *m_qsoProgress {nullptr};

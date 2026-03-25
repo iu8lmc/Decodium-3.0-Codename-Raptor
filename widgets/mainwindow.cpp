@@ -67,6 +67,7 @@
 #include <QTableWidget>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QColorDialog>
 #include <QClipboard>
 #include <QTextStream>
 #include <QDateTime>
@@ -777,11 +778,18 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
     if (id == m_currentTheme) a->setChecked (true);
     connect (a, &QAction::triggered, this, [this, id]() { applyTheme (id); });
   };
-  addTheme (tr ("Shannon Light"),   0);
-  addTheme (tr ("Shannon Dark"),    1);
-  addTheme (tr ("Midnight"),        2);
+  addTheme (tr ("Shannon Light"),    0);
+  addTheme (tr ("Shannon Dark"),     1);
+  addTheme (tr ("Midnight"),         2);
   addTheme (tr ("Classic (WSJT-X)"), 3);
-  addTheme (tr ("RF Amber"),        4);
+  addTheme (tr ("RF Amber"),         4);
+  addTheme (tr ("Personalizzato"),   5);
+  themeMenu->addSeparator ();
+  {
+    auto *a = themeMenu->addAction (tr ("Personalizza Colori…"));
+    a->setToolTip (tr ("Apre il pannello di personalizzazione colori per ogni elemento dell'interfaccia"));
+    connect (a, &QAction::triggered, this, &MainWindow::showColorCustomizer);
+  }
 
   // ── Period separator toggle ──────────────────────────────────────
   ui->menuView->addSeparator ();
@@ -2668,6 +2676,13 @@ void MainWindow::readSettings()
   ui->actionDisable_event_logging->setChecked(m_settings->value("DisableEventLogging", false).toBool());
   ui->actionUse_Dark_Style->setChecked(m_settings->value("DarkStyle", true).toBool());
   m_currentTheme = m_settings->value("CurrentTheme", 3).toInt();  // default Classic
+  // Carica colori personalizzati salvati dall'utente
+  {
+    m_settings->beginGroup ("CustomTheme");
+    for (auto const& key : m_settings->childKeys ())
+      m_customColors[key] = QColor (m_settings->value (key).toString ());
+    m_settings->endGroup ();
+  }
   ui->actionBand_Buttons->setChecked(m_settings->value("BandButtons", true).toBool());
   ui->actionVHF_UHF_Buttons->setChecked(m_settings->value("VHFUHFButtons", false).toBool());
   ui->tx1->setEnabled(m_settings->value("tx1State", true).toBool());
@@ -5593,9 +5608,17 @@ void MainWindow::exportLayout ()
   root["description"] = description.trimmed ();
   root["created"]     = QDateTime::currentDateTimeUtc ().toString (Qt::ISODate);
   root["app_version"] = QStringLiteral ("3.0");
+  root["theme"]       = m_currentTheme;
   // Dati Qt del layout (base64)
   root["state"]    = QString::fromLatin1 (saveState (4).toBase64 ());
   root["geometry"] = QString::fromLatin1 (saveGeometry ().toBase64 ());
+  // Colori personalizzati — inclusi solo se tema Custom (5) o se presenti
+  if (!m_customColors.isEmpty ()) {
+    QJsonObject colorObj;
+    for (auto it = m_customColors.constBegin (); it != m_customColors.constEnd (); ++it)
+      colorObj[it.key ()] = it.value ().name ();
+    root["colors"] = colorObj;
+  }
 
   QJsonDocument doc (root);
   QFile f (filePath);
@@ -5665,6 +5688,34 @@ void MainWindow::importLayout ()
   if (!geo.isEmpty ())   restoreGeometry (geo);
   if (!state.isEmpty ()) restoreState (state, 4);
 
+  // Applica colori personalizzati se presenti nel file
+  if (root.contains ("colors") && root["colors"].isObject ()) {
+    QJsonObject colorObj = root["colors"].toObject ();
+    QMap<QString, QColor> importedColors;
+    for (auto it = colorObj.constBegin (); it != colorObj.constEnd (); ++it)
+      importedColors[it.key ()] = QColor (it.value ().toString ());
+
+    if (!importedColors.isEmpty ()) {
+      auto reply2 = QMessageBox::question (
+        this, tr ("Importa Layout"),
+        tr ("Il layout include anche colori personalizzati. Applicarli?"),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+      if (reply2 == QMessageBox::Yes) {
+        m_customColors = importedColors;
+        m_currentTheme = 5;
+        m_settings->beginGroup ("CustomTheme");
+        for (auto it = m_customColors.constBegin (); it != m_customColors.constEnd (); ++it)
+          m_settings->setValue (it.key (), it.value ().name ());
+        m_settings->endGroup ();
+        m_settings->setValue ("CurrentTheme", 5);
+        applyCustomTheme (m_customColors);
+      }
+    }
+  } else if (root.contains ("theme")) {
+    // Nessun colore custom — applica il tema numerico salvato
+    applyTheme (root["theme"].toInt (3));
+  }
+
   // Salva nelle layout locali col nome originale
   QString name = root["name"].toString ();
   m_settings->setValue (QStringLiteral ("SavedLayouts/") + name, state);
@@ -5672,6 +5723,256 @@ void MainWindow::importLayout ()
   rebuildSavedLayoutsMenu ();
 
   statusBar ()->showMessage (tr ("Layout '%1' importato e applicato").arg (name), 4000);
+}
+
+// ── Definizione slot colori personalizzabili ──────────────────────────────
+// Ogni slot: {chiave, etichetta visibile, colore default}
+static const struct { const char* key; const char* label; const char* def; } kColorSlots[] = {
+  // Finestra principale
+  { "win_bg",          "Sfondo principale",            "#f0f0f0" },
+  { "win_fg",          "Testo principale",             "#000000" },
+  // Dock title bar
+  { "dock_title_bg",   "Dock — sfondo barra titolo",   "#d4d0c8" },
+  { "dock_title_fg",   "Dock — testo barra titolo",    "#000000" },
+  // Pannelli decode (Band Activity / Rx Frequency)
+  { "decode_bg",       "Decode — sfondo pannello",     "#000000" },
+  { "decode_fg",       "Decode — testo normale",       "#ffffff" },
+  // Orologio UTC
+  { "clock_bg",        "Orologio — sfondo",            "#000000" },
+  { "clock_fg",        "Orologio — testo",             "#ffff00" },
+  // Display frequenza dial
+  { "freq_bg",         "Frequenza — sfondo",           "#000000" },
+  { "freq_fg",         "Frequenza — testo",            "#ffff00" },
+  // Pulsanti normali
+  { "btn_bg",          "Pulsanti — sfondo",            "#e1e1e1" },
+  { "btn_fg",          "Pulsanti — testo",             "#000000" },
+  { "btn_hover_bg",    "Pulsanti — hover sfondo",      "#c8daea" },
+  // Pulsanti attivi (checked)
+  { "btn_on_bg",       "Pulsanti attivi — sfondo",     "#0078d4" },
+  { "btn_on_fg",       "Pulsanti attivi — testo",      "#ffffff" },
+  // Barra menu
+  { "menu_bg",         "Menu — sfondo",                "#f0f0f0" },
+  { "menu_fg",         "Menu — testo",                 "#000000" },
+  { "menu_sel_bg",     "Menu — voce selezionata",      "#0078d4" },
+  { "menu_sel_fg",     "Menu — testo selezionato",     "#ffffff" },
+  // Barra stato
+  { "status_bg",       "Status bar — sfondo",          "#f0f0f0" },
+  { "status_fg",       "Status bar — testo",           "#000000" },
+  // Tab widget
+  { "tab_bg",          "Schede — sfondo",              "#dcdcdc" },
+  { "tab_fg",          "Schede — testo",               "#000000" },
+  { "tab_sel_bg",      "Scheda attiva — sfondo",       "#ffffff" },
+  { "tab_sel_fg",      "Scheda attiva — testo",        "#000000" },
+  // Campi input (QLineEdit, QSpinBox, QComboBox)
+  { "input_bg",        "Campi input — sfondo",         "#ffffff" },
+  { "input_fg",        "Campi input — testo",          "#000000" },
+  // Separatori dock
+  { "separator",       "Separatore dock — hover",      "#888888" },
+};
+static constexpr int kColorSlotCount = (int)(sizeof(kColorSlots)/sizeof(kColorSlots[0]));
+
+// ── Applica tema colori personalizzati ────────────────────────────────────
+void MainWindow::applyCustomTheme (QMap<QString, QColor> const& colors)
+{
+  m_useDarkStyle = false;
+  ui->actionUse_Dark_Style->setChecked (false);
+  QFont font = m_config.text_font ();
+  qApp->setFont (font);
+
+  // Helper: restituisce il colore del slot o il default se non definito
+  auto c = [&](const char* key) -> QString {
+    if (colors.contains (QLatin1String (key)))
+      return colors[QLatin1String (key)].name ();
+    for (int i = 0; i < kColorSlotCount; ++i)
+      if (QLatin1String (kColorSlots[i].key) == QLatin1String (key))
+        return QLatin1String (kColorSlots[i].def);
+    return QString ();
+  };
+
+  QString css;
+  css += "* {" + font_as_stylesheet (font) + "}";
+  css += "QMainWindow::separator { width:1px; height:1px; margin:0; padding:0; }";
+  css += QString ("QMainWindow::separator:hover { background: %1; }").arg (c ("separator"));
+  // Finestra e widget generici
+  css += QString ("QMainWindow, QDialog, QWidget { background-color: %1; color: %2; }")
+         .arg (c ("win_bg"), c ("win_fg"));
+  // Dock title bar
+  css += QString ("QDockWidget::title { background: %1; color: %2; padding: 4px 6px; "
+                  "border: 1px solid #aaa; }")
+         .arg (c ("dock_title_bg"), c ("dock_title_fg"));
+  // Pulsanti
+  css += QString ("QPushButton { background-color: %1; color: %2; "
+                  "border: 1px solid #aaa; border-radius: 3px; padding: 3px 8px; }")
+         .arg (c ("btn_bg"), c ("btn_fg"));
+  css += QString ("QPushButton:hover { background-color: %1; }").arg (c ("btn_hover_bg"));
+  css += QString ("QPushButton:checked { background-color: %1; color: %2; "
+                  "border: 1px solid #555; }").arg (c ("btn_on_bg"), c ("btn_on_fg"));
+  // Menu
+  css += QString ("QMenuBar { background-color: %1; color: %2; }")
+         .arg (c ("menu_bg"), c ("menu_fg"));
+  css += QString ("QMenuBar::item:selected, QMenuBar::item:pressed "
+                  "{ background: %1; color: %2; }").arg (c ("menu_sel_bg"), c ("menu_sel_fg"));
+  css += QString ("QMenu { background-color: %1; color: %2; }")
+         .arg (c ("menu_bg"), c ("menu_fg"));
+  css += QString ("QMenu::item:selected { background: %1; color: %2; }")
+         .arg (c ("menu_sel_bg"), c ("menu_sel_fg"));
+  // Status bar
+  css += QString ("QStatusBar { background-color: %1; color: %2; }")
+         .arg (c ("status_bg"), c ("status_fg"));
+  // Tab bar
+  css += QString ("QTabBar::tab { background: %1; color: %2; padding: 4px 8px; "
+                  "border: 1px solid #aaa; border-bottom: none; }")
+         .arg (c ("tab_bg"), c ("tab_fg"));
+  css += QString ("QTabBar::tab:selected { background: %1; color: %2; }")
+         .arg (c ("tab_sel_bg"), c ("tab_sel_fg"));
+  // Input
+  css += QString ("QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QTextEdit, QPlainTextEdit "
+                  "{ background-color: %1; color: %2; }")
+         .arg (c ("input_bg"), c ("input_fg"));
+
+  qApp->setStyleSheet (css);
+
+  // Widget individuali con stile specifico
+  ui->labUTC->setStyleSheet (QString (
+    "QLabel { font-family: 'MS Shell Dlg 2'; font-size: 16pt;"
+    " background-color: %1; color: %2; }").arg (c ("clock_bg"), c ("clock_fg")));
+  ui->labDialFreq->setStyleSheet (QString (
+    "QLabel { font-family: 'MS Shell Dlg 2'; font-size: 16pt;"
+    " background-color: %1; color: %2; }"
+    "QLabel[oob=\"true\"] { background-color: red; }").arg (c ("freq_bg"), c ("freq_fg")));
+  ui->decodedTextBrowser->setStyleSheet (QString (
+    "QTextEdit { background-color: %1; color: %2; }").arg (c ("decode_bg"), c ("decode_fg")));
+  ui->decodedTextBrowser2->setStyleSheet (QString (
+    "QTextEdit { background-color: %1; color: %2; }").arg (c ("decode_bg"), c ("decode_fg")));
+
+  m_wideGraph->setDarkStyle (false);
+  ui->tabWidget->setTabShape (QTabWidget::Triangular);
+  check_button_color ();
+  for (auto &w : qApp->topLevelWidgets ()) w->updateGeometry ();
+  statusChanged ();
+  guiUpdate ();
+}
+
+// ── Dialogo personalizzazione colori ─────────────────────────────────────
+void MainWindow::showColorCustomizer ()
+{
+  // Copia locale dei colori da modificare nel dialogo
+  QMap<QString, QColor> workColors = m_customColors;
+
+  // Prepopola con i default se mancanti
+  for (int i = 0; i < kColorSlotCount; ++i) {
+    if (!workColors.contains (QLatin1String (kColorSlots[i].key)))
+      workColors[QLatin1String (kColorSlots[i].key)] = QColor (QLatin1String (kColorSlots[i].def));
+  }
+
+  auto *dlg = new QDialog (this);
+  dlg->setWindowTitle (tr ("Personalizza Colori — Decodium"));
+  dlg->setMinimumWidth (460);
+  dlg->setSizeGripEnabled (true);
+
+  auto *vbox = new QVBoxLayout (dlg);
+
+  // Intestazione
+  auto *header = new QLabel (tr ("<b>Modifica i colori di ogni elemento dell'interfaccia.</b><br>"
+    "Clicca su un colore per cambiarlo. I colori vengono inclusi nell'export .dlay."));
+  header->setWordWrap (true);
+  vbox->addWidget (header);
+
+  // Griglia colori dentro scroll area
+  auto *scroll = new QScrollArea (dlg);
+  scroll->setWidgetResizable (true);
+  scroll->setFrameShape (QFrame::NoFrame);
+  auto *grid_widget = new QWidget;
+  auto *grid = new QGridLayout (grid_widget);
+  grid->setColumnStretch (1, 1);
+  grid->setHorizontalSpacing (8);
+  grid->setVerticalSpacing (4);
+
+  // Intestazione colonne
+  grid->addWidget (new QLabel (tr ("<b>Elemento</b>")), 0, 0);
+  grid->addWidget (new QLabel (tr ("<b>Colore</b>")),   0, 1);
+  grid->addWidget (new QLabel (tr ("<b>Reset</b>")),    0, 2);
+
+  // Mappa chiave → QPushButton swatch (per aggiornamento live)
+  QMap<QString, QPushButton*> swatches;
+
+  auto makeSwatchColor = [](QColor col) -> QString {
+    return QString ("background-color: %1; border: 2px solid #555; border-radius: 3px;")
+           .arg (col.name ());
+  };
+
+  for (int i = 0; i < kColorSlotCount; ++i) {
+    QString key = QLatin1String (kColorSlots[i].key);
+    QString lbl = QLatin1String (kColorSlots[i].label);
+    QColor  def = QColor (QLatin1String (kColorSlots[i].def));
+
+    int row = i + 1;
+    grid->addWidget (new QLabel (lbl), row, 0);
+
+    auto *swatch = new QPushButton;
+    swatch->setFixedSize (80, 22);
+    swatch->setStyleSheet (makeSwatchColor (workColors.value (key, def)));
+    swatch->setToolTip (tr ("Clicca per cambiare colore"));
+    swatches[key] = swatch;
+
+    // Cattura per riferimento al workColors locale tramite lambda
+    connect (swatch, &QPushButton::clicked, dlg, [=, &workColors] () mutable {
+      QColor cur = workColors.value (key, def);
+      QColor chosen = QColorDialog::getColor (cur, dlg, lbl);
+      if (!chosen.isValid ()) return;
+      workColors[key] = chosen;
+      swatches[key]->setStyleSheet (makeSwatchColor (chosen));
+    });
+
+    grid->addWidget (swatch, row, 1, Qt::AlignLeft);
+
+    auto *resetBtn = new QPushButton (tr ("↺"));
+    resetBtn->setFixedSize (28, 22);
+    resetBtn->setToolTip (tr ("Ripristina il colore di default"));
+    connect (resetBtn, &QPushButton::clicked, dlg, [=, &workColors] () mutable {
+      workColors[key] = def;
+      swatches[key]->setStyleSheet (makeSwatchColor (def));
+    });
+    grid->addWidget (resetBtn, row, 2);
+  }
+
+  scroll->setWidget (grid_widget);
+  vbox->addWidget (scroll);
+
+  // Pulsanti
+  auto *btnBox = new QDialogButtonBox (
+    QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Apply);
+  vbox->addWidget (btnBox);
+
+  // Anteprima live con Apply
+  connect (btnBox->button (QDialogButtonBox::Apply), &QPushButton::clicked, dlg,
+    [this, &workColors] () {
+      m_customColors = workColors;
+      m_currentTheme = 5;
+      // Salva in QSettings
+      m_settings->beginGroup ("CustomTheme");
+      for (auto it = m_customColors.constBegin (); it != m_customColors.constEnd (); ++it)
+        m_settings->setValue (it.key (), it.value ().name ());
+      m_settings->endGroup ();
+      m_settings->setValue ("CurrentTheme", 5);
+      applyCustomTheme (m_customColors);
+    });
+
+  connect (btnBox, &QDialogButtonBox::accepted, dlg, [this, dlg, &workColors] () {
+    m_customColors = workColors;
+    m_currentTheme = 5;
+    m_settings->beginGroup ("CustomTheme");
+    for (auto it = m_customColors.constBegin (); it != m_customColors.constEnd (); ++it)
+      m_settings->setValue (it.key (), it.value ().name ());
+    m_settings->endGroup ();
+    m_settings->setValue ("CurrentTheme", 5);
+    applyCustomTheme (m_customColors);
+    dlg->accept ();
+  });
+  connect (btnBox, &QDialogButtonBox::rejected, dlg, &QDialog::reject);
+
+  dlg->exec ();
+  dlg->deleteLater ();
 }
 
 //  0 = Classic (WSJT-X):   waterfall top, decodes L+R, controls bottom
@@ -19637,6 +19938,12 @@ void MainWindow::applyTheme (int theme)
 {
   m_currentTheme = theme;
   QFont font = m_config.text_font ();
+
+  // ── Custom: applica i colori personalizzati dall'utente ──────────────────
+  if (theme == 5) {
+    applyCustomTheme (m_customColors);
+    return;
+  }
 
   // ── Classic: WSJT-X 3.0 originale — stile Qt di sistema, ZERO CSS custom ──
   if (theme == 3) {
