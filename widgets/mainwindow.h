@@ -742,7 +742,7 @@ private:
   int  m_maxCallerRetries   {3};             // max retries for non-responding station before skip
   int  m_autoCQPeriodsMissed   {0};           // RX periods senza risposta dal caller corrente
   bool m_receivedReplyThisPeriod {false};     // flag reset ogni periodo RX
-  static constexpr int MAX_MISSED_PERIODS = 4;
+  int  m_maxMissedPeriods   {4};             // timeout AutoCQ: RX senza risposta prima di tornare a CQ
   qint32  m_kin0=0;
   qint32  m_earlyDecode=41;
   qint32  m_earlyDecode2=47;

@@ -2379,6 +2379,10 @@ void MainWindow::writeSettings()
   m_settings->setValue("FirstLotwDl", m_firstLotwDl);    //avt 9/29/25
   m_settings->endGroup();
 
+  // Salva parametri waterfall — saveSettings() è normalmente chiamata solo su closeEvent
+  // ma se il widget è dockato quel segnale non scatta mai
+  if (m_wideGraph) m_wideGraph->saveSettings ();
+
   // do this in the General group because we save the parameters from various places
   if(m_mode=="JT9") {
         m_settings->setValue("SubMode",ui->sbSubmode->value());
@@ -2663,8 +2667,9 @@ void MainWindow::readSettings()
 
   // AutoCQ settings
   m_settings->beginGroup ("AutoCQ");
-  m_maxCQCalls = m_settings->value ("MaxCQCalls", 0).toInt ();
-  m_maxCallerRetries = m_settings->value ("MaxCallerRetries", 3).toInt ();
+  m_maxCQCalls        = m_settings->value ("MaxCQCalls",       0).toInt ();
+  m_maxCallerRetries  = m_settings->value ("MaxCallerRetries", 3).toInt ();
+  m_maxMissedPeriods  = m_settings->value ("MaxMissedPeriods", 4).toInt ();
   m_settings->endGroup ();
 
   // do this outside of settings group because it uses groups internally
@@ -7789,11 +7794,11 @@ void MainWindow::decodeDone ()
     if(ui->cbWorkDupes->isChecked()) QTimer::singleShot (5000, [=] {band_activity_cleared();});
   }
 
-  // Auto CQ MSHV-style timeout: dopo MAX_MISSED_PERIODS RX senza risposta → salta al prossimo
+  // Auto CQ MSHV-style timeout: dopo m_maxMissedPeriods RX senza risposta → salta al prossimo
   if (m_autoCQ && m_QSOProgress > CALLING && !m_diskData) {
     if (!m_receivedReplyThisPeriod) {
       m_autoCQPeriodsMissed++;
-      if (m_autoCQPeriodsMissed >= MAX_MISSED_PERIODS)
+      if (m_autoCQPeriodsMissed >= m_maxMissedPeriods)
         QTimer::singleShot (0, this, [this] { clearDX (); });
     }
     m_receivedReplyThisPeriod = false;
@@ -19405,7 +19410,7 @@ void MainWindow::showAutoCQSettings ()
 
   auto *sbMissed = new QSpinBox;
   sbMissed->setRange (2, 20);
-  sbMissed->setValue (MAX_MISSED_PERIODS);
+  sbMissed->setValue (m_maxMissedPeriods);
   sbMissed->setToolTip (tr ("RX periods without reply before returning to CQ"));
   form->addRow (tr ("Timeout periods (no reply):"), sbMissed);
 
@@ -19418,12 +19423,14 @@ void MainWindow::showAutoCQSettings ()
   layout->addWidget (buttons);
 
   if (dlg.exec () == QDialog::Accepted) {
-    m_maxCQCalls = sbMaxCQ->value ();
+    m_maxCQCalls       = sbMaxCQ->value ();
     m_maxCallerRetries = sbMaxRetry->value ();
+    m_maxMissedPeriods = sbMissed->value ();
     // Save to settings
     m_settings->beginGroup ("AutoCQ");
-    m_settings->setValue ("MaxCQCalls", m_maxCQCalls);
+    m_settings->setValue ("MaxCQCalls",       m_maxCQCalls);
     m_settings->setValue ("MaxCallerRetries", m_maxCallerRetries);
+    m_settings->setValue ("MaxMissedPeriods", m_maxMissedPeriods);
     m_settings->endGroup ();
   }
 }
