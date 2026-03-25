@@ -1801,8 +1801,42 @@ MainWindow::MainWindow(QDir const& temp_directory, bool multiple,
   // restoreState dopo che l'event loop è partito (cioè dopo show() in main.cpp).
   QTimer::singleShot(0, this, [this]() {
     auto savedState = m_settings->value("state").toByteArray();
-    if (!savedState.isEmpty())
+    if (!savedState.isEmpty()) {
       restoreState(savedState, 4);
+    } else {
+      // First run (no saved state): load decodium_original.dlay if present
+      QString defaultDlay = QApplication::applicationDirPath() + "/decodium_original.dlay";
+      if (QFile::exists(defaultDlay)) {
+        QFile f(defaultDlay);
+        if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+          QJsonParseError err;
+          QJsonDocument doc = QJsonDocument::fromJson(f.readAll(), &err);
+          f.close();
+          if (!doc.isNull() && doc.isObject()) {
+            QJsonObject root = doc.object();
+            if (root["format"].toString() == QLatin1String("DecodiumLayout")) {
+              QByteArray geo   = QByteArray::fromBase64(root["geometry"].toString().toLatin1());
+              QByteArray state = QByteArray::fromBase64(root["state"].toString().toLatin1());
+              if (!geo.isEmpty())   restoreGeometry(geo);
+              if (!state.isEmpty()) restoreState(state, 4);
+              int fileTheme = root["theme"].toInt(3);
+              QTimer::singleShot(0, this, [this, fileTheme, root]() {
+                applyTheme(fileTheme);
+                if (root.contains("colors") && root["colors"].isObject()) {
+                  QJsonObject colorObj = root["colors"].toObject();
+                  for (auto it = colorObj.constBegin(); it != colorObj.constEnd(); ++it)
+                    m_customColors[it.key()] = QColor(it.value().toString());
+                  if (!m_customColors.isEmpty()) {
+                    m_currentTheme = 5;
+                    applyCustomTheme(m_customColors);
+                  }
+                }
+              });
+            }
+          }
+        }
+      }
+    }
   });
 
   {
@@ -20175,6 +20209,10 @@ void MainWindow::applyTheme (int theme)
   }
   m_wideGraph->setDarkStyle (m_useDarkStyle);
   ui->tabWidget->setTabShape (m_useDarkStyle ? QTabWidget::Rounded : QTabWidget::Triangular);
+
+  // Reset inline stylesheets from previous Custom theme (if any)
+  ui->decodedTextBrowser->setStyleSheet (QString ());
+  ui->decodedTextBrowser2->setStyleSheet (QString ());
 
   // ── Colori specifici per tema (solo dock title + clock + freq) ─────
   QString dockTitleBg, dockTitleFg, dockBorder;
