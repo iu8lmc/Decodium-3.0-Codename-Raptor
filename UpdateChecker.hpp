@@ -28,7 +28,8 @@ private Q_SLOTS:
 private:
   void startDownload (QString const& url, QString const& filename);
   void launchInstaller (QString const& path);
-  bool isNewerVersion (QString const& remoteTag) const;
+  bool isVersionDifferent (QString const& remoteTag) const;
+  bool isDowngrade       (QString const& remoteTag) const;
 
   QNetworkAccessManager  m_nam;
   QNetworkReply        * m_downloadReply {nullptr};

@@ -49,22 +49,30 @@ UpdateChecker::UpdateChecker (QWidget * parent, bool silent)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-bool UpdateChecker::isNewerVersion (QString const& remoteTag) const
+static qint64 extractBuildNumber (QString const& tag)
 {
   static QRegularExpression rxDigits {R"((\d{10}))"};
-  auto remoteMatch = rxDigits.match (remoteTag);
-  if (!remoteMatch.hasMatch ()) return false;
-  qint64 remote = remoteMatch.captured (1).toLongLong ();
+  auto m = rxDigits.match (tag);
+  return m.hasMatch () ? m.captured (1).toLongLong () : -1;
+}
 
-  QString localTag = program_title ();
-  auto localMatch = rxDigits.match (localTag);
-  if (!localMatch.hasMatch ()) return false;
-  qint64 local = localMatch.captured (1).toLongLong ();
+bool UpdateChecker::isVersionDifferent (QString const& remoteTag) const
+{
+  qint64 remote = extractBuildNumber (remoteTag);
+  qint64 local  = extractBuildNumber (program_title ());
+  if (remote < 0 || local < 0) return false;
 
   qDebug () << "UpdateChecker: remote=" << remote << "local=" << local
-             << "tag=" << remoteTag << "title=" << localTag;
+             << "tag=" << remoteTag << "title=" << program_title ();
 
-  return remote > local;
+  return remote != local;
+}
+
+bool UpdateChecker::isDowngrade (QString const& remoteTag) const
+{
+  qint64 remote = extractBuildNumber (remoteTag);
+  qint64 local  = extractBuildNumber (program_title ());
+  return (remote >= 0 && local >= 0 && remote < local);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -92,7 +100,7 @@ void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
   QJsonObject root = doc.object ();
   m_remoteVersion  = root["tag_name"].toString ();
 
-  if (!isNewerVersion (m_remoteVersion)) {
+  if (!isVersionDifferent (m_remoteVersion)) {
     if (!m_silent)
       QMessageBox::information (m_parent, tr ("Update"),
                                 tr ("Decodium is up to date.\n\n"
@@ -125,18 +133,27 @@ void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
     }
   }
 
+  bool downgrade = isDowngrade (m_remoteVersion);
   QString notes = root["body"].toString ().left (400);
-  QString msg   = tr ("New version available: <b>%1</b><br><br>"
-                      "%2<br><br>"
-                      "Would you like to download and install the update now?")
-                  .arg (m_remoteVersion)
-                  .arg (notes.toHtmlEscaped ().replace ("\n", "<br>"));
+  QString msg   = downgrade
+    ? tr ("A <b>downgrade</b> is available: <b>%1</b><br>"
+          "<i>(your current version %2 is newer than the official release)</i><br><br>"
+          "%3<br><br>"
+          "Would you like to download and install the official version now?")
+        .arg (m_remoteVersion)
+        .arg (program_title ())
+        .arg (notes.toHtmlEscaped ().replace ("\n", "<br>"))
+    : tr ("New version available: <b>%1</b><br><br>"
+          "%2<br><br>"
+          "Would you like to download and install the update now?")
+        .arg (m_remoteVersion)
+        .arg (notes.toHtmlEscaped ().replace ("\n", "<br>"));
 
   QMessageBox box {m_parent};
   box.setWindowTitle (tr ("Decodium Update"));
   box.setTextFormat  (Qt::RichText);
   box.setText        (msg);
-  QPushButton *btnYes  = box.addButton (tr ("Yes, update"), QMessageBox::AcceptRole);
+  QPushButton *btnYes  = box.addButton (downgrade ? tr ("Yes, downgrade") : tr ("Yes, update"), QMessageBox::AcceptRole);
   QPushButton *btnSkip = box.addButton (tr ("Not now (don't ask again for this version)"), QMessageBox::RejectRole);
   box.addButton (tr ("Later"), QMessageBox::DestructiveRole);
   box.setDefaultButton (btnYes);
