@@ -12,6 +12,7 @@
 #include <QStandardPaths>
 #include <QProcess>
 #include <QSysInfo>
+#include <QDesktopServices>
 #include <QNetworkRequest>
 #include <QSettings>
 #include <QTextStream>
@@ -167,7 +168,16 @@ void UpdateChecker::onReleaseFetched (QNetworkReply * reply)
     return;
   }
 
-  if (box.clickedButton () != btnYes || m_assetUrl.isEmpty ()) {
+  if (box.clickedButton () != btnYes) {
+    deleteLater ();
+    return;
+  }
+
+  if (m_assetUrl.isEmpty ()) {
+    // Nessun asset .exe allegato — apri la pagina release nel browser
+    QString releaseUrl = QString ("https://github.com/iu8lmc/Decodium-3.0-Shannon/releases/tag/%1")
+                         .arg (m_remoteVersion);
+    QDesktopServices::openUrl (QUrl {releaseUrl});
     deleteLater ();
     return;
   }
